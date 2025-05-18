@@ -1,0 +1,147 @@
+<!-- activity_second.xml -->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/textView6"
+
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+
+        android:fontFamily="@font/venus_cormier"
+        android:gravity="center_vertical|start"
+        android:text="@string/setupText"
+        android:textColor="@color/accent_0"
+        android:textSize="96sp"
+
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <LinearLayout
+        android:id="@+id/constraintLayout1"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginStart="16dp"
+
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+
+        android:background="@drawable/data_background"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView6">
+
+        <!-- Username Related-->
+        <TextView
+            android:id="@+id/usernameTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+
+            android:fontFamily="@font/venus_cormier"
+
+            android:gravity="left"
+
+            android:padding="12dp"
+            android:text="@string/setupUsernameText"
+            android:textColor="@color/accent_1"
+            android:textSize="14sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <EditText
+            android:id="@+id/usernameEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+
+            android:layout_marginTop="8dp"
+            android:autofillHints="@string/setupUsernameHint"
+            android:background="@drawable/rounded_edittext_username_setup"
+            android:backgroundTint="@color/base_0"
+
+            android:fontFamily="@font/venus_cormier"
+            android:gravity="center"
+
+            android:hint="@string/setupUsernameHint"
+            android:inputType="text"
+            android:padding="24dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:textColor="#CACACA"
+
+            android:textColorHint="#CACACA"
+            android:textCursorDrawable="@drawable/cursor_color"
+            android:textSize="14sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/usernameTextView" />
+
+        <!-- Permission Related-->
+        <TextView
+            android:id="@+id/permissionsTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+
+            android:layout_marginTop="8dp"
+            android:fontFamily="@font/venus_cormier"
+
+            android:gravity="left"
+
+            android:padding="12dp"
+            android:text="@string/setupPermissionsText"
+            android:textColor="@color/accent_1"
+            android:textSize="14sp"
+
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/editText" />
+
+        <Button
+            android:id="@+id/buttonPermission"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+
+            android:layout_marginTop="8dp"
+            android:fontFamily="@font/venus_cormier"
+            android:padding="24dp"
+
+            android:radius="@dimen/softCorners"
+            android:stateListAnimator="@null"
+            android:text="@string/givePermissionsText"
+            android:textColor="#CACACA"
+            android:textSize="14sp"
+
+            app:backgroundTint="@color/base_0"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/permissionsTextView" />
+
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/buttonUpdateAndNext"
+
+        android:layout_marginEnd="32dp"
+        android:layout_marginBottom="32dp"
+
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+
+        android:background="@drawable/baseline_keyboard_arrow_right_24"
+        app:iconTint="@color/accent_0"
+        app:iconSize="32dp"
+        android:contentDescription="@string/nextButton"
+
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

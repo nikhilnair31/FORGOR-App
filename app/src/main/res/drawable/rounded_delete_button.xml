@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <solid android:color="@color/android:black" />
+            <corners android:radius="@dimen/softCorners" />
+        </shape>
+    </item>
+
+    <item
+        android:drawable="@drawable/baseline_delete_24"
+        android:gravity="center"/>
+</layer-list>

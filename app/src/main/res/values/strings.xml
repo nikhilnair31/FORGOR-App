@@ -1,0 +1,34 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="appName">BUILDMODE</string>
+
+    <string name="shortcut_label_save_image">Save to BUILDMODE</string>
+
+    <string name="nextButton">next button</string>
+    <string name="backButton">back button</string>
+
+    <string name="appLogoDescription">app logo</string>
+
+    <string name="setupText">SETUP</string>
+    <string name="setupUsernameHint">SET A USERNAME</string>
+    <string name="setupUsernameText">USERNAME</string>
+    <string name="setupPermissionsText">PERMISSIONS</string>
+    <string name="setupThoughtsText">BUILDMODE THOUGHTS</string>
+    <string name="setupThoughtsTimingText">SHOW TIME</string>
+    <string name="setupThoughtsStartTimeText">6</string>
+    <string name="setupThoughtsEndTimeText">23</string>
+    <string name="setupSavingText">SAVING</string>
+    <string name="setupAudioSavingText">AUDIO</string>
+    <string name="setupImageSavingText">IMAGE</string>
+    <string name="setupFileProcessingText">PREPROCESSING</string>
+    <string name="setupDataText">DATA</string>
+
+    <string name="permissionsText">PERMISSIONS</string>
+    <string name="gavePermissionsText">ALL PERMISSIONS GRANTED!</string>
+    <string name="givePermissionsText">GRANT ALL PERMISSIONS</string>
+
+    <string name="settingsText">SETTINGS</string>
+    <string name="settingsUsernameText">USERNAME: abc</string>
+    <string name="settingsPreprocessAudio">AUDIO</string>
+    <string name="settingsPreprocessImage">IMAGE</string>
+
+</resources>

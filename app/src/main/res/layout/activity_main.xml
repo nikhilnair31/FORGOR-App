@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".Main">
+
+    <ImageButton
+        android:id="@+id/settingsButton"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/rounded_settings_button"
+        android:contentDescription="@string/settingsText"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+
+        android:layout_marginStart="16dp"
+        android:fontFamily="@font/venus_cormier"
+        android:lineSpacingExtra="0sp"
+        android:paddingStart="8dp"
+        android:text="@string/appName"
+        android:textColor="@color/accent_0"
+        android:textSize="96sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:layout_editor_absoluteY="357dp" />
+
+    <ToggleButton
+        android:id="@+id/screenshotToggleButton"
+
+        android:layout_width="wrap_content"
+        android:layout_height="64dp"
+
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/rounded_screenshot_toggle_selector"
+
+        android:checked="false"
+        android:textOff=""
+
+        android:textOn=""
+
+        app:elevation="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:ignore="MissingConstraints" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
