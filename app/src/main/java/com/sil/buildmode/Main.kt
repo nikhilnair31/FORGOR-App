@@ -14,18 +14,10 @@ import androidx.core.content.edit
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
-import androidx.work.BackoffPolicy
-import androidx.work.Constraints
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequest
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
 import com.sil.services.ScreenshotService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.util.concurrent.TimeUnit
 
 class Main : AppCompatActivity() {
     // region Vars
@@ -111,7 +103,7 @@ class Main : AppCompatActivity() {
     }
 
     private fun updateServiceState(serviceClass: Class<*>, isEnabled: Boolean, preferenceKey: String) {
-        val serviceIntent = Intent(this, serviceClass)
+        val serviceIntent = Intent(this@Main, serviceClass)
         if (isEnabled) {
             Log.i(TAG, "${serviceClass.simpleName} created")
             startForegroundService(serviceIntent)

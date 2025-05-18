@@ -28,22 +28,31 @@ class Share : AppCompatActivity() {
         val type = intent.type
 
         Log.d(TAG, "Intent action: $action")
-        if (type != null && type.startsWith("image/")) {
-            when (action) {
-                Intent.ACTION_SEND -> {
-                    val imageUri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
-                    handleSendImage(imageUri)
+
+        when {
+            type?.startsWith("image/") == true -> {
+                when (action) {
+                    Intent.ACTION_SEND -> {
+                        val imageUri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
+                        handleSendImage(imageUri)
+                    }
+                    Intent.ACTION_SEND_MULTIPLE -> {
+                        val imageUriList = intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM)
+                        handleSendMultipleImages(imageUriList)
+                    }
                 }
-                Intent.ACTION_SEND_MULTIPLE -> {
-                    val imageUriList = intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM)
-                    handleSendMultipleImages(imageUriList)
+            }
+            type == "text/plain" -> {
+                if (action == Intent.ACTION_SEND) {
+                    val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
+                    handleSendText(sharedText)
                 }
             }
         }
 
-        // Immediately finish the activity after handling
         finish()
     }
+
     private fun handleSendImage(imageUri: Uri?) {
         imageUri?.let {
             var realPath = Helpers.getRealPathFromUri(this, it)
@@ -73,6 +82,12 @@ class Share : AppCompatActivity() {
                 val file = File(path)
                 ScreenshotService.uploadImageFileWithMetadata(this, file)
             }
+        }
+    }
+    private fun handleSendText(text: String?) {
+        text?.let {
+            Log.d(TAG, "handleSendText | received text: $it")
+//            ScreenshotService.uploadTextWithMetadata(this, it)
         }
     }
     // endregion

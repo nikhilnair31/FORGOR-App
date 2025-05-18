@@ -8,6 +8,7 @@ import android.os.FileObserver
 import android.os.IBinder
 import android.util.Log
 import com.sil.others.Helpers
+import com.sil.others.NotificationHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -18,6 +19,9 @@ class ScreenshotService : Service() {
     private val TAG = "Screenshot Service"
 
     private var screenshotObserver: ScreenshotFileObserver? = null
+
+    private lateinit var notificationHelper: NotificationHelper
+    private val monitoringNotificationId = 2
     // endregion
 
     // region Common
@@ -39,6 +43,10 @@ class ScreenshotService : Service() {
 
     private fun initRelated() {
         Log.i(TAG, "initRelated")
+
+        // Service related
+        notificationHelper = NotificationHelper(this)
+        startForeground(monitoringNotificationId, notificationHelper.createMonitoringNotification())
 
         // Observer related
         if (screenshotObserver == null) {

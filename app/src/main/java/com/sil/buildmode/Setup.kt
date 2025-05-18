@@ -25,7 +25,6 @@ class Setup : AppCompatActivity() {
     private lateinit var generalSharedPreferences: SharedPreferences
 
     private val initRequestCode = 100
-    private val backgroundLocationRequestCode = 102
     private val batteryUnrestrictedRequestCode = 103
 
     private lateinit var usernameEditText: EditText
@@ -108,6 +107,7 @@ class Setup : AppCompatActivity() {
         if (!areAllPermissionsGranted()) {
             val permList = arrayOf(
                 Manifest.permission.READ_MEDIA_IMAGES,
+                Manifest.permission.POST_NOTIFICATIONS,
             )
             ActivityCompat.requestPermissions(this, permList, initRequestCode)
         }
@@ -115,13 +115,14 @@ class Setup : AppCompatActivity() {
 
     private fun areAllPermissionsGranted(): Boolean {
         // Check for all regular permissions
+        val hasNotificationPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
         val hasMediaImagesPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED
 
         // Check for battery optimization exemption
         val powerManager = this.getSystemService(POWER_SERVICE) as PowerManager
         val isBatteryOptimizationIgnored = powerManager.isIgnoringBatteryOptimizations(this.packageName)
 
-        val hasAllPermissions = isBatteryOptimizationIgnored && hasMediaImagesPermission
+        val hasAllPermissions = hasNotificationPermission && isBatteryOptimizationIgnored && hasMediaImagesPermission
         Log.i(TAG, "hasAllPermissions: $hasAllPermissions")
 
         return hasAllPermissions
