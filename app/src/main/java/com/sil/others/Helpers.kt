@@ -44,6 +44,7 @@ import java.io.IOException
 import java.io.OutputStream
 import java.util.concurrent.TimeUnit
 import androidx.core.content.edit
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.sil.buildmode.R
 import com.sil.buildmode.ResultAdapter
@@ -406,7 +407,7 @@ class Helpers {
                                 Log.i("Helpers", "resultList: $resultList")
 
                                 val recyclerView = context.findViewById<RecyclerView>(R.id.imageRecyclerView)
-                                recyclerView.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(context)
+                                recyclerView.layoutManager = GridLayoutManager(context, 2)
                                 recyclerView.adapter = ResultAdapter(context, resultList)
                             }
                         } catch (e: Exception) {
