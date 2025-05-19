@@ -20,20 +20,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <ImageButton
-        android:id="@+id/userButton"
-        android:layout_width="64dp"
-        android:layout_height="64dp"
-
-        android:src="@drawable/baseline_person_24"
-        android:background="@color/base_1"
-        app:tint="@color/accent_1"
-
-        android:contentDescription="@string/settingsText"
-
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/settingsButton" />
-
     <TextView
         android:id="@+id/textView2"
         android:layout_width="0dp"
@@ -48,58 +34,36 @@
 
         android:textColor="@color/accent_0"
         android:textSize="96sp"
-        app:layout_constraintEnd_toStartOf="@+id/userButton"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
-
-    <ToggleButton
-        android:id="@+id/screenshotToggleButton"
-
-        android:layout_width="0dp"
-        android:layout_height="64dp"
-        android:paddingStart="32dp"
-
-        android:checked="false"
-        android:textOff="@string/screenshotToggleOnText"
-        android:textOn="@string/screenshotToggleOnText"
-        android:textColor="@color/accent_1"
-        android:fontFamily="@font/venus_cormier"
-
-        app:elevation="0dp"
-        android:stateListAnimator="@null"
-        android:drawableStart="@drawable/toggle_button_icon"
-        android:background="@drawable/toggle_button_background"
-
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView2" />
 
     <EditText
         android:id="@+id/searchEditText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
 
-        app:elevation="0dp"
-        android:stateListAnimator="@null"
         android:background="@color/accent_0"
+        android:fontFamily="@font/venus_cormier"
+        android:gravity="center"
 
-        android:inputType="text"
         android:hint="@string/searchHint"
+        android:inputType="text"
 
         android:padding="24dp"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
 
-        android:gravity="center"
+        android:stateListAnimator="@null"
         android:textColor="@color/accent_1"
-        android:fontFamily="@font/venus_cormier"
         android:textColorHint="@android:color/darker_gray"
         android:textCursorDrawable="@drawable/cursor_color"
         android:textSize="14sp"
+        app:elevation="0dp"
 
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/screenshotToggleButton" />
+        app:layout_constraintTop_toBottomOf="@+id/textView2" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/imageRecyclerView"
