@@ -5,6 +5,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.HapticFeedbackConstants
 import android.widget.EditText
@@ -30,6 +32,9 @@ class Main : AppCompatActivity() {
     private val KEY_SCREENSHOT_ENABLED = "isScreenshotMonitoringEnabled"
 
     private lateinit var generalSharedPref: SharedPreferences
+
+    private var searchHandler = Handler(Looper.getMainLooper())
+    private var searchRunnable: Runnable? = null
 
     private lateinit var screenshotToggleButton: ToggleButton
     private lateinit var searchEditText: EditText
@@ -87,8 +92,17 @@ class Main : AppCompatActivity() {
             )
         }
         searchEditText.doAfterTextChanged { text ->
-            Log.i(TAG, "Text changed to: ${text.toString()}")
-            Helpers.searchToServer(this, text.toString())
+            searchRunnable?.let { searchHandler.removeCallbacks(it) }
+
+            searchRunnable = Runnable {
+                val query = text.toString().trim()
+                if (query.isNotEmpty()) {
+                    Log.i(TAG, "Delayed search triggered for: $query")
+                    Helpers.searchToServer(this, query)
+                }
+            }
+
+            searchHandler.postDelayed(searchRunnable!!, 500) // 1000 ms = 1 second
         }
     }
     private fun updateToggleStates() {
