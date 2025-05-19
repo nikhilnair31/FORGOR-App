@@ -7,14 +7,16 @@ import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.view.HapticFeedbackConstants
+import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ToggleButton
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
+import androidx.core.widget.doAfterTextChanged
 import androidx.core.content.edit
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
+import com.sil.others.Helpers
 import com.sil.services.ScreenshotService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -30,6 +32,7 @@ class Main : AppCompatActivity() {
     private lateinit var generalSharedPref: SharedPreferences
 
     private lateinit var screenshotToggleButton: ToggleButton
+    private lateinit var searchEditText: EditText
     private lateinit var settingsButton: ImageButton
     // endregion
 
@@ -66,9 +69,9 @@ class Main : AppCompatActivity() {
         }
     }
     private fun initViews() {
-        screenshotToggleButton = findViewById(R.id.screenshotToggleButton)
-
         settingsButton = findViewById(R.id.settingsButton)
+        screenshotToggleButton = findViewById(R.id.screenshotToggleButton)
+        searchEditText = findViewById(R.id.searchEditText)
     }
     private fun setupListeners() {
         settingsButton.setOnClickListener {
@@ -82,6 +85,10 @@ class Main : AppCompatActivity() {
                 isChecked,
                 KEY_SCREENSHOT_ENABLED
             )
+        }
+        searchEditText.doAfterTextChanged { text ->
+            Log.i(TAG, "Text changed to: ${text.toString()}")
+            Helpers.searchToServer(this, text.toString())
         }
     }
     private fun updateToggleStates() {

@@ -1,5 +1,6 @@
 package com.sil.others
 
+import android.app.Activity
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.SharedPreferences
@@ -8,6 +9,8 @@ import android.os.Environment
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.util.Log
+import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
@@ -41,12 +44,17 @@ import java.io.IOException
 import java.io.OutputStream
 import java.util.concurrent.TimeUnit
 import androidx.core.content.edit
+import androidx.recyclerview.widget.RecyclerView
+import com.sil.buildmode.R
+import com.sil.buildmode.ResultAdapter
 import org.json.JSONObject
 
 class Helpers {
     companion object {
         // region API Keys
         private const val TAG = "Helper"
+
+        private const val PREFS_GENERAL = "com.sil.buildmode.generalSharedPrefs"
 
         private const val SERVER_URL = BuildConfig.SERVER_URL
         // endregion
@@ -64,7 +72,7 @@ class Helpers {
                     }
 
                     // Upload file
-                    val generalSharedPrefs: SharedPreferences = context.getSharedPreferences("com.sil.buildmode.generalSharedPrefs", Context.MODE_PRIVATE)
+                    val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
                     val userName = generalSharedPrefs.getString("userName", null)
 
                     val requestBody = MultipartBody.Builder().setType(MultipartBody.FORM)
@@ -112,7 +120,7 @@ class Helpers {
 
         fun uploadImageFile(context: Context, imageFile: File) {
             // Get the shared preferences for metadata values
-            val sharedPrefs = context.getSharedPreferences("com.sil.buildmode.generalSharedPrefs", MODE_PRIVATE)
+            val sharedPrefs = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
             val saveImage = sharedPrefs.getString("saveImageFiles", "false")
             val preprocessImage = sharedPrefs.getString("preprocessImage", "false")
 
@@ -192,7 +200,7 @@ class Helpers {
         fun uploadPostURLToServer(context: Context, postURL: String) {
             Log.i("Helpers", "Uploading URL to server...")
 
-            val prefs = context.getSharedPreferences("com.sil.buildmode.generalSharedPrefs", Context.MODE_PRIVATE)
+            val prefs = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
             val userName = prefs.getString("userName", "") ?: ""
 
             val requestBody = MultipartBody.Builder()
@@ -334,7 +342,7 @@ class Helpers {
                         val token = json.optString("token", "")
                         if (!token.isEmpty()) {
                             Log.i(TAG, "Token received")
-                            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences("com.sil.buildmode.generalSharedPrefs", Context.MODE_PRIVATE)
+                            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
                             generalSharedPrefs.edit { putString("token", token.toString()) }
                             callback(true)
                             return
@@ -342,6 +350,71 @@ class Helpers {
                     } else {
                         Log.e("Helpers", "Login error ${response.code}: $responseBody")
                         showToast(context, "Login failed!")
+                    }
+                }
+            })
+        }
+        // endregion
+
+        // region Search Related
+        fun searchToServer(context: Context, query: String) {
+            Log.i("Helpers", "Trying to search for $query")
+
+            val generalSharedPrefs: SharedPreferences =
+                context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
+            val token = generalSharedPrefs.getString("token", "") ?: ""
+
+            if (token.isEmpty()) {
+                Log.e("Helpers", "Token missing")
+                showToast(context, "Not logged in")
+                return
+            }
+
+            val jsonBody = """
+                {
+                    "searchText": "$query"
+                }
+            """.trimIndent()
+
+            val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
+
+            val request = Request.Builder()
+                .url("$SERVER_URL/query")
+                .addHeader("Authorization", "Bearer $token")
+                .post(requestBody)
+                .build()
+
+            OkHttpClient().newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    Log.e("Helpers", "Query failed: ${e.localizedMessage}")
+                    showToast(context, "Query failed!")
+                }
+
+                override fun onResponse(call: Call, response: Response) {
+                    val responseBody = response.body?.string()
+                    if (response.isSuccessful && responseBody != null) {
+                        try {
+                            (context as Activity).runOnUiThread {
+                                val json = JSONObject(responseBody)
+                                val resultsArray = json.getJSONArray("results")
+                                Log.i("Helpers", "resultsArray: $resultsArray")
+
+                                val resultList = mutableListOf<JSONObject>()
+                                for (i in 0 until resultsArray.length()) {
+                                    resultList.add(resultsArray.getJSONObject(i))
+                                }
+                                Log.i("Helpers", "resultList: $resultList")
+
+                                val recyclerView = context.findViewById<RecyclerView>(R.id.imageRecyclerView)
+                                recyclerView.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(context)
+                                recyclerView.adapter = ResultAdapter(context, resultList)
+                            }
+                        } catch (e: Exception) {
+                            Log.e("Helpers", "Error parsing response: ${e.localizedMessage}")
+                        }
+                    } else {
+                        Log.e("Helpers", "Query error ${response.code}: $responseBody")
+                        showToast(context, "Query error!")
                     }
                 }
             })
