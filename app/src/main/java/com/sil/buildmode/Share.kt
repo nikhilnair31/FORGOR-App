@@ -59,6 +59,7 @@ class Share : AppCompatActivity() {
             if (realPath == null) {
                 val tempFile = Helpers.copyUriToTempFile(this, it)
                 realPath = tempFile?.absolutePath
+                Log.d(TAG, "handleSendImage | realPath: $realPath")
             }
 
             realPath?.let { path ->

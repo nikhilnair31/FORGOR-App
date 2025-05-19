@@ -15,16 +15,13 @@ class UploadWorker(context: Context, workerParams: WorkerParameters) : Worker(co
 
         if (uploadType == "image") {
             val filePath = inputData.getString("filePath")
-            val fileSave = inputData.getString("fileSave")
-            val filePreprocess = inputData.getString("filePreprocess")
+            Log.i("UploadWorker", "doWork | filePath: $filePath")
 
             if (!filePath.isNullOrEmpty()) {
                 val file = File(filePath)
                 Helpers.uploadImageFileToServer(
                     applicationContext,
-                    file,
-                    fileSave,
-                    filePreprocess
+                    file
                 )
             }
 

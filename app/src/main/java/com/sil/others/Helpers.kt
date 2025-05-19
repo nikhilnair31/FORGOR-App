@@ -61,13 +61,13 @@ class Helpers {
         // endregion
 
         // region Image Related
-        fun uploadImageFileToServer(context: Context, imageFile: File?, saveFile: String?, preprocessFile: String?) {
+        fun uploadImageFileToServer(context: Context, imageFile: File?) {
             Log.i("Helpers", "Uploading Image to Server...")
 
             try {
                 imageFile?.let {
                     // Verify the file's readability and size
-                    if (!it.exists() || !it.canRead() || it.length() <= 0) {
+                    if (!imageFile.exists() || !imageFile.canRead() || imageFile.length() <= 0) {
                         Log.e(TAG, "Image file does not exist, is unreadable or empty")
                         return
                     }
@@ -120,33 +120,24 @@ class Helpers {
         }
 
         fun uploadImageFile(context: Context, imageFile: File) {
-            // Get the shared preferences for metadata values
-            val sharedPrefs = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
-            val saveImage = sharedPrefs.getString("saveImageFiles", "false")
-            val preprocessImage = sharedPrefs.getString("preprocessImage", "false")
-
             CoroutineScope(Dispatchers.IO).launch {
                 // Start upload process
                 scheduleImageUploadWork(
                     context,
                     "image",
-                    imageFile,
-                    saveImage,
-                    preprocessImage
+                    imageFile
                 )
             }
         }
 
-        fun scheduleImageUploadWork(context: Context, uploadType: String, file: File?, saveFile: String?, preprocessFile: String?) {
+        fun scheduleImageUploadWork(context: Context, uploadType: String, file: File?) {
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build()
 
             val inputData = workDataOf(
                 "uploadType" to uploadType,
-                "filePath" to file?.absolutePath,
-                "fileSave" to saveFile,
-                "filePreprocess" to preprocessFile
+                "filePath" to file?.absolutePath
             )
 
             val uploadWorkRequest = OneTimeWorkRequestBuilder<UploadWorker>()
