@@ -63,7 +63,7 @@ class Share : AppCompatActivity() {
 
             realPath?.let { path ->
                 val file = File(path)
-                ScreenshotService.uploadImageFileWithMetadata(this, file)
+                Helpers.uploadImageFile(this, file)
             }
         }
     }
@@ -80,14 +80,14 @@ class Share : AppCompatActivity() {
 
             realPath?.let { path ->
                 val file = File(path)
-                ScreenshotService.uploadImageFileWithMetadata(this, file)
+                Helpers.uploadImageFile(this, file)
             }
         }
     }
     private fun handleSendText(text: String?) {
         text?.let {
             Log.d(TAG, "handleSendText | received text: $it")
-//            ScreenshotService.uploadTextWithMetadata(this, it)
+            Helpers.uploadPostURL(this, it)
         }
     }
     // endregion

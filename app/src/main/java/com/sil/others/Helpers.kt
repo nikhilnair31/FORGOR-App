@@ -1,8 +1,10 @@
 package com.sil.others
 
 import android.content.Context
+import android.content.Context.MODE_PRIVATE
 import android.content.SharedPreferences
 import android.net.Uri
+import android.os.Environment
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.util.Log
@@ -15,15 +17,11 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.amazonaws.AmazonServiceException
-import com.amazonaws.auth.BasicAWSCredentials
-import com.amazonaws.regions.Region
-import com.amazonaws.regions.Regions
-import com.amazonaws.services.s3.AmazonS3Client
-import com.amazonaws.services.s3.model.ObjectMetadata
-import com.amazonaws.services.s3.model.PutObjectRequest
 import com.sil.buildmode.BuildConfig
 import com.sil.workers.UploadWorker
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -31,11 +29,8 @@ import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
-import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
-import org.json.JSONObject
 import java.io.File
-import java.io.FileInputStream
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.io.IOException
@@ -50,17 +45,103 @@ class Helpers {
         private const val SERVER_URL = BuildConfig.SERVER_URL
         // endregion
 
-        // region Worker Related
-        fun scheduleContentUploadWork(context: Context, source: String, file: File?, saveFile: String?, preprocessFile: String?) {
+        // region Image Related
+        fun uploadImageFile(context: Context, imageFile: File) {
+            // Get the shared preferences for metadata values
+            val sharedPrefs = context.getSharedPreferences("com.sil.buildmode.generalSharedPrefs", MODE_PRIVATE)
+            val saveImage = sharedPrefs.getString("saveImageFiles", "false")
+            val preprocessImage = sharedPrefs.getString("preprocessImage", "false")
+
+            CoroutineScope(Dispatchers.IO).launch {
+                // Start upload process
+                scheduleImageUploadWork(
+                    context,
+                    "image",
+                    imageFile,
+                    saveImage,
+                    preprocessImage
+                )
+            }
+        }
+        fun scheduleImageUploadWork(context: Context, uploadType: String, file: File?, saveFile: String?, preprocessFile: String?) {
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build()
 
             val inputData = workDataOf(
+                "uploadType" to uploadType,
                 "filePath" to file?.absolutePath,
-                "fileSource" to source,
                 "fileSave" to saveFile,
                 "filePreprocess" to preprocessFile
+            )
+
+            val uploadWorkRequest = OneTimeWorkRequestBuilder<UploadWorker>()
+                .setBackoffCriteria(
+                    BackoffPolicy.EXPONENTIAL,
+                    OneTimeWorkRequest.MIN_BACKOFF_MILLIS,
+                    TimeUnit.MILLISECONDS
+                )
+                .setConstraints(constraints)
+                .setInputData(inputData)
+                .build()
+
+            val appContext = context.applicationContext
+            WorkManager.getInstance(appContext).enqueue(uploadWorkRequest)
+        }
+
+        fun getScreenshotsPath(): String? {
+            // For most devices, screenshots are in DCIM/Screenshots or Pictures/Screenshots
+            val dcimPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)
+            val picturesPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+
+            val possiblePaths = listOf(
+                File(picturesPath, "Screenshots"),
+                // Some devices might use the root of DCIM or Pictures
+                picturesPath
+            )
+
+            for (path in possiblePaths) {
+                if (path.exists() && path.isDirectory) {
+                    return path.absolutePath
+                }
+            }
+
+            // If we can't find a known screenshots directory, default to DCIM/Screenshots
+            val defaultPath = File(dcimPath, "Screenshots")
+            defaultPath.mkdirs()
+
+            return defaultPath.absolutePath
+        }
+        fun isImageFile(fileName: String): Boolean {
+            Log.i(TAG, "isImageFile | fileName: $fileName")
+
+            val lowerCaseName = fileName.lowercase()
+            return lowerCaseName.endsWith(".jpg") ||
+                    lowerCaseName.endsWith(".jpeg") ||
+                    lowerCaseName.endsWith(".png") ||
+                    lowerCaseName.endsWith(".webp")
+        }
+        // endregion
+
+        // region URL Related
+        fun uploadPostURL(context: Context, postURL: String) {
+            CoroutineScope(Dispatchers.IO).launch {
+                // Start upload process
+                schedulePostURLUploadWork(
+                    context,
+                    "text",
+                    postURL
+                )
+            }
+        }
+        fun schedulePostURLUploadWork(context: Context, uploadType: String, postURL: String) {
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
+
+            val inputData = workDataOf(
+                "uploadType" to uploadType,
+                "postURL" to postURL,
             )
 
             val uploadWorkRequest = OneTimeWorkRequestBuilder<UploadWorker>()
@@ -104,7 +185,7 @@ class Helpers {
                         .build()
 
                     val request = Request.Builder()
-                        .url("$SERVER_URL/upload")
+                        .url("$SERVER_URL/upload/image")
                         .post(requestBody)
                         .build()
 
@@ -135,6 +216,41 @@ class Helpers {
                 }
                 e.printStackTrace()
             }
+        }
+        fun uploadPostURLToServer(context: Context, postURL: String) {
+            Log.i("Helpers", "Uploading URL to server...")
+
+            val prefs = context.getSharedPreferences("com.sil.buildmode.generalSharedPrefs", Context.MODE_PRIVATE)
+            val userName = prefs.getString("userName", "") ?: ""
+
+            val requestBody = MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("username", userName)
+                .addFormDataPart("url", postURL)
+                .build()
+
+            val request = Request.Builder()
+                .url("$SERVER_URL/upload/url")
+                .post(requestBody)
+                .build()
+
+            OkHttpClient().newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    Log.e("Helpers", "Upload failed: ${e.localizedMessage}")
+                    showToast(context, "Save failed!")
+                }
+
+                override fun onResponse(call: Call, response: Response) {
+                    val responseBody = response.body?.string()
+                    if (response.isSuccessful) {
+                        Log.i("Helpers", "Upload successful: $responseBody")
+                        showToast(context, "Image saved!")
+                    } else {
+                        Log.e("Helpers", "Upload error ${response.code}: $responseBody")
+                        showToast(context, "Save failed!")
+                    }
+                }
+            })
         }
         // endregion
 

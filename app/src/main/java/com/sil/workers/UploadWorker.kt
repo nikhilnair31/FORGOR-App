@@ -11,19 +11,35 @@ class UploadWorker(context: Context, workerParams: WorkerParameters) : Worker(co
     override fun doWork(): Result {
         Log.i("UploadWorker", "doWork | inputData: $inputData")
 
-        val filePath = inputData.getString("filePath")
-        val fileSource = inputData.getString("fileSource")
-        val fileSave = inputData.getString("fileSave")
-        val filePreprocess = inputData.getString("filePreprocess")
+        val uploadType = inputData.getString("uploadType")
 
-        if (!filePath.isNullOrEmpty()) {
-            val file = File(filePath)
+        if (uploadType == "image") {
+            val filePath = inputData.getString("filePath")
+            val fileSave = inputData.getString("fileSave")
+            val filePreprocess = inputData.getString("filePreprocess")
 
-            if (fileSource == "image") {
-                Helpers.uploadImageFileToServer(applicationContext, file, fileSave, filePreprocess)
+            if (!filePath.isNullOrEmpty()) {
+                val file = File(filePath)
+                Helpers.uploadImageFileToServer(
+                    applicationContext,
+                    file,
+                    fileSave,
+                    filePreprocess
+                )
             }
 
             return Result.success()
+        }
+        else if (uploadType == "text") {
+            val postURL = inputData.getString("postURL")
+
+            if (!postURL.isNullOrEmpty()) {
+                Helpers.uploadPostURLToServer(
+                    applicationContext,
+                    postURL
+                )
+                return Result.success()
+            }
         }
 
         return Result.failure()
