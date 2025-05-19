@@ -73,8 +73,6 @@ class Setup : AppCompatActivity() {
             Log.i(TAG, "goToMain\nuserName: $userNameText")
 
             generalSharedPreferences.edit { putString("userName", userNameText) }
-            generalSharedPreferences.edit { putString("saveImageFiles", true.toString()) }
-            generalSharedPreferences.edit { putString("preprocessImage", true.toString()) }
 
             launchMainActivity()
         }
@@ -113,8 +111,6 @@ class Setup : AppCompatActivity() {
                     highlightButtonEffects(loginButton, getString(R.string.setupLoginSuccessText))
                     generalSharedPreferences.edit {
                         putString("userName", userNameText)
-                        putString("saveImageFiles", true.toString())
-                        putString("preprocessImage", true.toString())
                     }
                 } else {
                     Log.i(TAG, "Login failed — prompting registration")
@@ -134,8 +130,6 @@ class Setup : AppCompatActivity() {
                             Helpers.showToast(this, "Registered and signed in.")
                             generalSharedPreferences.edit {
                                 putString("userName", username)
-                                putString("saveImageFiles", true.toString())
-                                putString("preprocessImage", true.toString())
                             }
                         } else {
                             Helpers.showToast(this, "Registration failed.")

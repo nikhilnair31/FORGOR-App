@@ -55,9 +55,7 @@ class Helpers {
     companion object {
         // region API Keys
         private const val TAG = "Helper"
-
         private const val PREFS_GENERAL = "com.sil.buildmode.generalSharedPrefs"
-
         private const val SERVER_URL = BuildConfig.SERVER_URL
         // endregion
 
@@ -343,6 +341,48 @@ class Helpers {
                     } else {
                         Log.e("Helpers", "Login error ${response.code}: $responseBody")
                         showToast(context, "Login failed!")
+                    }
+                }
+            })
+        }
+        fun authEditUsernameToServer(context: Context, newUsername: String, callback: (success: Boolean) -> Unit) {
+            Log.i("Helpers", "Trying to edit username to $newUsername")
+
+            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
+            val token = generalSharedPrefs.getString("token", "") ?: ""
+            if (token.isEmpty()) {
+                Log.e("Helpers", "Token missing")
+                showToast(context, "Not logged in")
+                return
+            }
+
+            val jsonBody = """
+            {
+                "new_username": "$newUsername"
+            }
+            """.trimIndent()
+
+            val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
+
+            val request = Request.Builder()
+                .url("$SERVER_URL/update-username")
+                .addHeader("Authorization", "Bearer $token")
+                .post(requestBody)
+                .build()
+
+            OkHttpClient().newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    Log.e("Helpers", "Edit username failed: ${e.localizedMessage}")
+                    callback(false)
+                }
+                override fun onResponse(call: Call, response: Response) {
+                    val responseBody = response.body?.string()
+                    if (response.isSuccessful) {
+                        Log.i("Helpers", "Edit username successful: $response")
+                        callback(true)
+                        return
+                    } else {
+                        Log.e("Helpers", "Edit username error ${response.code}: $responseBody")
                     }
                 }
             })

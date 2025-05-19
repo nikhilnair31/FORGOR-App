@@ -1,23 +1,21 @@
 package com.sil.buildmode
 
-import android.app.ActivityManager
-import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.text.Editable
 import android.util.Log
 import android.view.HapticFeedbackConstants
+import android.widget.Button
+import android.widget.EditText
 import android.widget.TextView
 import android.widget.ToggleButton
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
-import com.sil.buildmode.Main
 import com.sil.others.Helpers
+import com.sil.others.Helpers.Companion.showToast
 import com.sil.services.ScreenshotService
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 class Settings : AppCompatActivity() {
     // region Vars
@@ -27,8 +25,9 @@ class Settings : AppCompatActivity() {
 
     private lateinit var generalSharedPreferences: SharedPreferences
 
-    private lateinit var usernameText: TextView
+    private lateinit var usernameText: EditText
 
+    private lateinit var editUsernameButton: Button
     private lateinit var screenshotToggleButton: ToggleButton
     // endregion
 
@@ -39,8 +38,11 @@ class Settings : AppCompatActivity() {
 
         generalSharedPreferences = getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
 
-        usernameText = findViewById(R.id.usernameText)
+        usernameText = findViewById(R.id.usernameEditText)
+        editUsernameButton = findViewById(R.id.editUsername)
         screenshotToggleButton = findViewById(R.id.screenshotToggleButton)
+
+        usernameText.text = Editable.Factory.getInstance().newEditable(generalSharedPreferences.getString("userName", ""))
 
         // Check if the service is running and update the toggle button accordingly
         val isScreenshotServiceRunning = Helpers.isServiceRunning(this, ScreenshotService::class.java)
@@ -63,8 +65,31 @@ class Settings : AppCompatActivity() {
             updateToggle(screenshotToggleButton, isChecked)
             screenshotToggleButton.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
         }
+        editUsernameButton.setOnClickListener {
+            editUsernameRelated()
+        }
+    }
+    // endregion
 
-        usernameText.text = generalSharedPreferences.getString("userName", "")
+    // region Auth Related
+    private fun editUsernameRelated() {
+        Log.i(TAG, "editUsernameRelated")
+
+        val newUsername = usernameText.text.toString()
+        Helpers.authEditUsernameToServer(this, newUsername) { success ->
+            runOnUiThread {
+                if (success) {
+                    Log.i(TAG, "Edit username success")
+                    showToast(this, "Edit username successful!")
+                    generalSharedPreferences.edit {
+                        putString("userName", newUsername)
+                    }
+                } else {
+                    Log.i(TAG, "Edit username failed!")
+                    showToast(this, "Edit username failed!")
+                }
+            }
+        }
     }
     // endregion
 

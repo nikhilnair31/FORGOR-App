@@ -28,9 +28,8 @@
     <string name="setupLoginFailedText">FAILED :(</string>
 
     <string name="settingsText">SETTINGS</string>
-    <string name="settingsUsernameText">USERNAME: abc</string>
-    <string name="settingsPreprocessAudio">AUDIO</string>
-    <string name="settingsPreprocessImage">IMAGE</string>
+    <string name="settingsAuthHintText">...</string>
+    <string name="settingsEditUsername">EDIT USERNAME</string>
 
     <string name="searchHint">WHAT ?</string>
     <string name="screenshotToggleOnText">MONITORING ALL SCREENSHOTS</string>
