@@ -5,7 +5,7 @@
         <layer-list>
             <item>
                 <shape android:layout_width="wrap_content">
-                    <solid android:color="@color/accent_3" />
+                    <solid android:color="@color/accent_0" />
                     <corners android:radius="@dimen/softCorners" />
                 </shape>
             </item>

@@ -10,6 +10,7 @@ import android.view.HapticFeedbackConstants
 import android.widget.ImageButton
 import android.widget.ToggleButton
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
@@ -86,6 +87,7 @@ class Main : AppCompatActivity() {
     private fun updateToggleStates() {
         val isScreenshotRunning = isServiceRunning(this, ScreenshotService::class.java)
         screenshotToggleButton.isChecked = isScreenshotRunning
+        screenshotToggleButton.text = getString(R.string.screenshotToggleOnText)
     }
     // endregion
 

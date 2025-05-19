@@ -5,5 +5,6 @@
     <color name="base_2">#7b7889</color>
 
     <color name="accent_0">#deff96</color>
+    <color name="accent_0x">#F3FFE1</color>
     <color name="accent_1">#7654b1</color>
 </resources>

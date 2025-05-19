@@ -18,17 +18,21 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.amazonaws.AmazonServiceException
 import com.sil.buildmode.BuildConfig
+import com.sil.buildmode.Settings
 import com.sil.workers.UploadWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import okhttp3.Call
 import okhttp3.Callback
+import okhttp3.MediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import java.io.File
 import java.io.FileNotFoundException
@@ -36,6 +40,8 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStream
 import java.util.concurrent.TimeUnit
+import androidx.core.content.edit
+import org.json.JSONObject
 
 class Helpers {
     companion object {
@@ -46,6 +52,64 @@ class Helpers {
         // endregion
 
         // region Image Related
+        fun uploadImageFileToServer(context: Context, imageFile: File?, saveFile: String?, preprocessFile: String?) {
+            Log.i("Helpers", "Uploading Image to Server...")
+
+            try {
+                imageFile?.let {
+                    // Verify the file's readability and size
+                    if (!it.exists() || !it.canRead() || it.length() <= 0) {
+                        Log.e(TAG, "Image file does not exist, is unreadable or empty")
+                        return
+                    }
+
+                    // Upload file
+                    val generalSharedPrefs: SharedPreferences = context.getSharedPreferences("com.sil.buildmode.generalSharedPrefs", Context.MODE_PRIVATE)
+                    val userName = generalSharedPrefs.getString("userName", null)
+
+                    val requestBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+                        .addFormDataPart("username", userName.toString())
+                        .addFormDataPart(
+                            "image",
+                            imageFile.name,
+                            imageFile.asRequestBody("image/png".toMediaTypeOrNull())
+                        )
+                        .build()
+
+                    val request = Request.Builder()
+                        .url("$SERVER_URL/upload/image")
+                        .post(requestBody)
+                        .build()
+
+                    val client = OkHttpClient()
+                    client.newCall(request).enqueue(object : Callback {
+                        override fun onFailure(call: Call, e: IOException) {
+                            Log.e(TAG, "Image upload to Flask failed: ${e.localizedMessage}")
+                            showToast(context, "Save failed!")
+                        }
+
+                        override fun onResponse(call: Call, response: Response) {
+                            if (response.isSuccessful) {
+                                Log.i(TAG, "Image uploaded to Flask successfully: ${response.body?.string()}")
+                                showToast(context, "Image saved!")
+                            } else {
+                                Log.e(TAG, "Flask server returned error ${response.code}: ${response.body?.string()}")
+                                showToast(context, "Save failed!")
+                            }
+                        }
+                    })
+                }
+            }
+            catch (e: Exception) {
+                when (e) {
+                    is AmazonServiceException -> Log.e(TAG, "Error uploading image to S3: ${e.message}")
+                    is FileNotFoundException -> Log.e(TAG, "Image file not found: ${e.message}")
+                    else -> Log.e(TAG, "Error in image S3 upload: ${e.localizedMessage}")
+                }
+                e.printStackTrace()
+            }
+        }
+
         fun uploadImageFile(context: Context, imageFile: File) {
             // Get the shared preferences for metadata values
             val sharedPrefs = context.getSharedPreferences("com.sil.buildmode.generalSharedPrefs", MODE_PRIVATE)
@@ -63,6 +127,7 @@ class Helpers {
                 )
             }
         }
+
         fun scheduleImageUploadWork(context: Context, uploadType: String, file: File?, saveFile: String?, preprocessFile: String?) {
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
@@ -124,99 +189,6 @@ class Helpers {
         // endregion
 
         // region URL Related
-        fun uploadPostURL(context: Context, postURL: String) {
-            CoroutineScope(Dispatchers.IO).launch {
-                // Start upload process
-                schedulePostURLUploadWork(
-                    context,
-                    "text",
-                    postURL
-                )
-            }
-        }
-        fun schedulePostURLUploadWork(context: Context, uploadType: String, postURL: String) {
-            val constraints = Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.CONNECTED)
-                .build()
-
-            val inputData = workDataOf(
-                "uploadType" to uploadType,
-                "postURL" to postURL,
-            )
-
-            val uploadWorkRequest = OneTimeWorkRequestBuilder<UploadWorker>()
-                .setBackoffCriteria(
-                    BackoffPolicy.EXPONENTIAL,
-                    OneTimeWorkRequest.MIN_BACKOFF_MILLIS,
-                    TimeUnit.MILLISECONDS
-                )
-                .setConstraints(constraints)
-                .setInputData(inputData)
-                .build()
-
-            val appContext = context.applicationContext
-            WorkManager.getInstance(appContext).enqueue(uploadWorkRequest)
-        }
-        // endregion
-
-        // region Server Related
-        fun uploadImageFileToServer(context: Context, imageFile: File?, saveFile: String?, preprocessFile: String?) {
-            Log.i("Helpers", "Uploading Image to Server...")
-
-            try {
-                imageFile?.let {
-                    // Verify the file's readability and size
-                    if (!it.exists() || !it.canRead() || it.length() <= 0) {
-                        Log.e(TAG, "Image file does not exist, is unreadable or empty")
-                        return
-                    }
-
-                    // Upload file
-                    val generalSharedPrefs: SharedPreferences = context.getSharedPreferences("com.sil.buildmode.generalSharedPrefs", Context.MODE_PRIVATE)
-                    val userName = generalSharedPrefs.getString("userName", null)
-
-                    val requestBody = MultipartBody.Builder().setType(MultipartBody.FORM)
-                        .addFormDataPart("username", userName.toString())
-                        .addFormDataPart(
-                            "image",
-                            imageFile.name,
-                            imageFile.asRequestBody("image/png".toMediaTypeOrNull())
-                        )
-                        .build()
-
-                    val request = Request.Builder()
-                        .url("$SERVER_URL/upload/image")
-                        .post(requestBody)
-                        .build()
-
-                    val client = OkHttpClient()
-                    client.newCall(request).enqueue(object : Callback {
-                        override fun onFailure(call: Call, e: IOException) {
-                            Log.e(TAG, "Image upload to Flask failed: ${e.localizedMessage}")
-                            showToast(context, "Save failed!")
-                        }
-
-                        override fun onResponse(call: Call, response: Response) {
-                            if (response.isSuccessful) {
-                                Log.i(TAG, "Image uploaded to Flask successfully: ${response.body?.string()}")
-                                showToast(context, "Image saved!")
-                            } else {
-                                Log.e(TAG, "Flask server returned error ${response.code}: ${response.body?.string()}")
-                                showToast(context, "Save failed!")
-                            }
-                        }
-                    })
-                }
-            }
-            catch (e: Exception) {
-                when (e) {
-                    is AmazonServiceException -> Log.e(TAG, "Error uploading image to S3: ${e.message}")
-                    is FileNotFoundException -> Log.e(TAG, "Image file not found: ${e.message}")
-                    else -> Log.e(TAG, "Error in image S3 upload: ${e.localizedMessage}")
-                }
-                e.printStackTrace()
-            }
-        }
         fun uploadPostURLToServer(context: Context, postURL: String) {
             Log.i("Helpers", "Uploading URL to server...")
 
@@ -248,6 +220,128 @@ class Helpers {
                     } else {
                         Log.e("Helpers", "Upload error ${response.code}: $responseBody")
                         showToast(context, "Save failed!")
+                    }
+                }
+            })
+        }
+
+        fun uploadPostURL(context: Context, postURL: String) {
+            CoroutineScope(Dispatchers.IO).launch {
+                // Start upload process
+                schedulePostURLUploadWork(
+                    context,
+                    "text",
+                    postURL
+                )
+            }
+        }
+
+        fun schedulePostURLUploadWork(context: Context, uploadType: String, postURL: String) {
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
+
+            val inputData = workDataOf(
+                "uploadType" to uploadType,
+                "postURL" to postURL,
+            )
+
+            val uploadWorkRequest = OneTimeWorkRequestBuilder<UploadWorker>()
+                .setBackoffCriteria(
+                    BackoffPolicy.EXPONENTIAL,
+                    OneTimeWorkRequest.MIN_BACKOFF_MILLIS,
+                    TimeUnit.MILLISECONDS
+                )
+                .setConstraints(constraints)
+                .setInputData(inputData)
+                .build()
+
+            val appContext = context.applicationContext
+            WorkManager.getInstance(appContext).enqueue(uploadWorkRequest)
+        }
+        // endregion
+
+        // region Auth Related
+        fun authRegisterToServer(context: Context, username: String, password: String, callback: (success: Boolean) -> Unit) {
+            Log.i("Helpers", "Trying to register with $username/$password")
+
+            val jsonBody = """
+            {
+                "username": "$username",
+                "password": "$password"
+            }
+            """.trimIndent()
+
+            val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
+
+            val request = Request.Builder()
+                .url("$SERVER_URL/register")
+                .post(requestBody)
+                .build()
+
+            OkHttpClient().newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    Log.e("Helpers", "Register failed: ${e.localizedMessage}")
+                    showToast(context, "Register failed!")
+                    callback(false)
+                }
+                override fun onResponse(call: Call, response: Response) {
+                    val responseBody = response.body?.string()
+                    if (response.isSuccessful) {
+                        Log.i("Helpers", "Register successful: $responseBody")
+
+                        // Now attempt login and forward that result
+                        authLoginToServer(context, username, password) { loginSuccess ->
+                            Log.i(TAG, "Login success")
+                            callback(loginSuccess)
+                        }
+                    } else {
+                        Log.e("Helpers", "Register error ${response.code}: $responseBody")
+                        showToast(context, "Register failed!")
+                        callback(false)
+                    }
+                }
+            })
+        }
+        fun authLoginToServer(context: Context, username: String, password: String, callback: (success: Boolean) -> Unit) {
+            Log.i("Helpers", "Trying to login with $username/$password")
+
+            val jsonBody = """
+            {
+                "username": "$username",
+                "password": "$password"
+            }
+            """.trimIndent()
+
+            val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
+
+            val request = Request.Builder()
+                .url("$SERVER_URL/login")
+                .post(requestBody)
+                .build()
+
+            OkHttpClient().newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    Log.e("Helpers", "Login failed: ${e.localizedMessage}")
+                    showToast(context, "Login failed!")
+                    callback(false)
+                }
+                override fun onResponse(call: Call, response: Response) {
+                    val responseBody = response.body?.string()
+                    if (response.isSuccessful) {
+                        Log.i("Helpers", "Login successful: $response")
+                        val json = JSONObject(responseBody)
+                        val token = json.optString("token", "")
+                        if (!token.isEmpty()) {
+                            Log.i(TAG, "Token received")
+                            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences("com.sil.buildmode.generalSharedPrefs", Context.MODE_PRIVATE)
+                            generalSharedPrefs.edit { putString("token", token.toString()) }
+                            callback(true)
+                            return
+                        }
+                    } else {
+                        Log.e("Helpers", "Login error ${response.code}: $responseBody")
+                        showToast(context, "Login failed!")
                     }
                 }
             })
