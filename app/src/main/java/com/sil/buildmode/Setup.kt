@@ -171,72 +171,61 @@ class Setup : AppCompatActivity() {
     private fun permissionRelated() {
         Log.i(TAG, "Requesting initial permissions")
 
-        val permList = arrayOf(
+        val permissions = arrayOf(
             Manifest.permission.READ_MEDIA_IMAGES,
             Manifest.permission.POST_NOTIFICATIONS,
         )
-        ActivityCompat.requestPermissions(this, permList, initRequestCode)
+
+        if (!hasRuntimePermissions(permissions)) {
+            ActivityCompat.requestPermissions(this, permissions, initRequestCode)
+        } else if (!isBatteryOptimized()) {
+            requestIgnoreBatteryOptimizations()
+        } else {
+            highlightButtonEffects(permissionButton, getString(R.string.gavePermissionsText))
+        }
     }
 
-    private fun areAllPermissionsGranted(): Boolean {
-        // Check for all regular permissions
-        val hasNotificationPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-        val hasMediaImagesPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED
-
-        // Check for battery optimization exemption
-        val powerManager = this.getSystemService(POWER_SERVICE) as PowerManager
-        val isBatteryOptimizationIgnored = powerManager.isIgnoringBatteryOptimizations(this.packageName)
-
-        val hasAllPermissions = hasNotificationPermission && isBatteryOptimizationIgnored && hasMediaImagesPermission
-        Log.i(TAG, "hasAllPermissions: $hasAllPermissions")
-
-        return hasAllPermissions
+    private fun hasRuntimePermissions(permissions: Array<String>): Boolean {
+        return permissions.all {
+            ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
+        }
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
+    private fun isBatteryOptimized(): Boolean {
+        val pm = getSystemService(POWER_SERVICE) as PowerManager
+        return pm.isIgnoringBatteryOptimizations(packageName)
+    }
 
-        if (requestCode == batteryUnrestrictedRequestCode) {
-            // Check if permission was granted
-            val powerManager = getSystemService(POWER_SERVICE) as PowerManager
-            if (powerManager.isIgnoringBatteryOptimizations(packageName)) {
-                Log.i("Permissions", "Battery optimization ignored")
-                // Update button color
-                if (areAllPermissionsGranted()) {
+    private fun requestIgnoreBatteryOptimizations() {
+        val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+        startActivityForResult(intent, batteryUnrestrictedRequestCode)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == initRequestCode) {
+            if (grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+                if (!isBatteryOptimized()) {
+                    requestIgnoreBatteryOptimizations()
+                } else {
                     highlightButtonEffects(permissionButton, getString(R.string.gavePermissionsText))
                 }
             }
         }
     }
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        when (requestCode) {
-            initRequestCode -> {
-                if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                    Log.i("Permissions", "initRequestCode granted")
-                    getBatteryUnrestrictedPermission()
-                }
-                return
-            }
-            batteryUnrestrictedRequestCode -> {
-                if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                    Log.i("Permissions", "batteryUnrestrictedRequestCode granted")
-                    if (areAllPermissionsGranted()) {
-                        highlightButtonEffects(permissionButton, getString(R.string.gavePermissionsText))
-                        launchMainActivity()
-                    }
-                }
-                return
-            }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == batteryUnrestrictedRequestCode && isBatteryOptimized()) {
+            highlightButtonEffects(permissionButton, getString(R.string.gavePermissionsText))
         }
     }
-    private fun getBatteryUnrestrictedPermission() {
-        Log.i(TAG, "Requesting getBatteryUnrestrictedPermission")
 
-        if (!(this.getSystemService(POWER_SERVICE) as PowerManager).isIgnoringBatteryOptimizations(this.packageName)) {
-            val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-            startActivityForResult(intent, batteryUnrestrictedRequestCode)
-        }
+    private fun areAllPermissionsGranted(): Boolean {
+        return hasRuntimePermissions(arrayOf(
+            Manifest.permission.READ_MEDIA_IMAGES,
+            Manifest.permission.POST_NOTIFICATIONS
+        )) && isBatteryOptimized()
     }
     // endregion
 }
