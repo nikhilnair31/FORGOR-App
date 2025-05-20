@@ -95,6 +95,8 @@ class Helpers {
                     val request = Request.Builder()
                         .url("$SERVER_URL/upload/image")
                         .addHeader("Authorization", "Bearer $token")
+                        .addHeader("User-Agent", "buildmode")
+                        .addHeader("X-App-Key", APP_KEY)
                         .post(requestBody)
                         .build()
 
@@ -395,6 +397,7 @@ class Helpers {
                     } else {
                         Log.e("Helpers", "Login error ${response.code}: $responseBody")
                         showToast(context, "Login failed!")
+                        callback(false)
                     }
                 }
             })

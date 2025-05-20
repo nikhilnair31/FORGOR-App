@@ -11,6 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
@@ -90,10 +91,12 @@ class ResultAdapter(private val context: Context, private val dataList: List<JSO
             .setCancelable(true)
             .create()
 
-        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        val darkColor = ContextCompat.getColor(context, R.color.accent_1)
+        val darkBackgroundDrawable = darkColor.toDrawable()
+        dialog.window?.setBackgroundDrawable(darkBackgroundDrawable)
         dialog.show()
 
-        if (postUrl.isNotBlank()) {
+        if (postUrl.isNotBlank() && postUrl != "-") {
             linkView.visibility = View.VISIBLE
             linkView.setOnClickListener {
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(postUrl))

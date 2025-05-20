@@ -70,8 +70,9 @@ class Setup : AppCompatActivity() {
             override fun afterTextChanged(s: android.text.Editable?) {
                 val username = usernameEditText.text.toString()
                 val password = passwordEditText.text.toString()
+                val minPasswordLength = resources.getInteger(R.integer.minPasswordLength)
 
-                loginButton.isEnabled = username.isNotEmpty() && password.length >= 1
+                loginButton.isEnabled = username.isNotEmpty() && password.length >= minPasswordLength
             }
 
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -158,6 +159,7 @@ class Setup : AppCompatActivity() {
                     runOnUiThread {
                         if (registerSuccess) {
                             Helpers.showToast(this, "Registered and signed in.")
+                            highlightButtonEffects(loginButton, getString(R.string.setupLoginSuccessText))
                             generalSharedPreferences.edit {
                                 putString("userName", username)
                             }
