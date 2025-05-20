@@ -10,12 +10,14 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
 import org.json.JSONObject
 import androidx.core.graphics.drawable.toDrawable
 import com.sil.others.Helpers
+import androidx.core.net.toUri
 
 class ResultAdapter(private val context: Context, private val dataList: List<JSONObject>) :
     RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
@@ -36,6 +38,7 @@ class ResultAdapter(private val context: Context, private val dataList: List<JSO
         val rawUrl = item.optString("image_presigned_url", "")
         val imageUrl = if (rawUrl.startsWith("http")) rawUrl else BuildConfig.SERVER_URL + rawUrl
         val postUrl = item.optString("post_url", "").trim()
+        Log.i("ResultAdapter", "imageUrl: $imageUrl, postUrl: $postUrl")
 
         val blankDrawable = R.color.accent_0.toDrawable() // or use Color.LTGRAY or any color you want
         if (imageUrl.isBlank()) {
@@ -52,19 +55,31 @@ class ResultAdapter(private val context: Context, private val dataList: List<JSO
                 .into(holder.imageView)
         }
 
+        // Show link icon if postUrl is valid
+        if (postUrl == "-" || postUrl.isBlank()) {
+            holder.linkIcon.visibility = View.GONE
+        } else {
+            holder.linkIcon.visibility = View.VISIBLE
+            holder.linkIcon.setOnClickListener {
+                val intent = Intent(Intent.ACTION_VIEW, postUrl.toUri())
+                context.startActivity(intent)
+            }
+        }
+
         // Show and handle link icon only if post_url is valid
         holder.itemView.setOnClickListener {
             if (imageUrl.isNotBlank()) {
-                showImagePopup(imageUrl)
+                showImagePopup(imageUrl, postUrl)
             }
         }
     }
 
     override fun getItemCount(): Int = dataList.size
 
-    private fun showImagePopup(imageUrl: String) {
+    private fun showImagePopup(imageUrl: String, postUrl: String) {
         val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_full_image, null)
         val imageView = dialogView.findViewById<ImageView>(R.id.dialogImageView)
+        val linkView = dialogView.findViewById<TextView>(R.id.linkTextView)
 
         Glide.with(context)
             .load(imageUrl)
@@ -77,5 +92,15 @@ class ResultAdapter(private val context: Context, private val dataList: List<JSO
 
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         dialog.show()
+
+        if (postUrl.isNotBlank()) {
+            linkView.visibility = View.VISIBLE
+            linkView.setOnClickListener {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(postUrl))
+                context.startActivity(intent)
+            }
+        } else {
+            linkView.visibility = View.GONE
+        }
     }
 }
