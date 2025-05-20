@@ -1,19 +1,20 @@
 package com.sil.buildmode
 
-import android.app.ActivityManager
-import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import androidx.core.view.WindowCompat
 import android.widget.EditText
 import android.widget.ImageButton
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.widget.doAfterTextChanged
+import androidx.core.content.ContextCompat
 import androidx.core.content.edit
-import com.sil.buildmode.Settings
+import androidx.core.widget.doAfterTextChanged
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.sil.others.Helpers
 import com.sil.services.ScreenshotService
 
@@ -37,6 +38,10 @@ class Main : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        // Make navigation bar transparent
+        window.navigationBarColor = ContextCompat.getColor(this, R.color.accent_0)
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightNavigationBars = true
 
         initSharedPreferences()
         initViews()
@@ -63,9 +68,17 @@ class Main : AppCompatActivity() {
 
             searchRunnable = Runnable {
                 val query = text.toString().trim()
+                val recyclerView = findViewById<RecyclerView>(R.id.imageRecyclerView)
+                recyclerView.layoutManager = GridLayoutManager(this, 2)
                 if (query.isNotEmpty()) {
                     Log.i(TAG, "Delayed search triggered for: $query")
                     Helpers.searchToServer(this, query)
+                }
+                else {
+                    Log.i(TAG, "Empty search triggered")
+
+                    // Clear the result list and update adapter
+                    recyclerView.adapter = ResultAdapter(this, emptyList())
                 }
             }
 

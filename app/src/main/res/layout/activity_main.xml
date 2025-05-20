@@ -6,36 +6,79 @@
     android:layout_height="match_parent"
     tools:context=".Main">
 
-    <ImageButton
-        android:id="@+id/settingsButton"
-        android:layout_width="64dp"
-        android:layout_height="64dp"
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollView"
 
-        android:src="@drawable/baseline_menu_24"
-        android:background="@color/base_1"
-        app:tint="@color/accent_1"
-
-        android:contentDescription="@string/settingsText"
-
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/textView2"
         android:layout_width="0dp"
+        android:layout_height="0dp"
 
-        android:layout_height="wrap_content"
-        android:fontFamily="@font/venus_cormier"
+        android:fillViewport="false"
 
-        android:letterSpacing="0"
-        android:lineSpacingExtra="0sp"
-        android:paddingStart="8dp"
-        android:text="@string/appName"
-
-        android:textColor="@color/accent_0"
-        android:textSize="96sp"
+        app:layout_constraintBottom_toTopOf="@id/searchEditText"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <TextView
+                    android:id="@+id/textView2"
+                    android:layout_width="match_parent"
+
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/venus_cormier"
+
+                    android:letterSpacing="0"
+                    android:lineSpacingExtra="0sp"
+                    android:paddingStart="8dp"
+                    android:text="@string/appName"
+
+                    android:textColor="@color/accent_0"
+                    android:textSize="96sp"
+                    app:layout_constraintBottom_toTopOf="@+id/imageRecyclerView"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+                <ImageButton
+                    android:id="@+id/settingsButton"
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+
+                    android:layout_marginTop="16dp"
+                    android:layout_marginEnd="16dp"
+                    android:background="@color/base_1"
+
+                    android:contentDescription="@string/settingsText"
+                    android:src="@drawable/baseline_menu_24"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:tint="@color/accent_1" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/imageRecyclerView"
+
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+
+                android:nestedScrollingEnabled="false"
+                android:overScrollMode="never"
+
+                android:padding="16dp"
+
+                app:layout_constraintBottom_toTopOf="@+id/searchEditText"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent" />
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 
     <EditText
         android:id="@+id/searchEditText"
@@ -60,25 +103,9 @@
         android:textSize="14sp"
         app:elevation="0dp"
 
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView2" />
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/imageRecyclerView"
-
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-
-        android:overScrollMode="never"
-        android:nestedScrollingEnabled="false"
-
-        android:padding="16dp"
-
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/searchEditText" />
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
