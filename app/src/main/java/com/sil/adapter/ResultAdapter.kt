@@ -53,7 +53,16 @@ class ResultAdapter(private val context: Context, private val dataList: List<JSO
             return
         }
 
-        loadImageWithRetry(holder.imageView, glideUrl, 0, maxRetries = 3)
+        Glide.with(context)
+            .load(glideUrl)
+            .apply(
+                RequestOptions()
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .placeholder(R.color.accent_0.toDrawable())
+                    .error(R.color.accent_0.toDrawable())
+                    .fitCenter()  // or centerCrop() if you want more even alignment
+            )
+            .into(holder.imageView)
 
         // Show link icon if postUrl is valid
         if (postUrl.isBlank() || postUrl == "-") {
@@ -89,7 +98,7 @@ class ResultAdapter(private val context: Context, private val dataList: List<JSO
                     .diskCacheStrategy(DiskCacheStrategy.ALL) // ✅ cache both original and transformed
                     .placeholder(R.color.accent_0.toDrawable())
                     .error(R.color.accent_0.toDrawable())
-                    .override(400, 400)
+                    .dontTransform()
             )
             .into(object : com.bumptech.glide.request.target.CustomTarget<Drawable>() {
                 override fun onLoadCleared(placeholder: Drawable?) {

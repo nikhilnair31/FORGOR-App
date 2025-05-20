@@ -34,6 +34,8 @@
 
     <string name="searchImagesDescription">SEARCH IMAGES</string>
     <string name="searchHint">WHAT ?</string>
+    <string name="image_desc">SEARCH IMAGE RESULT</string>
+
     <string name="screenshotToggleOnText">MONITORING ALL SCREENSHOTS</string>
     <string name="screenshotToggleOffText">NOT MONITORING SCREENSHOTS</string>
 
