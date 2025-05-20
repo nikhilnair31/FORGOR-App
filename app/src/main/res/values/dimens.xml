@@ -4,10 +4,4 @@
     <dimen name="roundedCorners">48dp</dimen>
     <dimen name="softCorners">0dp</dimen>
     <dimen name="lineThickness">2dp</dimen>
-
-    <!-- Vars -->
-    <integer name="maxRecordingTimeInMin">15</integer>
-    <integer name="recordingEncodingBitrate">32000</integer>
-    <integer name="recordingSamplingRate">16000</integer>
-    <integer name="recordingChannels">1</integer>
 </resources>

@@ -21,6 +21,7 @@ import com.sil.others.Helpers
 class Setup : AppCompatActivity() {
     // region Vars
     private val TAG = "Setup"
+    private val PREFS_GENERAL = "com.sil.buildmode.generalSharedPrefs"
 
     private lateinit var generalSharedPreferences: SharedPreferences
 
@@ -45,7 +46,7 @@ class Setup : AppCompatActivity() {
     private fun initRelated() {
         Log.i(TAG, "initRelated")
 
-        generalSharedPreferences = getSharedPreferences("com.sil.buildmode.generalSharedPrefs", MODE_PRIVATE)
+        generalSharedPreferences = getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
 
         // Setup UI related
         usernameEditText = findViewById(R.id.usernameEditText)
@@ -70,7 +71,7 @@ class Setup : AppCompatActivity() {
                 val username = usernameEditText.text.toString()
                 val password = passwordEditText.text.toString()
 
-                loginButton.isEnabled = username.isNotEmpty() && password.length >= 6
+                loginButton.isEnabled = username.isNotEmpty() && password.length >= 1
             }
 
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -105,6 +106,9 @@ class Setup : AppCompatActivity() {
         startActivity(intent)
         finish()
     }
+    // endregion
+
+    // region UI Related
     private fun highlightButtonEffects(button: Button, newText: String) {
         button.setBackgroundColor(ContextCompat.getColor(this, R.color.accent_0))
         button.setTextColor(ContextCompat.getColor(this, R.color.accent_1))
@@ -118,13 +122,14 @@ class Setup : AppCompatActivity() {
 
         val userNameText = usernameEditText.text.toString()
         val passwordText = passwordEditText.text.toString()
+        val minPasswordLength = resources.getInteger(R.integer.minPasswordLength)
 
         if (userNameText.isEmpty() || passwordText.isEmpty()) {
             Helpers.showToast(this, "Username or password cannot be empty.")
             return
         }
-        if (passwordText.length < 6) {
-            passwordEditText.error = "Password must be at least 6 characters"
+        if (passwordText.length < minPasswordLength) {
+            passwordEditText.error = "Password must be at least $minPasswordLength characters"
         } else {
             // Proceed with valid password
         }

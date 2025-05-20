@@ -30,6 +30,7 @@
     <string name="settingsText">SETTINGS</string>
     <string name="settingsAuthHintText">...</string>
     <string name="settingsEditUsername">EDIT USERNAME</string>
+    <string name="settingsUserLogout">LOGOUT</string>
 
     <string name="searchImagesDescription">SEARCH IMAGES</string>
     <string name="searchHint">WHAT ?</string>

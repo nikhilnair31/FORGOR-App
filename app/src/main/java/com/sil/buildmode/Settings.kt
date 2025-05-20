@@ -22,11 +22,13 @@ class Settings : AppCompatActivity() {
     private val TAG = "Settings"
     private val PREFS_GENERAL = "com.sil.buildmode.generalSharedPrefs"
     private val KEY_SCREENSHOT_ENABLED = "isScreenshotMonitoringEnabled"
+    private val KEY_FIRST_RUN = "isFirstRun"
 
     private lateinit var generalSharedPreferences: SharedPreferences
 
     private lateinit var usernameText: EditText
     private lateinit var editUsernameButton: Button
+    private lateinit var userLogoutButton: Button
     private lateinit var screenshotToggleButton: ToggleButton
     // endregion
 
@@ -39,6 +41,7 @@ class Settings : AppCompatActivity() {
 
         usernameText = findViewById(R.id.usernameEditText)
         editUsernameButton = findViewById(R.id.editUsername)
+        userLogoutButton = findViewById(R.id.userLogout)
         screenshotToggleButton = findViewById(R.id.screenshotToggleButton)
 
         usernameText.text = Editable.Factory.getInstance().newEditable(generalSharedPreferences.getString("userName", ""))
@@ -67,6 +70,9 @@ class Settings : AppCompatActivity() {
         editUsernameButton.setOnClickListener {
             editUsernameRelated()
         }
+        userLogoutButton.setOnClickListener {
+            userLogoutRelated()
+        }
     }
     // endregion
 
@@ -89,6 +95,25 @@ class Settings : AppCompatActivity() {
                 }
             }
         }
+    }
+    private fun userLogoutRelated() {
+        Log.i(TAG, "userLogoutRelated")
+
+        generalSharedPreferences.edit(commit = true) {
+            putString("userName", "")
+                .putString("token", "")
+                .putBoolean(KEY_SCREENSHOT_ENABLED, false)
+                .putBoolean(KEY_FIRST_RUN, true)
+        }  // ← block until written
+
+        val serviceIntent = Intent(this@Settings, ScreenshotService::class.java)
+        stopService(serviceIntent)
+
+        val intent = Intent(this, Welcome::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        startActivity(intent)
+        finish()
     }
     // endregion
 
