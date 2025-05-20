@@ -31,6 +31,7 @@
     <string name="settingsAuthHintText">...</string>
     <string name="settingsEditUsername">EDIT USERNAME</string>
 
+    <string name="searchImagesDescription">SEARCH IMAGES</string>
     <string name="searchHint">WHAT ?</string>
     <string name="screenshotToggleOnText">MONITORING ALL SCREENSHOTS</string>
     <string name="screenshotToggleOffText">NOT MONITORING SCREENSHOTS</string>

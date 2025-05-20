@@ -15,6 +15,7 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
 import org.json.JSONObject
 import androidx.core.graphics.drawable.toDrawable
+import com.sil.others.Helpers
 
 class ResultAdapter(private val context: Context, private val dataList: List<JSONObject>) :
     RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
@@ -40,8 +41,9 @@ class ResultAdapter(private val context: Context, private val dataList: List<JSO
         if (imageUrl.isBlank()) {
             holder.imageView.setImageDrawable(blankDrawable)
         } else {
+            val glideUrl = Helpers.getImageURL(context, imageUrl)
             Glide.with(context)
-                .load(imageUrl)
+                .load(glideUrl)
                 .apply(
                     RequestOptions()
                         .placeholder(blankDrawable)

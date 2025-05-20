@@ -26,7 +26,6 @@ class Settings : AppCompatActivity() {
     private lateinit var generalSharedPreferences: SharedPreferences
 
     private lateinit var usernameText: EditText
-
     private lateinit var editUsernameButton: Button
     private lateinit var screenshotToggleButton: ToggleButton
     // endregion

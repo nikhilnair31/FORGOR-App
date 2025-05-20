@@ -31,18 +31,18 @@
                 <TextView
                     android:id="@+id/textView2"
                     android:layout_width="match_parent"
-
                     android:layout_height="wrap_content"
-                    android:fontFamily="@font/venus_cormier"
+                    android:paddingStart="8dp"
 
+                    android:fontFamily="@font/venus_cormier"
                     android:letterSpacing="0"
                     android:lineSpacingExtra="0sp"
-                    android:paddingStart="8dp"
                     android:text="@string/appName"
-
                     android:textColor="@color/accent_0"
                     android:textSize="96sp"
-                    app:layout_constraintBottom_toTopOf="@+id/imageRecyclerView"
+                    android:contentDescription="@string/appName"
+
+                    app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent" />
 
@@ -67,11 +67,11 @@
 
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:padding="16dp"
 
                 android:nestedScrollingEnabled="false"
                 android:overScrollMode="never"
-
-                android:padding="16dp"
+                android:contentDescription="@string/searchImagesDescription"
 
                 app:layout_constraintBottom_toTopOf="@+id/searchEditText"
                 app:layout_constraintEnd_toEndOf="parent"

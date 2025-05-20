@@ -47,6 +47,8 @@ import java.util.concurrent.TimeUnit
 import androidx.core.content.edit
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.load.model.GlideUrl
+import com.bumptech.glide.load.model.LazyHeaders
 import com.sil.buildmode.R
 import com.sil.buildmode.ResultAdapter
 import org.json.JSONObject
@@ -71,12 +73,16 @@ class Helpers {
                         return
                     }
 
-                    // Upload file
-                    val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
-                    val userName = generalSharedPrefs.getString("userName", null)
+                    val generalSharedPrefs: SharedPreferences =
+                        context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
+                    val token = generalSharedPrefs.getString("token", "") ?: ""
+                    if (token.isEmpty()) {
+                        Log.e("Helpers", "Token missing")
+                        showToast(context, "Not logged in")
+                        return
+                    }
 
                     val requestBody = MultipartBody.Builder().setType(MultipartBody.FORM)
-                        .addFormDataPart("username", userName.toString())
                         .addFormDataPart(
                             "image",
                             imageFile.name,
@@ -86,6 +92,7 @@ class Helpers {
 
                     val request = Request.Builder()
                         .url("$SERVER_URL/upload/image")
+                        .addHeader("Authorization", "Bearer $token")
                         .post(requestBody)
                         .build()
 
@@ -110,9 +117,8 @@ class Helpers {
             }
             catch (e: Exception) {
                 when (e) {
-                    is AmazonServiceException -> Log.e(TAG, "Error uploading image to S3: ${e.message}")
                     is FileNotFoundException -> Log.e(TAG, "Image file not found: ${e.message}")
-                    else -> Log.e(TAG, "Error in image S3 upload: ${e.localizedMessage}")
+                    else -> Log.e(TAG, "Error in image upload: ${e.localizedMessage}")
                 }
                 e.printStackTrace()
             }
@@ -153,6 +159,35 @@ class Helpers {
             WorkManager.getInstance(appContext).enqueue(uploadWorkRequest)
         }
 
+        fun getImageURL(context: Context, imageUrl: String): GlideUrl? {
+            Log.i(TAG, "getImageURL | getting image URL...")
+
+            try {
+                val generalSharedPrefs: SharedPreferences =
+                    context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
+                val token = generalSharedPrefs.getString("token", "") ?: ""
+                if (token.isEmpty()) {
+                    Log.e("Helpers", "Token missing")
+                    showToast(context, "Not logged in")
+                    return null
+                }
+
+                val glideUrl = GlideUrl(imageUrl, LazyHeaders.Builder()
+                    .addHeader("Authorization", "Bearer $token")
+                    .build())
+
+                return glideUrl
+            }
+            catch (e: Exception) {
+                when (e) {
+                    is FileNotFoundException -> Log.e(TAG, "Image file not found: ${e.message}")
+                    else -> Log.e(TAG, "Error in image upload: ${e.localizedMessage}")
+                }
+                e.printStackTrace()
+                return null
+            }
+        }
+
         fun getScreenshotsPath(): String? {
             // For most devices, screenshots are in DCIM/Screenshots or Pictures/Screenshots
             val dcimPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)
@@ -191,21 +226,32 @@ class Helpers {
         fun uploadPostURLToServer(context: Context, postURL: String) {
             Log.i("Helpers", "Uploading URL to server...")
 
-            val prefs = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
-            val userName = prefs.getString("userName", "") ?: ""
+            val generalSharedPrefs: SharedPreferences =
+                context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
+            val token = generalSharedPrefs.getString("token", "") ?: ""
+            if (token.isEmpty()) {
+                Log.e("Helpers", "Token missing")
+                showToast(context, "Not logged in")
+                return
+            }
 
             val requestBody = MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
-                .addFormDataPart("username", userName)
                 .addFormDataPart("url", postURL)
                 .build()
 
             val request = Request.Builder()
                 .url("$SERVER_URL/upload/url")
+                .addHeader("Authorization", "Bearer $token")
                 .post(requestBody)
                 .build()
 
-            OkHttpClient().newCall(request).enqueue(object : Callback {
+            // ✅ Custom OkHttpClient with longer timeouts
+            val client = OkHttpClient.Builder()
+                .readTimeout(20, TimeUnit.SECONDS)
+                .build()
+
+            client.newCall(request).enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
                     Log.e("Helpers", "Upload failed: ${e.localizedMessage}")
                     showToast(context, "Save failed!")
@@ -396,7 +442,6 @@ class Helpers {
             val generalSharedPrefs: SharedPreferences =
                 context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
             val token = generalSharedPrefs.getString("token", "") ?: ""
-
             if (token.isEmpty()) {
                 Log.e("Helpers", "Token missing")
                 showToast(context, "Not logged in")
@@ -426,17 +471,18 @@ class Helpers {
                 override fun onResponse(call: Call, response: Response) {
                     val responseBody = response.body?.string()
                     if (response.isSuccessful && responseBody != null) {
+                        Log.i("Helpers", "Query successful!")
                         try {
                             (context as Activity).runOnUiThread {
                                 val json = JSONObject(responseBody)
                                 val resultsArray = json.getJSONArray("results")
-                                Log.i("Helpers", "resultsArray: $resultsArray")
+                                // Log.i("Helpers", "resultsArray: $resultsArray")
 
                                 val resultList = mutableListOf<JSONObject>()
                                 for (i in 0 until resultsArray.length()) {
                                     resultList.add(resultsArray.getJSONObject(i))
                                 }
-                                Log.i("Helpers", "resultList: $resultList")
+                                // Log.i("Helpers", "resultList: $resultList")
 
                                 val recyclerView = context.findViewById<RecyclerView>(R.id.imageRecyclerView)
                                 recyclerView.layoutManager = GridLayoutManager(context, 2)
