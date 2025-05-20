@@ -64,6 +64,26 @@ class Setup : AppCompatActivity() {
         updateAndNextButton.setOnClickListener {
             goToMain()
         }
+
+        val textWatcher = object : android.text.TextWatcher {
+            override fun afterTextChanged(s: android.text.Editable?) {
+                val username = usernameEditText.text.toString()
+                val password = passwordEditText.text.toString()
+
+                loginButton.isEnabled = username.isNotEmpty() && password.length >= 6
+            }
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+        }
+        // Attach the watcher to both fields
+        usernameEditText.addTextChangedListener(textWatcher)
+        passwordEditText.addTextChangedListener(textWatcher)
+
+        // Check for permissions
+        if (areAllPermissionsGranted()) {
+            highlightButtonEffects(permissionButton, getString(R.string.gavePermissionsText))
+        }
     }
 
     private fun goToMain() {
@@ -102,6 +122,11 @@ class Setup : AppCompatActivity() {
         if (userNameText.isEmpty() || passwordText.isEmpty()) {
             Helpers.showToast(this, "Username or password cannot be empty.")
             return
+        }
+        if (passwordText.length < 6) {
+            passwordEditText.error = "Password must be at least 6 characters"
+        } else {
+            // Proceed with valid password
         }
 
         Helpers.authLoginToServer(this, userNameText, passwordText) { success ->
@@ -146,13 +171,11 @@ class Setup : AppCompatActivity() {
     private fun permissionRelated() {
         Log.i(TAG, "Requesting initial permissions")
 
-        if (!areAllPermissionsGranted()) {
-            val permList = arrayOf(
-                Manifest.permission.READ_MEDIA_IMAGES,
-                Manifest.permission.POST_NOTIFICATIONS,
-            )
-            ActivityCompat.requestPermissions(this, permList, initRequestCode)
-        }
+        val permList = arrayOf(
+            Manifest.permission.READ_MEDIA_IMAGES,
+            Manifest.permission.POST_NOTIFICATIONS,
+        )
+        ActivityCompat.requestPermissions(this, permList, initRequestCode)
     }
 
     private fun areAllPermissionsGranted(): Boolean {

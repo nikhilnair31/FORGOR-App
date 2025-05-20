@@ -89,24 +89,24 @@
             android:id="@+id/passwordEditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-
             android:layout_marginTop="8dp"
-            android:background="@drawable/rounded_edittext_username_setup"
-            android:backgroundTint="@color/base_0"
-
-            android:fontFamily="@font/venus_cormier"
-            android:gravity="center"
-
-            android:hint="@string/setupPasswordHint"
-            android:inputType="textVisiblePassword"
             android:padding="24dp"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
-            android:textColor="#CACACA"
+
+            android:background="@drawable/rounded_edittext_username_setup"
+            android:backgroundTint="@color/base_0"
 
             android:textColorHint="#CACACA"
             android:textCursorDrawable="@drawable/cursor_color"
             android:textSize="14sp"
+            android:gravity="center"
+            android:fontFamily="@font/venus_cormier"
+            android:hint="@string/setupPasswordHint"
+            android:inputType="textVisiblePassword"
+            android:textColor="#CACACA"
+            android:minEms="6"
+
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/usernameTextView" />
@@ -124,7 +124,7 @@
             android:stateListAnimator="@null"
             android:text="@string/setupLoginText"
             android:textSize="14sp"
-            android:enabled="true"
+            android:enabled="false"
 
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
