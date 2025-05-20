@@ -3,16 +3,16 @@ package com.sil.others
 import android.app.Activity
 import android.app.ActivityManager
 import android.content.Context
-import android.content.Context.MODE_PRIVATE
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Environment
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.util.Log
-import android.widget.ImageView
-import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.edit
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.NetworkType
@@ -20,39 +20,31 @@ import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
-import com.amazonaws.AmazonServiceException
+import com.bumptech.glide.load.model.GlideUrl
+import com.bumptech.glide.load.model.LazyHeaders
 import com.sil.buildmode.BuildConfig
-import com.sil.buildmode.Settings
+import com.sil.buildmode.R
+import com.sil.buildmode.ResultAdapter
 import com.sil.workers.UploadWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import okhttp3.Call
 import okhttp3.Callback
-import okhttp3.MediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
+import org.json.JSONObject
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStream
 import java.util.concurrent.TimeUnit
-import androidx.core.content.edit
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.StaggeredGridLayoutManager
-import com.bumptech.glide.load.model.GlideUrl
-import com.bumptech.glide.load.model.LazyHeaders
-import com.sil.buildmode.R
-import com.sil.buildmode.ResultAdapter
-import org.json.JSONObject
 
 class Helpers {
     companion object {
@@ -178,6 +170,8 @@ class Helpers {
 
                 val glideUrl = GlideUrl(imageUrl, LazyHeaders.Builder()
                     .addHeader("Authorization", "Bearer $token")
+                    .addHeader("User-Agent", "buildmode")
+                    .addHeader("X-App-Key", APP_KEY)
                     .build())
 
                 return glideUrl
@@ -449,7 +443,7 @@ class Helpers {
         // endregion
 
         // region Search Related
-        fun searchToServer(context: Context, query: String) {
+        fun searchToServer(context: Context, query: String, callback: (response: String?) -> Unit) {
             Log.i("Helpers", "Trying to search for $query")
 
             val generalSharedPrefs: SharedPreferences =
@@ -458,6 +452,7 @@ class Helpers {
             if (token.isEmpty()) {
                 Log.e("Helpers", "Token missing")
                 showToast(context, "Not logged in")
+                callback(null)
                 return
             }
 
@@ -481,34 +476,18 @@ class Helpers {
                 override fun onFailure(call: Call, e: IOException) {
                     Log.e("Helpers", "Query failed: ${e.localizedMessage}")
                     showToast(context, "Query failed!")
+                    callback(null)
                 }
 
                 override fun onResponse(call: Call, response: Response) {
                     val responseBody = response.body?.string()
                     if (response.isSuccessful && responseBody != null) {
                         Log.i("Helpers", "Query successful!")
-                        try {
-                            (context as Activity).runOnUiThread {
-                                val json = JSONObject(responseBody)
-                                val resultsArray = json.getJSONArray("results")
-                                // Log.i("Helpers", "resultsArray: $resultsArray")
-
-                                val resultList = mutableListOf<JSONObject>()
-                                for (i in 0 until resultsArray.length()) {
-                                    resultList.add(resultsArray.getJSONObject(i))
-                                }
-                                // Log.i("Helpers", "resultList: $resultList")
-
-                                val recyclerView = context.findViewById<RecyclerView>(R.id.imageRecyclerView)
-                                recyclerView.layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
-                                recyclerView.adapter = ResultAdapter(context, resultList)
-                            }
-                        } catch (e: Exception) {
-                            Log.e("Helpers", "Error parsing response: ${e.localizedMessage}")
-                        }
+                        callback(responseBody)
                     } else {
                         Log.e("Helpers", "Query error ${response.code}: $responseBody")
                         showToast(context, "Query error!")
+                        callback(null)
                     }
                 }
             })

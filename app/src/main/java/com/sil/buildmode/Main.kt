@@ -1,5 +1,6 @@
 package com.sil.buildmode
 
+import android.app.Activity
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
@@ -15,8 +16,10 @@ import androidx.core.content.edit
 import androidx.core.widget.doAfterTextChanged
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.sil.others.Helpers
 import com.sil.services.ScreenshotService
+import org.json.JSONObject
 
 class Main : AppCompatActivity() {
     // region Vars
@@ -72,7 +75,30 @@ class Main : AppCompatActivity() {
                 recyclerView.layoutManager = GridLayoutManager(this, 2)
                 if (query.isNotEmpty()) {
                     Log.i(TAG, "Delayed search triggered for: $query")
-                    Helpers.searchToServer(this, query)
+
+                    Helpers.searchToServer(this, query) { queryResponseString ->
+                        runOnUiThread {
+                            if (queryResponseString != null) {
+                                try {
+                                    val json = JSONObject(queryResponseString)
+                                    val resultsArray = json.getJSONArray("results")
+
+                                    val resultList = mutableListOf<JSONObject>()
+                                    for (i in 0 until resultsArray.length()) {
+                                        resultList.add(resultsArray.getJSONObject(i))
+                                    }
+
+                                    val recyclerView = findViewById<RecyclerView>(R.id.imageRecyclerView)
+                                    recyclerView.layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
+                                    recyclerView.adapter = ResultAdapter(this, resultList)
+                                } catch (e: Exception) {
+                                    Log.e("Helpers", "Error parsing response: ${e.localizedMessage}")
+                                }
+                            } else {
+                                Log.e(TAG, "Query returned null")
+                            }
+                        }
+                    }
                 }
                 else {
                     Log.i(TAG, "Empty search triggered")
