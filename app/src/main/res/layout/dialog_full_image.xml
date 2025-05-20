@@ -7,7 +7,7 @@
     android:padding="8dp"
     android:background="@android:color/transparent">
 
-    <ImageView
+    <com.github.chrisbanes.photoview.PhotoView
         android:id="@+id/dialogImageView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -27,7 +27,7 @@
         android:background="@color/accent_1"
         android:textColor="@color/accent_0"
         android:textStyle="bold"
-        android:visibility="visible"
+        android:visibility="gone"
         android:autoLink="web"
 
         android:gravity="center"

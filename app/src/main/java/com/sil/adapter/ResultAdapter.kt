@@ -78,7 +78,7 @@ class ResultAdapter(private val context: Context, private val dataList: List<JSO
 
     private fun showImagePopup(imageUrl: String, postUrl: String) {
         val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_full_image, null)
-        val imageView = dialogView.findViewById<ImageView>(R.id.dialogImageView)
+        val imageView = dialogView.findViewById<com.github.chrisbanes.photoview.PhotoView>(R.id.dialogImageView)
         val linkView = dialogView.findViewById<TextView>(R.id.linkTextView)
 
         Glide.with(context)
