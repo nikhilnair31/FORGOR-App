@@ -60,6 +60,7 @@ class Helpers {
         private const val TAG = "Helper"
         private const val PREFS_GENERAL = "com.sil.buildmode.generalSharedPrefs"
         private const val SERVER_URL = BuildConfig.SERVER_URL
+        private const val APP_KEY = BuildConfig.APP_KEY
         // endregion
 
         // region Image Related
@@ -244,6 +245,8 @@ class Helpers {
             val request = Request.Builder()
                 .url("$SERVER_URL/upload/url")
                 .addHeader("Authorization", "Bearer $token")
+                .addHeader("User-Agent", "buildmode")
+                .addHeader("X-App-Key", APP_KEY)
                 .post(requestBody)
                 .build()
 
@@ -322,6 +325,8 @@ class Helpers {
 
             val request = Request.Builder()
                 .url("$SERVER_URL/register")
+                .addHeader("User-Agent", "buildmode")
+                .addHeader("X-App-Key", APP_KEY)
                 .post(requestBody)
                 .build()
 
@@ -363,6 +368,8 @@ class Helpers {
 
             val request = Request.Builder()
                 .url("$SERVER_URL/login")
+                .addHeader("User-Agent", "buildmode")
+                .addHeader("X-App-Key", APP_KEY)
                 .post(requestBody)
                 .build()
 
@@ -414,6 +421,8 @@ class Helpers {
             val request = Request.Builder()
                 .url("$SERVER_URL/update-username")
                 .addHeader("Authorization", "Bearer $token")
+                .addHeader("User-Agent", "buildmode")
+                .addHeader("X-App-Key", APP_KEY)
                 .post(requestBody)
                 .build()
 
@@ -460,6 +469,8 @@ class Helpers {
             val request = Request.Builder()
                 .url("$SERVER_URL/query")
                 .addHeader("Authorization", "Bearer $token")
+                .addHeader("User-Agent", "buildmode")
+                .addHeader("X-App-Key", APP_KEY)
                 .post(requestBody)
                 .build()
 
