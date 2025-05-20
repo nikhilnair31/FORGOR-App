@@ -47,6 +47,7 @@ import java.util.concurrent.TimeUnit
 import androidx.core.content.edit
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.bumptech.glide.load.model.GlideUrl
 import com.bumptech.glide.load.model.LazyHeaders
 import com.sil.buildmode.R
@@ -485,7 +486,7 @@ class Helpers {
                                 // Log.i("Helpers", "resultList: $resultList")
 
                                 val recyclerView = context.findViewById<RecyclerView>(R.id.imageRecyclerView)
-                                recyclerView.layoutManager = GridLayoutManager(context, 2)
+                                recyclerView.layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
                                 recyclerView.adapter = ResultAdapter(context, resultList)
                             }
                         } catch (e: Exception) {

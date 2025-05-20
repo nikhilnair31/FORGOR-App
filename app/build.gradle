@@ -23,6 +23,7 @@ android {
         // API Keys
         // AWS Related
         buildConfigField "String", "SERVER_URL", "\"${properties.getProperty('SERVER_URL')}\""
+        buildConfigField "String", "APP_KEY", "\"${properties.getProperty('APP_KEY')}\""
     }
 
     buildTypes {
