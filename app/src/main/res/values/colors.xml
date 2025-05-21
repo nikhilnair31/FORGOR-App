@@ -2,10 +2,7 @@
 <resources>
     <color name="base_0">#FBF2FF</color>
     <color name="base_1">#F9E6FF</color>
-    <color name="base_2">#7b7889</color>
 
     <color name="accent_0">#7858B0</color>
-    <color name="accent_0x">#A282DB</color>
     <color name="accent_1">#6D46B0</color>
-    <color name="accent_1t">#CC6D46B0</color>
 </resources>

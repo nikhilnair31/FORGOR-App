@@ -7,7 +7,6 @@
     tools:context=".Main">
 
     <androidx.core.widget.NestedScrollView
-        android:id="@+id/scrollView"
 
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -29,7 +28,6 @@
                 android:layout_height="match_parent">
 
                 <TextView
-                    android:id="@+id/textView2"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:paddingStart="8dp"

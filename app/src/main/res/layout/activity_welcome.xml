@@ -5,7 +5,6 @@
     android:layout_height="match_parent">
 
     <TextView
-        android:id="@+id/appName"
 
         android:layout_width="0dp"
         android:layout_height="wrap_content"

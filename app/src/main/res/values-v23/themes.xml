@@ -19,6 +19,4 @@
         <item name="colorSecondaryVariant">@color/accent_1</item>
         <item name="colorOnSecondary">@android:color/black</item>
     </style>
-    <style name="Base.Theme.BUILDMODE" parent="Theme.Material3.DayNight.NoActionBar">
-    </style>
 </resources>
