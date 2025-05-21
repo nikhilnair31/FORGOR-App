@@ -6,24 +6,20 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.PowerManager
-import android.text.Editable
 import android.util.Log
 import android.view.HapticFeedbackConstants
 import android.widget.Button
-import android.widget.EditText
-import android.widget.TextView
 import android.widget.ToggleButton
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
-import com.sil.others.Helpers
 import com.sil.others.Helpers.Companion.showToast
 import com.sil.services.ScreenshotService
 
-class Settings : AppCompatActivity() {
+class Features : AppCompatActivity() {
     // region Vars
-    private val TAG = "Settings"
+    private val TAG = "Features"
     private val PREFS_GENERAL = "com.sil.buildmode.generalSharedPrefs"
     private val KEY_SCREENSHOT_ENABLED = "isScreenshotMonitoringEnabled"
     private val KEY_TEXT_ENABLED = "isTextMonitoringEnabled"
@@ -35,33 +31,26 @@ class Settings : AppCompatActivity() {
 
     private var pendingToggle: (() -> Unit)? = null
 
-    private lateinit var usernameText: EditText
-    private lateinit var editUsernameButton: Button
-    private lateinit var userLogoutButton: Button
     private lateinit var screenshotToggleButton: ToggleButton
     private lateinit var textToggleButton: ToggleButton
+    private lateinit var buttonToMain: Button
     // endregion
 
     // region Common
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_settings)
+        setContentView(R.layout.activity_features)
 
         generalSharedPreferences = getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
 
         initRelated()
     }
+
     private fun initRelated() {
-        usernameText = findViewById(R.id.usernameEditText)
-        editUsernameButton = findViewById(R.id.editUsername)
-        userLogoutButton = findViewById(R.id.userLogout)
         screenshotToggleButton = findViewById(R.id.screenshotToggleButton)
         textToggleButton = findViewById(R.id.textToggleButton)
+        buttonToMain = findViewById(R.id.buttonToMain)
 
-        usernameText.text = Editable.Factory.getInstance().newEditable(generalSharedPreferences.getString("userName", ""))
-
-        val isScreenshotServiceRunning = Helpers.isServiceRunning(this, ScreenshotService::class.java)
-        updateToggle(screenshotToggleButton, isScreenshotServiceRunning)
         screenshotToggleButton.setOnCheckedChangeListener { _, isChecked ->
             Log.i(TAG, "Screenshot toggle changed: isChecked=$isChecked")
 
@@ -82,15 +71,42 @@ class Settings : AppCompatActivity() {
                 generalSharedPreferences.edit { putBoolean(KEY_SCREENSHOT_ENABLED, false) }
                 updateToggle(screenshotToggleButton, false)
             }
+        }
+        textToggleButton.setOnCheckedChangeListener { _, isChecked ->
+            Log.i(TAG, "Text toggle changed: isChecked=$isChecked")
+            textToggleButton.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
-            updateToggle(screenshotToggleButton, isChecked)
+            if (isChecked) {
+                if (areAllPermissionsGranted()) {
+                    generalSharedPreferences.edit { putBoolean(KEY_TEXT_ENABLED, true) }
+                    updateToggle(textToggleButton, true)
+                } else {
+                    pendingToggle = {
+                        generalSharedPreferences.edit { putBoolean(KEY_TEXT_ENABLED, true) }
+                        updateToggle(textToggleButton, true)
+                    }
+                    requestAllPermissions()
+                    showToast(this, "Please grant all permissions to enable feature")
+                    textToggleButton.isChecked = false
+                }
+            } else {
+                generalSharedPreferences.edit { putBoolean(KEY_TEXT_ENABLED, false) }
+                updateToggle(textToggleButton, false)
+            }
         }
-        editUsernameButton.setOnClickListener {
-            editUsernameRelated()
+        buttonToMain.setOnClickListener {
+            val intent = Intent(this, Main::class.java)
+            startActivity(intent)
+            finish()
         }
-        userLogoutButton.setOnClickListener {
-            userLogoutRelated()
-        }
+    }
+    //
+
+    // region UI Related
+    private fun updateToggle(toggle: ToggleButton, isChecked: Boolean) {
+        toggle.isChecked = isChecked
+        toggle.background = ContextCompat.getDrawable(this, if (isChecked) R.color.accent_0 else R.color.base_0)
+        toggle.text = getString(if (isChecked) R.string.screenshotToggleOnText else R.string.screenshotToggleOffText)
     }
     // endregion
 
@@ -99,54 +115,6 @@ class Settings : AppCompatActivity() {
         startForegroundService(serviceIntent)
         generalSharedPreferences.edit { putBoolean(KEY_SCREENSHOT_ENABLED, true) }
         updateToggle(screenshotToggleButton, true)
-    }
-    // endregion
-
-    // region Auth Related
-    private fun editUsernameRelated() {
-        Log.i(TAG, "editUsernameRelated")
-
-        val newUsername = usernameText.text.toString()
-        Helpers.authEditUsernameToServer(this, newUsername) { success ->
-            runOnUiThread {
-                if (success) {
-                    Log.i(TAG, "Edit username success")
-                    showToast(this, "Edit username successful!")
-                    generalSharedPreferences.edit {
-                        putString("userName", newUsername)
-                    }
-                } else {
-                    Log.i(TAG, "Edit username failed!")
-                    showToast(this, "Edit username failed!")
-                }
-            }
-        }
-    }
-    private fun userLogoutRelated() {
-        Log.i(TAG, "userLogoutRelated")
-
-        generalSharedPreferences.edit(commit = true) {
-            putString("userName", "")
-                .putString("token", "")
-                .putBoolean(KEY_SCREENSHOT_ENABLED, false)
-        }  // ← block until written
-
-        val serviceIntent = Intent(this@Settings, ScreenshotService::class.java)
-        stopService(serviceIntent)
-
-        val intent = Intent(this, Welcome::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
-        startActivity(intent)
-        finish()
-    }
-    // endregion
-
-    // region UI Related
-    private fun updateToggle(toggle: ToggleButton, isChecked: Boolean) {
-        toggle.isChecked = isChecked
-        toggle.background = ContextCompat.getDrawable(this, if (isChecked) R.color.accent_0 else R.color.base_0)
-        toggle.text = getString(if (isChecked) R.string.screenshotToggleOnText else R.string.screenshotToggleOffText)
     }
     // endregion
 

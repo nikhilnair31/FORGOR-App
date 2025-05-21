@@ -38,7 +38,7 @@ class Setup : AppCompatActivity() {
     // region Common
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_setup)
+        setContentView(R.layout.activity_sign_in)
 
         initRelated()
     }
@@ -51,9 +51,9 @@ class Setup : AppCompatActivity() {
         // Setup UI related
         usernameEditText = findViewById(R.id.usernameEditText)
         passwordEditText = findViewById(R.id.passwordEditText)
-        loginButton = findViewById(R.id.buttonLogin)
-        permissionButton = findViewById(R.id.buttonPermission)
-        updateAndNextButton = findViewById(R.id.buttonUpdateAndNext)
+        loginButton = findViewById(R.id.buttonSignup)
+        permissionButton = findViewById(R.id.buttonSignup)
+        updateAndNextButton = findViewById(R.id.buttonToMain)
 
         // Setup button related
         loginButton.setOnClickListener {
@@ -139,7 +139,7 @@ class Setup : AppCompatActivity() {
             runOnUiThread {
                 if (success) {
                     Log.i(TAG, "Login success")
-                    highlightButtonEffects(loginButton, getString(R.string.setupLoginSuccessText))
+                    highlightButtonEffects(loginButton, getString(R.string.screenshotToggleOffText))
                     generalSharedPreferences.edit {
                         putString("userName", userNameText)
                     }
@@ -159,7 +159,7 @@ class Setup : AppCompatActivity() {
                     runOnUiThread {
                         if (registerSuccess) {
                             Helpers.showToast(this, "Registered and signed in.")
-                            highlightButtonEffects(loginButton, getString(R.string.setupLoginSuccessText))
+                            highlightButtonEffects(loginButton, getString(R.string.screenshotToggleOffText))
                             generalSharedPreferences.edit {
                                 putString("userName", username)
                             }

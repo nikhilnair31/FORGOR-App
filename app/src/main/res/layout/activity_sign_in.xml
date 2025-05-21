@@ -11,33 +11,33 @@
         android:layout_height="wrap_content"
 
         android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
 
+        android:layout_marginBottom="8dp"
         android:fontFamily="@font/venus_cormier"
-        android:gravity="center_vertical|start"
-        android:text="@string/setupText"
-        android:textColor="@color/accent_0"
-        android:textSize="96sp"
+        android:gravity="center_horizontal|center_vertical"
+        android:text="@string/signInText"
 
+        android:textColor="@color/accent_0"
+        android:textSize="82sp"
+        app:layout_constraintBottom_toTopOf="@+id/linearLayout2"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintStart_toStartOf="parent" />
 
     <LinearLayout
+        android:id="@+id/linearLayout2"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
+        android:layout_height="wrap_content"
+
         android:layout_marginStart="16dp"
-
         android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp"
 
+        android:layout_marginBottom="16dp"
         android:background="@drawable/data_background"
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView6">
+        app:layout_constraintStart_toStartOf="parent">
 
         <!-- Username Related-->
         <TextView
@@ -50,7 +50,7 @@
             android:gravity="left"
 
             android:padding="12dp"
-            android:text="@string/setupLoginText"
+            android:text="@string/signInText"
             android:textColor="@color/accent_1"
             android:textSize="14sp"
             app:layout_constraintEnd_toEndOf="parent"
@@ -69,7 +69,7 @@
             android:fontFamily="@font/venus_cormier"
             android:gravity="center"
 
-            android:hint="@string/setupUsernameHint"
+            android:hint="@string/loginUsernameHint"
             android:inputType="text"
             android:padding="24dp"
             android:paddingStart="16dp"
@@ -89,100 +89,46 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:background="@drawable/rounded_edittext_username_setup"
+            android:backgroundTint="@color/base_0"
+            android:fontFamily="@font/venus_cormier"
+
+            android:gravity="center"
+            android:hint="@string/loginPasswordHint"
+
+            android:inputType="textVisiblePassword"
+            android:minEms="@integer/minPasswordLength"
             android:padding="24dp"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
-
-            android:background="@drawable/rounded_edittext_username_setup"
-            android:backgroundTint="@color/base_0"
-
+            android:textColor="#CACACA"
             android:textColorHint="#CACACA"
             android:textCursorDrawable="@drawable/cursor_color"
             android:textSize="14sp"
-            android:gravity="center"
-            android:fontFamily="@font/venus_cormier"
-            android:hint="@string/setupPasswordHint"
-            android:inputType="textVisiblePassword"
-            android:textColor="#CACACA"
-            android:minEms="@integer/minPasswordLength"
 
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/usernameTextView" />
 
         <Button
-            android:id="@+id/buttonLogin"
+            android:id="@+id/buttonSignup"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
 
             android:layout_marginTop="8dp"
-            android:fontFamily="@font/venus_cormier"
-            android:padding="24dp"
-
-            app:cornerRadius="@dimen/softCorners"
-            android:stateListAnimator="@null"
-            android:text="@string/setupLoginText"
-            android:textSize="14sp"
             android:enabled="false"
-
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/permissionsTextView" />
-
-        <TextView
-            android:id="@+id/permissionsTextView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-
-            android:layout_marginTop="8dp"
             android:fontFamily="@font/venus_cormier"
 
-            android:gravity="left"
-
-            android:padding="12dp"
-            android:text="@string/setupPermissionsText"
-            android:textColor="@color/accent_1"
-            android:textSize="14sp"
-
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/editText" />
-
-        <Button
-            android:id="@+id/buttonPermission"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-
-            android:layout_marginTop="8dp"
-            android:fontFamily="@font/venus_cormier"
             android:padding="24dp"
-
-            app:cornerRadius="@dimen/softCorners"
-            android:text="@string/givePermissionsText"
+            android:stateListAnimator="@null"
+            android:text="@string/loginText"
             android:textSize="14sp"
-            android:enabled="true"
+            app:cornerRadius="@dimen/softCorners"
 
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/permissionsTextView" />
 
     </LinearLayout>
-
-    <ImageButton
-        android:id="@+id/buttonUpdateAndNext"
-
-        android:layout_marginEnd="32dp"
-        android:layout_marginBottom="32dp"
-
-        android:layout_width="64dp"
-        android:layout_height="64dp"
-
-        android:background="@drawable/baseline_keyboard_arrow_right_24"
-        app:iconTint="@color/accent_0"
-        app:iconSize="32dp"
-        android:contentDescription="@string/nextButton"
-
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

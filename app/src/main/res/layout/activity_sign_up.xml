@@ -3,34 +3,36 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".Settings">
+    android:layout_height="match_parent">
 
     <TextView
-        android:id="@+id/textView"
+        android:id="@+id/textView6"
+
         android:layout_width="0dp"
         android:layout_height="wrap_content"
 
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
+
         android:layout_marginBottom="8dp"
         android:fontFamily="@font/venus_cormier"
         android:gravity="center_horizontal|center_vertical"
-        android:text="@string/settingsText"
+        android:text="@string/createAccountText"
         android:textColor="@color/accent_0"
+
         android:textSize="64sp"
-        app:layout_constraintBottom_toTopOf="@+id/linearLayout5"
+        app:layout_constraintBottom_toTopOf="@+id/linearLayout3"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
     <LinearLayout
-        android:id="@+id/linearLayout5"
+        android:id="@+id/linearLayout3"
         android:layout_width="match_parent"
-
         android:layout_height="wrap_content"
 
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
+
         android:layout_marginBottom="16dp"
         android:background="@drawable/data_background"
         android:orientation="vertical"
@@ -38,7 +40,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
-        <!-- Username Related -->
+        <!-- Username Related-->
         <TextView
             android:id="@+id/usernameTextView"
             android:layout_width="match_parent"
@@ -46,13 +48,12 @@
 
             android:fontFamily="@font/venus_cormier"
 
-            android:gravity="start"
+            android:gravity="left"
 
             android:padding="12dp"
-            android:text="@string/setupUsernameText"
+            android:text="@string/createAccountText"
             android:textColor="@color/accent_1"
             android:textSize="14sp"
-
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -61,20 +62,49 @@
             android:id="@+id/usernameEditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:autofillHints="username"
 
-            android:background="@color/base_0"
-            android:editable="false"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/rounded_edittext_username_setup"
+            android:backgroundTint="@color/base_0"
+
             android:fontFamily="@font/venus_cormier"
             android:gravity="center"
-            android:hint="@string/settingsAuthHintText"
 
+            android:hint="@string/signupUsernameHint"
             android:inputType="text"
             android:padding="24dp"
-            android:textAllCaps="false"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:textColor="#CACACA"
+
+            android:textColorHint="#CACACA"
+            android:textCursorDrawable="@drawable/cursor_color"
+            android:textSize="14sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/usernameTextView" />
+
+        <!-- Permission Related-->
+        <EditText
+            android:id="@+id/passwordEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/rounded_edittext_username_setup"
+            android:backgroundTint="@color/base_0"
+            android:fontFamily="@font/venus_cormier"
+
+            android:gravity="center"
+            android:hint="@string/signupPasswordHint"
+
+            android:inputType="textVisiblePassword"
+            android:minEms="@integer/minPasswordLength"
+            android:padding="24dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
             android:textColor="#CACACA"
             android:textColorHint="#CACACA"
+            android:textCursorDrawable="@drawable/cursor_color"
             android:textSize="14sp"
 
             app:layout_constraintEnd_toEndOf="parent"
@@ -82,100 +112,22 @@
             app:layout_constraintTop_toBottomOf="@id/usernameTextView" />
 
         <Button
-            android:id="@+id/editUsername"
+            android:id="@+id/buttonSignup"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-
             android:layout_marginTop="8dp"
-            android:enabled="true"
-            android:fontFamily="@font/venus_cormier"
-
-            android:padding="24dp"
-            android:stateListAnimator="@null"
-            android:text="@string/settingsEditUsername"
-            android:textSize="14sp"
-            app:cornerRadius="@dimen/softCorners"
-
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/permissionsTextView" />
-
-        <!-- Saving Related -->
-
-        <Button
-            android:id="@+id/userLogout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-
-            android:layout_marginTop="8dp"
-            android:enabled="true"
-            android:fontFamily="@font/venus_cormier"
-
-            android:padding="24dp"
-            android:stateListAnimator="@null"
-            android:text="@string/settingsUserLogout"
-            android:textSize="14sp"
-            app:cornerRadius="@dimen/softCorners"
-
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/permissionsTextView" />
-
-        <TextView
-            android:id="@+id/featuresTextView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-
-            android:fontFamily="@font/venus_cormier"
-
-            android:gravity="start"
-            android:padding="12dp"
-            android:text="@string/featuresText"
-            android:textColor="@color/accent_1"
-            android:textSize="14sp"
-
-            />
-
-        <ToggleButton
-            android:id="@+id/screenshotToggleButton"
-            android:layout_width="match_parent"
-            android:layout_height="64dp"
-            android:background="@color/base_0"
-
-            android:checked="false"
-            android:drawableStart="@drawable/ic_baseline_screenshot_on_24"
-            android:fontFamily="@font/venus_cormier"
-            android:paddingStart="32dp"
-            android:stateListAnimator="@null"
-
-            android:textColor="@color/accent_1"
-            android:textOff="@string/screenshotToggleOnText"
-            android:textOn="@string/screenshotToggleOnText"
-            app:elevation="0dp"
-
-            />
-
-        <ToggleButton
-            android:id="@+id/textToggleButton"
-            android:layout_width="match_parent"
-            android:layout_height="64dp"
-            android:layout_marginTop="8dp"
-            android:background="@color/base_1"
-
             android:enabled="false"
-            android:checked="false"
-            android:drawableStart="@drawable/baseline_auto_awesome_24"
+
             android:fontFamily="@font/venus_cormier"
-            android:paddingStart="32dp"
+            android:padding="24dp"
             android:stateListAnimator="@null"
-            android:textColor="@color/accent_1"
-            android:textOff="@string/textToggleOffText"
-            android:textOn="@string/textToggleOnText"
-            app:elevation="0dp"
+            android:text="@string/signupText"
+            android:textSize="14sp"
+            app:cornerRadius="@dimen/softCorners"
 
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/featuresTextView" />
+            app:layout_constraintTop_toBottomOf="@+id/permissionsTextView" />
 
     </LinearLayout>
 

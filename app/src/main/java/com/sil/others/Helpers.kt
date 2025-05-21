@@ -3,6 +3,7 @@ package com.sil.others
 import android.app.Activity
 import android.app.ActivityManager
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Environment
@@ -410,7 +411,7 @@ class Helpers {
             })
         }
         fun authLoginToServer(context: Context, username: String, password: String, callback: (success: Boolean) -> Unit) {
-            Log.i(TAG, "Trying to login with $username/$password")
+            Log.i(TAG, "Trying to login...")
 
             val jsonBody = """
             {

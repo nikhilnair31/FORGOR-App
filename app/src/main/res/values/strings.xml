@@ -7,6 +7,29 @@
 
     <string name="appLogoDescription">app logo</string>
 
+    <string name="welcomeText">WELCOME</string>
+    <string name="signInText">SIGN IN</string>
+    <string name="createAccountText">CREATE ACCOUNT</string>
+    <string name="otherSignInText">OTHER SIGN IN</string>
+    <string name="googleSignInText">GOOGLE SIGN IN</string>
+
+    <string name="loginUsernameHint">USERNAME</string>
+    <string name="loginPasswordHint">PASSWORD</string>
+    <string name="loginText">LOG IN</string>
+    <string name="loginSuccessText">LOGGED IN!</string>
+
+    <string name="signupUsernameHint">PICK A USERNAME</string>
+    <string name="signupPasswordHint">PICK A PASSWORD</string>
+    <string name="signupText">SIGN UP</string>
+    <string name="signupSuccessText">SIGNED UP!</string>
+
+    <string name="featuresText">FEATURES</string>
+    <string name="screenshotToggleOnText">MONITORING ALL SCREENSHOTS</string>
+    <string name="screenshotToggleOffText">MONITOR SCREENSHOTS</string>
+    <string name="textToggleOnText">SUGGESTING SIMILAR CONTENT</string>
+    <string name="textToggleOffText">SUGGEST SIMILAR CONTENT</string>
+    <string name="stopForgoringText">STOP FORGORING</string>
+
     <string name="setupText">SETUP</string>
     <string name="setupUsernameText">USER</string>
     <string name="setupPermissionsText">PERMISSIONS</string>
@@ -14,11 +37,6 @@
 
     <string name="gavePermissionsText">PERMISSIONS GRANTED!</string>
     <string name="givePermissionsText">GRANT PERMISSIONS</string>
-
-    <string name="setupLoginText">LOGIN</string>
-    <string name="setupUsernameHint">PICK A USERNAME</string>
-    <string name="setupPasswordHint">PICK A PASSWORD</string>
-    <string name="setupLoginSuccessText">REGISTERED AND LOGGED IN!</string>
 
     <string name="settingsText">SETTINGS</string>
     <string name="settingsAuthHintText">...</string>
@@ -28,8 +46,5 @@
     <string name="searchImagesDescription">SEARCH IMAGES</string>
     <string name="searchHint">WHAT ARE YOU LOOKING FOR?</string>
     <string name="image_desc">SEARCH IMAGE RESULT</string>
-
-    <string name="screenshotToggleOnText">MONITORING ALL SCREENSHOTS</string>
-    <string name="screenshotToggleOffText">NOT MONITORING SCREENSHOTS</string>
 
 </resources>

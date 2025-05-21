@@ -1,17 +1,21 @@
 package com.sil.buildmode
 
-import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
-import android.widget.ImageButton
+import android.widget.Button
+import androidx.appcompat.app.AppCompatActivity
 
 class Welcome : AppCompatActivity() {
     // region Vars
-    private lateinit var sharedPreferences: SharedPreferences
-    private lateinit var nextButton: ImageButton
+    private val TAG = "Welcome"
+    private val PREFS_GENERAL = "com.sil.buildmode.generalSharedPrefs"
+
+    private lateinit var generalSharedPrefs: SharedPreferences
+
+    private lateinit var signInButton: Button
+    private lateinit var signUpButton: Button
+    private lateinit var googleSignInButton: Button
     // endregion
 
     // region Common
@@ -19,33 +23,41 @@ class Welcome : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_welcome)
 
-        firstLaunchCheck()
+        generalSharedPrefs = getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
+
+        generalInitRelated()
+        uiInitRelated()
     }
-    // endregion
 
-    // region First Launch Related
-    private fun firstLaunchCheck() {
-        sharedPreferences = getSharedPreferences("com.sil.buildmode.generalSharedPrefs", MODE_PRIVATE)
-
-        val isFirstRun = sharedPreferences.getBoolean("isFirstRun", true)
-        Log.i("Welcome", "isFirstRun: $isFirstRun")
-
-        if (isFirstRun) {
-            usernamePageButtonSetup()
-        } else {
+    private fun generalInitRelated() {
+        val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
+        if (!accessToken.isEmpty()) {
             launchNextActivity(Main::class.java)
         }
     }
-    private fun usernamePageButtonSetup() {
-        nextButton = findViewById(R.id.buttonNext)
-        nextButton.setOnClickListener {
-            launchNextActivity(Setup::class.java)
-        }
-    }
+
     private fun launchNextActivity(activityClass: Class<*>) {
         val intent = Intent(this, activityClass)
         startActivity(intent)
         finish()
+    }
+    // endregion
+
+    // region UI Related
+    private fun uiInitRelated() {
+        signInButton = findViewById(R.id.signInButton)
+        signUpButton = findViewById(R.id.signUpButton)
+        googleSignInButton = findViewById(R.id.googleSignInButton)
+
+        signInButton.setOnClickListener {
+            launchNextActivity(SignIn::class.java)
+        }
+        signUpButton.setOnClickListener {
+            launchNextActivity(SignUp::class.java)
+        }
+        googleSignInButton.setOnClickListener {
+            // launchNextActivity(Setup::class.java)
+        }
     }
     // endregion
 }

@@ -25,7 +25,6 @@ class Main : AppCompatActivity() {
     // region Vars
     private val TAG = "Main"
     private val PREFS_GENERAL = "com.sil.buildmode.generalSharedPrefs"
-    private val KEY_FIRST_RUN = "isFirstRun"
     private val KEY_SCREENSHOT_ENABLED = "isScreenshotMonitoringEnabled"
 
     private lateinit var generalSharedPreferences: SharedPreferences
@@ -42,27 +41,19 @@ class Main : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Make navigation bar transparent
-        window.navigationBarColor = ContextCompat.getColor(this, R.color.accent_0)
-        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightNavigationBars = true
+        generalSharedPreferences = getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
 
-        initSharedPreferences()
-        initViews()
-        setupListeners()
+        initUI()
         checkServiceStatus()
     }
 
-    private fun initSharedPreferences() {
-        generalSharedPreferences = getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
-        if (generalSharedPreferences.getBoolean(KEY_FIRST_RUN, true)) {
-            generalSharedPreferences.edit { putBoolean(KEY_FIRST_RUN, false) }
-        }
-    }
-    private fun initViews() {
+    private fun initUI() {
+        window.navigationBarColor = ContextCompat.getColor(this, R.color.accent_0)
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightNavigationBars = true
+
         settingsButton = findViewById(R.id.settingsButton)
         searchEditText = findViewById(R.id.searchEditText)
-    }
-    private fun setupListeners() {
+
         settingsButton.setOnClickListener {
             startActivity(Intent(this, Settings::class.java))
         }
