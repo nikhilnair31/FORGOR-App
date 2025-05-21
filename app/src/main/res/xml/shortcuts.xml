@@ -4,7 +4,7 @@
         android:shortcutShortLabel="@string/shortcut_label_save_image"
         android:shortcutLongLabel="@string/shortcut_label_save_image"
         android:enabled="true"
-        android:icon="@drawable/mia_stat_name">
+        android:icon="@mipmap/launcher_round">
 
         <share-target
             android:targetClass="com.sil.buildmode.Share">

@@ -1,5 +1,5 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="appName">BUILDMODE</string>
+    <string name="appName">FORGOR</string>
 
     <string name="shortcut_label_save_image">Save to BUILDMODE</string>
 
@@ -26,7 +26,7 @@
     <string name="settingsUserLogout">LOGOUT</string>
 
     <string name="searchImagesDescription">SEARCH IMAGES</string>
-    <string name="searchHint">WHAT ?</string>
+    <string name="searchHint">WHAT ARE YOU LOOKING FOR?</string>
     <string name="image_desc">SEARCH IMAGE RESULT</string>
 
     <string name="screenshotToggleOnText">MONITORING ALL SCREENSHOTS</string>

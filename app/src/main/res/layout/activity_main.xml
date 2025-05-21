@@ -29,35 +29,19 @@
 
                 <TextView
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:paddingStart="8dp"
+                    android:layout_height="96dp"
 
-                    android:fontFamily="@font/venus_cormier"
-                    android:letterSpacing="0"
-                    android:lineSpacingExtra="0sp"
-                    android:text="@string/appName"
-                    android:textColor="@color/accent_0"
-                    android:textSize="96sp"
                     android:contentDescription="@string/appName"
+                    android:fontFamily="@font/venus_cormier"
+                    android:gravity="center_horizontal|center_vertical"
+                    android:text="@string/appName"
 
+                    android:textColor="@color/accent_0"
+                    android:textSize="72sp"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent" />
 
-                <ImageButton
-                    android:id="@+id/settingsButton"
-                    android:layout_width="64dp"
-                    android:layout_height="64dp"
-
-                    android:layout_marginTop="16dp"
-                    android:layout_marginEnd="16dp"
-                    android:background="@color/base_1"
-
-                    android:contentDescription="@string/settingsText"
-                    android:src="@drawable/baseline_menu_24"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:tint="@color/accent_1" />
             </androidx.constraintlayout.widget.ConstraintLayout>
 
             <androidx.recyclerview.widget.RecyclerView
@@ -80,30 +64,42 @@
 
     <EditText
         android:id="@+id/searchEditText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_width="0dp"
+        android:layout_height="64dp"
 
         android:background="@color/accent_0"
         android:fontFamily="@font/venus_cormier"
-        android:gravity="center"
 
+        android:gravity="start"
         android:hint="@string/searchHint"
-        android:inputType="text"
 
+        android:inputType="text"
         android:padding="24dp"
         android:paddingStart="16dp"
-        android:paddingEnd="16dp"
 
+        android:paddingEnd="16dp"
         android:stateListAnimator="@null"
-        android:textColor="@color/accent_1"
+        android:textColor="@android:color/black"
         android:textColorHint="@android:color/darker_gray"
         android:textCursorDrawable="@drawable/cursor_color"
         android:textSize="14sp"
         app:elevation="0dp"
 
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintEnd_toStartOf="@+id/settingsButton"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <ImageButton
+        android:id="@+id/settingsButton"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+
+        android:background="@color/accent_0"
+
+        android:contentDescription="@string/settingsText"
+        android:src="@drawable/baseline_settings_24"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:tint="@color/accent_1" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

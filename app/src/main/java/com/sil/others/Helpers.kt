@@ -57,7 +57,7 @@ class Helpers {
 
         // region Image Related
         fun uploadImageFileToServer(context: Context, imageFile: File?) {
-            Log.i("Helpers", "Uploading Image to Server...")
+            Log.i(TAG, "Uploading Image to Server...")
 
             try {
                 imageFile?.let {
@@ -67,11 +67,10 @@ class Helpers {
                         return
                     }
 
-                    val generalSharedPrefs: SharedPreferences =
-                        context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
-                    val token = generalSharedPrefs.getString("token", "") ?: ""
-                    if (token.isEmpty()) {
-                        Log.e("Helpers", "Token missing")
+                    val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
+                    val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
+                    if (accessToken.isEmpty()) {
+                        Log.e(TAG, "Access token missing")
                         showToast(context, "Not logged in")
                         return
                     }
@@ -86,7 +85,7 @@ class Helpers {
 
                     val request = Request.Builder()
                         .url("$SERVER_URL/upload/image")
-                        .addHeader("Authorization", "Bearer $token")
+                        .addHeader("Authorization", "Bearer $accessToken")
                         .addHeader("User-Agent", "buildmode")
                         .addHeader("X-App-Key", APP_KEY)
                         .post(requestBody)
@@ -159,17 +158,16 @@ class Helpers {
             Log.i(TAG, "getImageURL | getting image URL...")
 
             try {
-                val generalSharedPrefs: SharedPreferences =
-                    context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
-                val token = generalSharedPrefs.getString("token", "") ?: ""
-                if (token.isEmpty()) {
-                    Log.e("Helpers", "Token missing")
+                val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
+                val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
+                if (accessToken.isEmpty()) {
+                    Log.e(TAG, "Access token missing")
                     showToast(context, "Not logged in")
                     return null
                 }
 
                 val glideUrl = GlideUrl(imageUrl, LazyHeaders.Builder()
-                    .addHeader("Authorization", "Bearer $token")
+                    .addHeader("Authorization", "Bearer $accessToken")
                     .addHeader("User-Agent", "buildmode")
                     .addHeader("X-App-Key", APP_KEY)
                     .build())
@@ -222,52 +220,60 @@ class Helpers {
 
         // region URL Related
         fun uploadPostURLToServer(context: Context, postURL: String) {
-            Log.i("Helpers", "Uploading URL to server...")
+            Log.i(TAG, "Uploading URL to server...")
 
-            val generalSharedPrefs: SharedPreferences =
-                context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
-            val token = generalSharedPrefs.getString("token", "") ?: ""
-            if (token.isEmpty()) {
-                Log.e("Helpers", "Token missing")
+            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
+            val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
+
+            fun sendRequest(token: String) {
+                val requestBody = MultipartBody.Builder()
+                    .setType(MultipartBody.FORM)
+                    .addFormDataPart("url", postURL)
+                    .build()
+
+                val request = Request.Builder()
+                    .url("$SERVER_URL/upload/url")
+                    .addHeader("Authorization", "Bearer $token")
+                    .addHeader("User-Agent", "buildmode")
+                    .addHeader("X-App-Key", APP_KEY)
+                    .post(requestBody)
+                    .build()
+
+                // ✅ Custom OkHttpClient with longer timeouts
+                val client = OkHttpClient.Builder()
+                    .readTimeout(20, TimeUnit.SECONDS)
+                    .build()
+
+                client.newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        Log.e(TAG, "Upload failed: ${e.localizedMessage}")
+                        showToast(context, "Save failed!")
+                    }
+
+                    override fun onResponse(call: Call, response: Response) {
+                        if (response.code == 401) {
+                            refreshAccessToken(context) { success, newToken ->
+                                if (success && newToken != null) sendRequest(newToken)
+                                else showToast(context, "Login expired")
+                            }
+                            return
+                        }
+
+                        if (response.isSuccessful) {
+                            showToast(context, "Image saved!")
+                        } else {
+                            showToast(context, "Save failed!")
+                        }
+                    }
+                })
+            }
+
+            if (accessToken.isEmpty()) {
                 showToast(context, "Not logged in")
                 return
             }
 
-            val requestBody = MultipartBody.Builder()
-                .setType(MultipartBody.FORM)
-                .addFormDataPart("url", postURL)
-                .build()
-
-            val request = Request.Builder()
-                .url("$SERVER_URL/upload/url")
-                .addHeader("Authorization", "Bearer $token")
-                .addHeader("User-Agent", "buildmode")
-                .addHeader("X-App-Key", APP_KEY)
-                .post(requestBody)
-                .build()
-
-            // ✅ Custom OkHttpClient with longer timeouts
-            val client = OkHttpClient.Builder()
-                .readTimeout(20, TimeUnit.SECONDS)
-                .build()
-
-            client.newCall(request).enqueue(object : Callback {
-                override fun onFailure(call: Call, e: IOException) {
-                    Log.e("Helpers", "Upload failed: ${e.localizedMessage}")
-                    showToast(context, "Save failed!")
-                }
-
-                override fun onResponse(call: Call, response: Response) {
-                    val responseBody = response.body?.string()
-                    if (response.isSuccessful) {
-                        Log.i("Helpers", "Upload successful: $responseBody")
-                        showToast(context, "Image saved!")
-                    } else {
-                        Log.e("Helpers", "Upload error ${response.code}: $responseBody")
-                        showToast(context, "Save failed!")
-                    }
-                }
-            })
+            sendRequest(accessToken)
         }
 
         fun uploadPostURL(context: Context, postURL: String) {
@@ -307,8 +313,61 @@ class Helpers {
         // endregion
 
         // region Auth Related
+        fun refreshAccessToken(context: Context, onComplete: (success: Boolean, newToken: String?) -> Unit) {
+            val prefs = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
+            val refreshToken = prefs.getString("refresh_token", "") ?: ""
+
+            if (refreshToken.isEmpty()) {
+                Log.e(TAG, "Refresh token missing")
+                onComplete(false, null)
+                return
+            }
+
+            val jsonBody = """
+                {
+                    "refresh_token": "$refreshToken"
+                }
+            """.trimIndent()
+
+            val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
+            val request = Request.Builder()
+                .url("$SERVER_URL/refresh_token")
+                .addHeader("User-Agent", "buildmode")
+                .addHeader("X-App-Key", APP_KEY)
+                .post(requestBody)
+                .build()
+
+            OkHttpClient().newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    Log.e(TAG, "Refresh token failed: ${e.localizedMessage}")
+                    onComplete(false, null)
+                }
+
+                override fun onResponse(call: Call, response: Response) {
+                    val responseBody = response.body?.string()
+                    if (response.isSuccessful) {
+                        try {
+                            val json = JSONObject(responseBody)
+                            val newToken = json.optString("access_token", "")
+                            if (newToken.isNotEmpty()) {
+                                prefs.edit { putString("access_token", newToken) }
+                                Log.i(TAG, "Access token refreshed")
+                                onComplete(true, newToken)
+                                return
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error parsing refresh token response: ${e.localizedMessage}")
+                        }
+                    } else {
+                        Log.e(TAG, "Refresh token failed: $responseBody")
+                    }
+                    onComplete(false, null)
+                }
+            })
+        }
+
         fun authRegisterToServer(context: Context, username: String, password: String, callback: (success: Boolean) -> Unit) {
-            Log.i("Helpers", "Trying to register with $username/$password")
+            Log.i(TAG, "Trying to register with $username/$password")
 
             val jsonBody = """
             {
@@ -328,14 +387,14 @@ class Helpers {
 
             OkHttpClient().newCall(request).enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
-                    Log.e("Helpers", "Register failed: ${e.localizedMessage}")
+                    Log.e(TAG, "Register failed: ${e.localizedMessage}")
                     showToast(context, "Register failed!")
                     callback(false)
                 }
                 override fun onResponse(call: Call, response: Response) {
                     val responseBody = response.body?.string()
                     if (response.isSuccessful) {
-                        Log.i("Helpers", "Register successful: $responseBody")
+                        Log.i(TAG, "Register successful: $responseBody")
 
                         // Now attempt login and forward that result
                         authLoginToServer(context, username, password) { loginSuccess ->
@@ -343,7 +402,7 @@ class Helpers {
                             callback(loginSuccess)
                         }
                     } else {
-                        Log.e("Helpers", "Register error ${response.code}: $responseBody")
+                        Log.e(TAG, "Register error ${response.code}: $responseBody")
                         showToast(context, "Register failed!")
                         callback(false)
                     }
@@ -351,7 +410,7 @@ class Helpers {
             })
         }
         fun authLoginToServer(context: Context, username: String, password: String, callback: (success: Boolean) -> Unit) {
-            Log.i("Helpers", "Trying to login with $username/$password")
+            Log.i(TAG, "Trying to login with $username/$password")
 
             val jsonBody = """
             {
@@ -371,25 +430,31 @@ class Helpers {
 
             OkHttpClient().newCall(request).enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
-                    Log.e("Helpers", "Login failed: ${e.localizedMessage}")
+                    Log.e(TAG, "Login failed: ${e.localizedMessage}")
                     showToast(context, "Login failed!")
                     callback(false)
                 }
                 override fun onResponse(call: Call, response: Response) {
                     val responseBody = response.body?.string()
                     if (response.isSuccessful) {
-                        Log.i("Helpers", "Login successful: $response")
+                        Log.i(TAG, "Login successful: $response")
+
                         val json = JSONObject(responseBody)
-                        val token = json.optString("token", "")
-                        if (!token.isEmpty()) {
-                            Log.i(TAG, "Token received")
+                        val accessToken = json.optString("access_token", "")
+                        val refreshToken = json.optString("refresh_token", "")
+
+                        if (!accessToken.isEmpty() && !refreshToken.isEmpty()) {
+                            Log.i(TAG, "Tokens received")
                             val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
-                            generalSharedPrefs.edit { putString("token", token.toString()) }
+                            generalSharedPrefs.edit {
+                                putString("access_token", accessToken.toString())
+                                putString("refresh_token", refreshToken.toString())
+                            }
                             callback(true)
                             return
                         }
                     } else {
-                        Log.e("Helpers", "Login error ${response.code}: $responseBody")
+                        Log.e(TAG, "Login error ${response.code}: $responseBody")
                         showToast(context, "Login failed!")
                         callback(false)
                     }
@@ -397,12 +462,12 @@ class Helpers {
             })
         }
         fun authEditUsernameToServer(context: Context, newUsername: String, callback: (success: Boolean) -> Unit) {
-            Log.i("Helpers", "Trying to edit username to $newUsername")
+            Log.i(TAG, "Trying to edit username to $newUsername")
 
             val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
-            val token = generalSharedPrefs.getString("token", "") ?: ""
-            if (token.isEmpty()) {
-                Log.e("Helpers", "Token missing")
+            val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
+            if (accessToken.isEmpty()) {
+                Log.e(TAG, "Access token missing")
                 showToast(context, "Not logged in")
                 return
             }
@@ -417,7 +482,7 @@ class Helpers {
 
             val request = Request.Builder()
                 .url("$SERVER_URL/update-username")
-                .addHeader("Authorization", "Bearer $token")
+                .addHeader("Authorization", "Bearer $accessToken")
                 .addHeader("User-Agent", "buildmode")
                 .addHeader("X-App-Key", APP_KEY)
                 .post(requestBody)
@@ -425,17 +490,17 @@ class Helpers {
 
             OkHttpClient().newCall(request).enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
-                    Log.e("Helpers", "Edit username failed: ${e.localizedMessage}")
+                    Log.e(TAG, "Edit username failed: ${e.localizedMessage}")
                     callback(false)
                 }
                 override fun onResponse(call: Call, response: Response) {
                     val responseBody = response.body?.string()
                     if (response.isSuccessful) {
-                        Log.i("Helpers", "Edit username successful: $response")
+                        Log.i(TAG, "Edit username successful: $response")
                         callback(true)
                         return
                     } else {
-                        Log.e("Helpers", "Edit username error ${response.code}: $responseBody")
+                        Log.e(TAG, "Edit username error ${response.code}: $responseBody")
                     }
                 }
             })
@@ -444,15 +509,13 @@ class Helpers {
 
         // region Search Related
         fun searchToServer(context: Context, query: String, callback: (response: String?) -> Unit) {
-            Log.i("Helpers", "Trying to search for $query")
+            Log.i(TAG, "Trying to search for $query")
 
-            val generalSharedPrefs: SharedPreferences =
-                context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
-            val token = generalSharedPrefs.getString("token", "") ?: ""
-            if (token.isEmpty()) {
-                Log.e("Helpers", "Token missing")
+            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
+            val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
+            if (accessToken.isEmpty()) {
+                Log.e(TAG, "Access token missing")
                 showToast(context, "Not logged in")
-                callback(null)
                 return
             }
 
@@ -466,7 +529,7 @@ class Helpers {
 
             val request = Request.Builder()
                 .url("$SERVER_URL/query")
-                .addHeader("Authorization", "Bearer $token")
+                .addHeader("Authorization", "Bearer $accessToken")
                 .addHeader("User-Agent", "buildmode")
                 .addHeader("X-App-Key", APP_KEY)
                 .post(requestBody)
@@ -474,7 +537,7 @@ class Helpers {
 
             OkHttpClient().newCall(request).enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
-                    Log.e("Helpers", "Query failed: ${e.localizedMessage}")
+                    Log.e(TAG, "Query failed: ${e.localizedMessage}")
                     showToast(context, "Query failed!")
                     callback(null)
                 }
@@ -482,10 +545,10 @@ class Helpers {
                 override fun onResponse(call: Call, response: Response) {
                     val responseBody = response.body?.string()
                     if (response.isSuccessful && responseBody != null) {
-                        Log.i("Helpers", "Query successful!")
+                        Log.i(TAG, "Query successful!")
                         callback(responseBody)
                     } else {
-                        Log.e("Helpers", "Query error ${response.code}: $responseBody")
+                        Log.e(TAG, "Query error ${response.code}: $responseBody")
                         showToast(context, "Query error!")
                         callback(null)
                     }
