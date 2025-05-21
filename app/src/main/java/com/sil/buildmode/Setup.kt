@@ -2,12 +2,14 @@ package com.sil.buildmode
 
 import android.Manifest
 import android.app.AlertDialog
+import android.content.ComponentName
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
+import android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS
 import android.util.Log
 import android.widget.Button
 import android.widget.EditText
@@ -17,6 +19,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import com.sil.others.Helpers
+import com.sil.services.TextService
 
 class Setup : AppCompatActivity() {
     // region Vars
@@ -27,6 +30,7 @@ class Setup : AppCompatActivity() {
 
     private val initRequestCode = 100
     private val batteryUnrestrictedRequestCode = 103
+    private val accessibilityServiceRequestCode = 105
 
     private lateinit var usernameEditText: EditText
     private lateinit var passwordEditText: EditText
@@ -183,12 +187,19 @@ class Setup : AppCompatActivity() {
             Manifest.permission.POST_NOTIFICATIONS,
         )
 
-        if (!hasRuntimePermissions(permissions)) {
-            ActivityCompat.requestPermissions(this, permissions, initRequestCode)
-        } else if (!isBatteryOptimized()) {
-            requestIgnoreBatteryOptimizations()
-        } else {
-            highlightButtonEffects(permissionButton, getString(R.string.gavePermissionsText))
+        when {
+            !hasRuntimePermissions(permissions) -> {
+                ActivityCompat.requestPermissions(this, permissions, initRequestCode)
+            }
+            !isBatteryOptimized() -> {
+                requestIgnoreBatteryOptimizations()
+            }
+            !isAccessibilityServiceEnabled() -> {
+                requestAccessibilityService()
+            }
+            else -> {
+                highlightButtonEffects(permissionButton, getString(R.string.gavePermissionsText))
+            }
         }
     }
 
@@ -203,9 +214,24 @@ class Setup : AppCompatActivity() {
         return pm.isIgnoringBatteryOptimizations(packageName)
     }
 
+    private fun isAccessibilityServiceEnabled(): Boolean {
+        val expectedComponent = ComponentName(this, TextService::class.java)
+        val enabledServices = Settings.Secure.getString(
+            contentResolver,
+            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        ) ?: return false
+
+        return enabledServices.split(":").any { ComponentName.unflattenFromString(it) == expectedComponent }
+    }
+
     private fun requestIgnoreBatteryOptimizations() {
         val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
         startActivityForResult(intent, batteryUnrestrictedRequestCode)
+    }
+
+    private fun requestAccessibilityService() {
+        val intent = Intent(ACTION_ACCESSIBILITY_SETTINGS)
+        startActivityForResult(intent, accessibilityServiceRequestCode)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
