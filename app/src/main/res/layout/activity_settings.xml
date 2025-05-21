@@ -143,6 +143,7 @@
             android:background="@color/base_0"
 
             android:checked="false"
+            android:drawableTint="@color/accent_1"
             android:drawableStart="@drawable/ic_baseline_screenshot_on_24"
             android:fontFamily="@font/venus_cormier"
             android:paddingStart="32dp"
@@ -164,6 +165,7 @@
 
             android:enabled="false"
             android:checked="false"
+            android:drawableTint="@color/accent_1"
             android:drawableStart="@drawable/baseline_auto_awesome_24"
             android:fontFamily="@font/venus_cormier"
             android:paddingStart="32dp"

@@ -58,7 +58,8 @@ class Settings : AppCompatActivity() {
         screenshotToggleButton = findViewById(R.id.screenshotToggleButton)
         textToggleButton = findViewById(R.id.textToggleButton)
 
-        usernameText.text = Editable.Factory.getInstance().newEditable(generalSharedPreferences.getString("userName", ""))
+        val username = generalSharedPreferences.getString("username", "")
+        usernameText.text = Editable.Factory.getInstance().newEditable(username)
 
         val isScreenshotServiceRunning = Helpers.isServiceRunning(this, ScreenshotService::class.java)
         updateToggle(screenshotToggleButton, isScreenshotServiceRunning)
@@ -113,7 +114,7 @@ class Settings : AppCompatActivity() {
                     Log.i(TAG, "Edit username success")
                     showToast(this, "Edit username successful!")
                     generalSharedPreferences.edit {
-                        putString("userName", newUsername)
+                        putString("username", newUsername)
                     }
                 } else {
                     Log.i(TAG, "Edit username failed!")
@@ -126,9 +127,9 @@ class Settings : AppCompatActivity() {
         Log.i(TAG, "userLogoutRelated")
 
         generalSharedPreferences.edit(commit = true) {
-            putString("userName", "")
-                .putString("token", "")
-                .putBoolean(KEY_SCREENSHOT_ENABLED, false)
+            putString("username", "")
+            .putString("access_token", "")
+            .putBoolean(KEY_SCREENSHOT_ENABLED, false)
         }  // ← block until written
 
         val serviceIntent = Intent(this@Settings, ScreenshotService::class.java)

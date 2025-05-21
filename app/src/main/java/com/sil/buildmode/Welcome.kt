@@ -1,5 +1,6 @@
 package com.sil.buildmode
 
+import android.util.Log
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
@@ -31,6 +32,7 @@ class Welcome : AppCompatActivity() {
 
     private fun generalInitRelated() {
         val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
+        Log.i(TAG, "access_token: $accessToken")
         if (!accessToken.isEmpty()) {
             launchNextActivity(Main::class.java)
         }

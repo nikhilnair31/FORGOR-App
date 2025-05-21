@@ -82,7 +82,7 @@ class SignUp : AppCompatActivity() {
                     highlightButtonEffects(signupButton, getString(R.string.signupSuccessText))
 
                     generalSharedPreferences.edit {
-                        putString("userName", userNameText)
+                        putString("username", userNameText)
                     }
 
                     val intent = Intent(this, Features::class.java)

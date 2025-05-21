@@ -83,7 +83,7 @@ class SignIn : AppCompatActivity() {
                     highlightButtonEffects(loginButton, getString(R.string.loginSuccessText))
 
                     generalSharedPreferences.edit {
-                        putString("userName", userNameText)
+                        putString("username", userNameText)
                     }
 
                     val intent = Intent(this, Features::class.java)
