@@ -1,7 +1,0 @@
-<accessibility-service
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:accessibilityEventTypes="typeViewTextChanged|typeViewFocused"
-    android:accessibilityFeedbackType="feedbackGeneric"
-    android:notificationTimeout="500"
-    android:canRetrieveWindowContent="true"
-    android:accessibilityFlags="flagDefault"  />
