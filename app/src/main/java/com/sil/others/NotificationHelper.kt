@@ -15,8 +15,8 @@ class NotificationHelper(private val context: Context) {
     // region Vars
     private val TAG = "NotificationHelper"
     
-    private val appChannelName = "BUILDMODE Active Channel"
-    private val appNotificationIcon = R.mipmap.launcher_foreground
+    private val appChannelName = "${R.string.appName} Active Channel"
+    private val appNotificationIcon = R.drawable.ic_stat_name
 
     // Constants for monitoring notification
     private val monitoringChannelId = "BuildmodeMonitoringChannel"

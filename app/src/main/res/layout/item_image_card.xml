@@ -1,4 +1,7 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:adjustViewBounds="true"
@@ -11,17 +14,19 @@
         android:layout_height="wrap_content"
         android:adjustViewBounds="true"
         android:scaleType="centerCrop"
+        tools:src="@drawable/ic_stat_name"
         android:contentDescription="@string/image_desc" />
 
     <ImageView
         android:id="@+id/linkIcon"
         android:layout_width="32dp"
         android:layout_height="32dp"
-        android:layout_gravity="top|end"
-        android:layout_margin="8dp"
-        android:src="@android:drawable/ic_menu_view"
-        android:background="@android:color/white"
         android:padding="4dp"
+
+        android:background="@color/accent_0"
+        android:layout_gravity="top|end"
         android:contentDescription="Open link"
-        android:visibility="gone" />
+        android:src="@drawable/sharp_link_24"
+        android:visibility="visible"
+        app:tint="@color/accent_1" />
 </FrameLayout>
