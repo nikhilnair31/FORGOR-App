@@ -7,9 +7,11 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.view.View
 import androidx.core.view.WindowCompat
 import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
@@ -29,11 +31,14 @@ class Main : AppCompatActivity() {
 
     private lateinit var generalSharedPreferences: SharedPreferences
 
+    lateinit var resultAdapter: ResultAdapter
     private var searchHandler = Handler(Looper.getMainLooper())
     private var searchRunnable: Runnable? = null
 
     private lateinit var searchEditText: EditText
     private lateinit var settingsButton: ImageButton
+    private lateinit var placeholder: TextView
+    private lateinit var recyclerView: RecyclerView
     // endregion
 
     // region Common
@@ -51,51 +56,70 @@ class Main : AppCompatActivity() {
         window.navigationBarColor = ContextCompat.getColor(this, R.color.accent_0)
         WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightNavigationBars = true
 
-        settingsButton = findViewById(R.id.settingsButton)
-        searchEditText = findViewById(R.id.searchEditText)
+        placeholder = findViewById(R.id.emptyPlaceholder)
+        placeholder.visibility = View.GONE
 
+        resultAdapter = ResultAdapter(this, mutableListOf())
+        recyclerView = findViewById(R.id.imageRecyclerView)
+        recyclerView.adapter = resultAdapter
+        recyclerView.layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
+
+        settingsButton = findViewById(R.id.settingsButton)
         settingsButton.setOnClickListener {
             startActivity(Intent(this, Settings::class.java))
         }
+
+        searchEditText = findViewById(R.id.searchEditText)
         searchEditText.doAfterTextChanged { text ->
             searchRunnable?.let { searchHandler.removeCallbacks(it) }
 
             searchRunnable = Runnable {
                 val query = text.toString().trim()
-                val recyclerView = findViewById<RecyclerView>(R.id.imageRecyclerView)
-                recyclerView.layoutManager = GridLayoutManager(this, 2)
-                if (query.isNotEmpty()) {
-                    Log.i(TAG, "Delayed search triggered for: $query")
 
-                    Helpers.searchToServer(this, query) { queryResponseString ->
-                        runOnUiThread {
-                            if (queryResponseString != null) {
-                                try {
-                                    val json = JSONObject(queryResponseString)
-                                    val resultsArray = json.getJSONArray("results")
-
-                                    val resultList = mutableListOf<JSONObject>()
-                                    for (i in 0 until resultsArray.length()) {
-                                        resultList.add(resultsArray.getJSONObject(i))
-                                    }
-
-                                    val recyclerView = findViewById<RecyclerView>(R.id.imageRecyclerView)
-                                    recyclerView.layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
-                                    recyclerView.adapter = ResultAdapter(this, resultList)
-                                } catch (e: Exception) {
-                                    Log.e("Helpers", "Error parsing response: ${e.localizedMessage}")
-                                }
-                            } else {
-                                Log.e(TAG, "Query returned null")
-                            }
-                        }
-                    }
-                }
-                else {
+                if (query.isEmpty()) {
                     Log.i(TAG, "Empty search triggered")
 
-                    // Clear the result list and update adapter
-                    recyclerView.adapter = ResultAdapter(this, emptyList())
+                    resultAdapter.updateData(emptyList())
+                    recyclerView.visibility = View.GONE
+                    placeholder.visibility = View.GONE
+
+                    return@Runnable
+                }
+
+                Log.i(TAG, "Delayed search triggered for: $query")
+
+                Helpers.searchToServer(this, query) { response  ->
+                    runOnUiThread {
+                        if (response == null) {
+                            Log.e(TAG, "Query returned null")
+
+                            resultAdapter.updateData(emptyList())
+                            recyclerView.visibility = View.GONE
+                            placeholder.visibility = View.VISIBLE
+
+                            return@runOnUiThread
+                        }
+
+                        try {
+                            val json = JSONObject(response)
+                            val results = json.getJSONArray("results")
+                            val resultList = List(results.length()) { i -> results.getJSONObject(i) }
+
+                            Log.i(TAG, "Query returned ${results.length()} results")
+
+                            if (resultList.isEmpty()) {
+                                resultAdapter.updateData(emptyList())
+                                recyclerView.visibility = View.GONE
+                                placeholder.visibility = View.VISIBLE
+                            } else {
+                                resultAdapter.updateData(resultList)
+                                recyclerView.visibility = View.VISIBLE
+                                placeholder.visibility = View.GONE
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error parsing response: ${e.localizedMessage}")
+                        }
+                    }
                 }
             }
 

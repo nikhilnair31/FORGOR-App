@@ -27,15 +27,17 @@
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
 
+                android:layout_marginBottom="8dp"
                 android:contentDescription="@string/appName"
                 android:fontFamily="@font/venus_cormier"
-                android:gravity="center_horizontal|center_vertical"
 
+                android:gravity="center_horizontal|center_vertical"
                 android:text="@string/appName"
                 android:textColor="@color/accent_0"
                 android:textSize="80sp"
-                app:layout_constraintBottom_toTopOf="@+id/imageRecyclerView"
+                app:layout_constraintBottom_toTopOf="@+id/emptyPlaceholder"
                 app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.0"
                 app:layout_constraintStart_toStartOf="parent" />
 
             <androidx.recyclerview.widget.RecyclerView
@@ -43,10 +45,29 @@
 
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+
                 android:contentDescription="@string/searchImagesDescription"
 
                 android:padding="16dp"
+                android:visibility="gone"
+                app:layout_constraintBottom_toTopOf="@+id/emptyPlaceholder"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="1.0"
+                app:layout_constraintStart_toStartOf="parent" />
 
+            <TextView
+                android:id="@+id/emptyPlaceholder"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+
+                android:fontFamily="@font/venus_cormier"
+                android:gravity="center_horizontal|center_vertical"
+                android:padding="32dp"
+                android:text="No matching results found"
+                android:textColor="@color/accent_1"
+                android:textSize="16sp"
+
+                android:visibility="gone"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent" />
@@ -67,7 +88,7 @@
         android:inputType="text"
         android:stateListAnimator="@null"
         android:hint="@string/searchHint"
-        android:textColor="@color/accent_0"
+        android:textColor="@color/accent_1"
         android:background="@color/accent_0"
         android:fontFamily="@font/venus_cormier"
         android:textColorHint="@color/accent_1t"

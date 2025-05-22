@@ -30,21 +30,15 @@
     <string name="textToggleOffText">SUGGEST SIMILAR CONTENT</string>
     <string name="stopForgoringText">STOP FORGORING</string>
 
-    <string name="setupText">SETUP</string>
-    <string name="setupUsernameText">USER</string>
-    <string name="setupPermissionsText">PERMISSIONS</string>
-    <string name="setupSavingText">SAVING</string>
-
-    <string name="gavePermissionsText">PERMISSIONS GRANTED!</string>
-    <string name="givePermissionsText">GRANT PERMISSIONS</string>
+    <string name="searchImagesDescription">SEARCH IMAGES</string>
+    <string name="searchHint">WHAT ARE YOU LOOKING FOR?</string>
+    <string name="imageDescription">SEARCH IMAGE RESULT</string>
+    <string name="noMatchingSearchResults">NO RESULTS :(</string>
 
     <string name="settingsText">SETTINGS</string>
+    <string name="settingsUsernameText">USER</string>
     <string name="settingsAuthHintText">...</string>
     <string name="settingsEditUsername">EDIT USERNAME</string>
     <string name="settingsUserLogout">LOGOUT</string>
-
-    <string name="searchImagesDescription">SEARCH IMAGES</string>
-    <string name="searchHint">WHAT ARE YOU LOOKING FOR?</string>
-    <string name="image_desc">SEARCH IMAGE RESULT</string>
 
 </resources>

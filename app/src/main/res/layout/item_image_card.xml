@@ -15,7 +15,7 @@
         android:adjustViewBounds="true"
         android:scaleType="centerCrop"
         tools:src="@drawable/ic_stat_name"
-        android:contentDescription="@string/image_desc" />
+        android:contentDescription="@string/imageDescription" />
 
     <ImageView
         android:id="@+id/linkIcon"

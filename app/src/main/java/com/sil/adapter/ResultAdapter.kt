@@ -23,12 +23,18 @@ import com.sil.others.Helpers
 import androidx.core.net.toUri
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 
-class ResultAdapter(private val context: Context, private val dataList: List<JSONObject>) :
+class ResultAdapter(private val context: Context, private val dataList: MutableList<JSONObject>) :
     RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
 
     class ResultViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val imageView: ImageView = view.findViewById(R.id.imageView)
         val linkIcon: ImageView = view.findViewById(R.id.linkIcon)
+    }
+
+    fun updateData(newData: List<JSONObject>) {
+        dataList.clear()
+        dataList.addAll(newData)
+        notifyDataSetChanged()
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ResultViewHolder {
@@ -43,7 +49,7 @@ class ResultAdapter(private val context: Context, private val dataList: List<JSO
         val imageUrl = if (rawUrl.startsWith("http")) rawUrl else BuildConfig.SERVER_URL + rawUrl
         val postUrl = item.optString("post_url", "").trim()
 
-        Log.i("ResultAdapter", "imageUrl: $imageUrl, postUrl: $postUrl")
+        // Log.i("ResultAdapter", "imageUrl: $imageUrl, postUrl: $postUrl")
 
         val blankDrawable = R.color.accent_0.toDrawable()
         val glideUrl = Helpers.getImageURL(context, imageUrl)

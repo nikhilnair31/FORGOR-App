@@ -156,7 +156,7 @@ class Helpers {
         }
 
         fun getImageURL(context: Context, imageUrl: String): GlideUrl? {
-            Log.i(TAG, "getImageURL | getting image URL...")
+            // Log.i(TAG, "getImageURL | getting image URL...")
 
             try {
                 val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
@@ -527,6 +527,7 @@ class Helpers {
             """.trimIndent()
 
             val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
+            val startTime = System.currentTimeMillis() // ⏱ Start timing
 
             val request = Request.Builder()
                 .url("$SERVER_URL/query")
@@ -544,8 +545,15 @@ class Helpers {
                 }
 
                 override fun onResponse(call: Call, response: Response) {
+                    val endTime = System.currentTimeMillis()
+                    val elapsedTime = endTime - startTime
+                    Log.i(TAG, "Query roundtrip time: $elapsedTime ms") // 🧪 Measure and log roundtrip
+
                     val responseBody = response.body?.string()
                     if (response.isSuccessful && responseBody != null) {
+                        Log.i(TAG, "Query successful!")
+                        callback(responseBody)
+                    } else if (response.isSuccessful && responseBody != null) {
                         Log.i(TAG, "Query successful!")
                         callback(responseBody)
                     } else {
