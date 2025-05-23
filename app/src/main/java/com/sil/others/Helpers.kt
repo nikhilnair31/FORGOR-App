@@ -85,7 +85,7 @@ class Helpers {
                         .build()
 
                     val request = Request.Builder()
-                        .url("$SERVER_URL/upload/image")
+                        .url("$SERVER_URL/api/upload/image")
                         .addHeader("Authorization", "Bearer $accessToken")
                         .addHeader("User-Agent", "buildmode")
                         .addHeader("X-App-Key", APP_KEY)
@@ -233,7 +233,7 @@ class Helpers {
                     .build()
 
                 val request = Request.Builder()
-                    .url("$SERVER_URL/upload/url")
+                    .url("$SERVER_URL/api/upload/url")
                     .addHeader("Authorization", "Bearer $token")
                     .addHeader("User-Agent", "buildmode")
                     .addHeader("X-App-Key", APP_KEY)
@@ -332,7 +332,7 @@ class Helpers {
 
             val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
             val request = Request.Builder()
-                .url("$SERVER_URL/refresh_token")
+                .url("$SERVER_URL/api/refresh_token")
                 .addHeader("User-Agent", "buildmode")
                 .addHeader("X-App-Key", APP_KEY)
                 .post(requestBody)
@@ -380,7 +380,7 @@ class Helpers {
             val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
 
             val request = Request.Builder()
-                .url("$SERVER_URL/register")
+                .url("$SERVER_URL/api/register")
                 .addHeader("User-Agent", "buildmode")
                 .addHeader("X-App-Key", APP_KEY)
                 .post(requestBody)
@@ -423,7 +423,7 @@ class Helpers {
             val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
 
             val request = Request.Builder()
-                .url("$SERVER_URL/login")
+                .url("$SERVER_URL/api/login")
                 .addHeader("User-Agent", "buildmode")
                 .addHeader("X-App-Key", APP_KEY)
                 .post(requestBody)
@@ -482,7 +482,7 @@ class Helpers {
             val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
 
             val request = Request.Builder()
-                .url("$SERVER_URL/update-username")
+                .url("$SERVER_URL/api/update-username")
                 .addHeader("Authorization", "Bearer $accessToken")
                 .addHeader("User-Agent", "buildmode")
                 .addHeader("X-App-Key", APP_KEY)
@@ -530,7 +530,7 @@ class Helpers {
             val startTime = System.currentTimeMillis() // ⏱ Start timing
 
             val request = Request.Builder()
-                .url("$SERVER_URL/query")
+                .url("$SERVER_URL/api/query")
                 .addHeader("Authorization", "Bearer $accessToken")
                 .addHeader("User-Agent", "buildmode")
                 .addHeader("X-App-Key", APP_KEY)

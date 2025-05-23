@@ -39,7 +39,6 @@ class Settings : AppCompatActivity() {
     private lateinit var editUsernameButton: Button
     private lateinit var userLogoutButton: Button
     private lateinit var screenshotToggleButton: ToggleButton
-    private lateinit var textToggleButton: ToggleButton
     // endregion
 
     // region Common
@@ -56,7 +55,6 @@ class Settings : AppCompatActivity() {
         editUsernameButton = findViewById(R.id.editUsername)
         userLogoutButton = findViewById(R.id.userLogout)
         screenshotToggleButton = findViewById(R.id.screenshotToggleButton)
-        textToggleButton = findViewById(R.id.textToggleButton)
 
         val username = generalSharedPreferences.getString("username", "")
         usernameText.text = Editable.Factory.getInstance().newEditable(username)

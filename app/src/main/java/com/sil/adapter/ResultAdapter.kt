@@ -25,6 +25,7 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 
 class ResultAdapter(private val context: Context, private val dataList: MutableList<JSONObject>) :
     RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
+    private val SERVER_URL = BuildConfig.SERVER_URL
 
     class ResultViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val imageView: ImageView = view.findViewById(R.id.imageView)
@@ -46,10 +47,9 @@ class ResultAdapter(private val context: Context, private val dataList: MutableL
     override fun onBindViewHolder(holder: ResultViewHolder, position: Int) {
         val item = dataList[position]
         val rawUrl = item.optString("image_presigned_url", "")
-        val imageUrl = if (rawUrl.startsWith("http")) rawUrl else BuildConfig.SERVER_URL + rawUrl
+        val imageUrl = if (rawUrl.startsWith("http")) rawUrl else "$SERVER_URL/api/$rawUrl"
         val postUrl = item.optString("post_url", "").trim()
-
-        // Log.i("ResultAdapter", "imageUrl: $imageUrl, postUrl: $postUrl")
+        Log.i("ResultAdapter", "imageUrl: $imageUrl, postUrl: $postUrl")
 
         val blankDrawable = R.color.accent_0.toDrawable()
         val glideUrl = Helpers.getImageURL(context, imageUrl)

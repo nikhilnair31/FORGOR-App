@@ -32,7 +32,6 @@ class Features : AppCompatActivity() {
     private var pendingToggle: (() -> Unit)? = null
 
     private lateinit var screenshotToggleButton: ToggleButton
-    private lateinit var textToggleButton: ToggleButton
     private lateinit var buttonToMain: Button
     // endregion
 
@@ -48,7 +47,6 @@ class Features : AppCompatActivity() {
 
     private fun initRelated() {
         screenshotToggleButton = findViewById(R.id.screenshotToggleButton)
-        textToggleButton = findViewById(R.id.textToggleButton)
         buttonToMain = findViewById(R.id.buttonToMain)
 
         screenshotToggleButton.setOnCheckedChangeListener { _, isChecked ->
@@ -70,28 +68,6 @@ class Features : AppCompatActivity() {
                 stopService(serviceIntent)
                 generalSharedPreferences.edit { putBoolean(KEY_SCREENSHOT_ENABLED, false) }
                 updateToggle(screenshotToggleButton, false)
-            }
-        }
-        textToggleButton.setOnCheckedChangeListener { _, isChecked ->
-            Log.i(TAG, "Text toggle changed: isChecked=$isChecked")
-            textToggleButton.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-
-            if (isChecked) {
-                if (areAllPermissionsGranted()) {
-                    generalSharedPreferences.edit { putBoolean(KEY_TEXT_ENABLED, true) }
-                    updateToggle(textToggleButton, true)
-                } else {
-                    pendingToggle = {
-                        generalSharedPreferences.edit { putBoolean(KEY_TEXT_ENABLED, true) }
-                        updateToggle(textToggleButton, true)
-                    }
-                    requestAllPermissions()
-                    showToast(this, "Please grant all permissions to enable feature")
-                    textToggleButton.isChecked = false
-                }
-            } else {
-                generalSharedPreferences.edit { putBoolean(KEY_TEXT_ENABLED, false) }
-                updateToggle(textToggleButton, false)
             }
         }
         buttonToMain.setOnClickListener {
