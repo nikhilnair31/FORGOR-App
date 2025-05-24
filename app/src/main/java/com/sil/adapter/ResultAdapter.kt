@@ -46,8 +46,8 @@ class ResultAdapter(private val context: Context, private val dataList: MutableL
 
     override fun onBindViewHolder(holder: ResultViewHolder, position: Int) {
         val item = dataList[position]
-        val rawUrl = item.optString("image_presigned_url", "")
-        val imageUrl = if (rawUrl.startsWith("http")) rawUrl else "$SERVER_URL/api/$rawUrl"
+        val rawUrl = item.optString("image_path", "")
+        val imageUrl = if (rawUrl.startsWith("http")) rawUrl else "$SERVER_URL/api/get_image/$rawUrl"
         val postUrl = item.optString("post_url", "").trim()
         Log.i("ResultAdapter", "imageUrl: $imageUrl, postUrl: $postUrl")
 

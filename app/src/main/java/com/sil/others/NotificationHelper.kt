@@ -21,7 +21,7 @@ class NotificationHelper(private val context: Context) {
     // Constants for monitoring notification
     private val monitoringChannelId = "BuildmodeMonitoringChannel"
     private val monitoringChannelImportance = NotificationManager.IMPORTANCE_MIN
-    private val monitoringNotificationTitle = "BUILDMODE monitoring..."
+    private val monitoringNotificationTitle = "FORGOR monitoring..."
     // endregion
 
     // region Notification Related
