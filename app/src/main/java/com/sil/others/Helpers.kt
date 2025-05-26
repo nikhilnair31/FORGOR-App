@@ -60,64 +60,61 @@ class Helpers {
         fun uploadImageFileToServer(context: Context, imageFile: File?) {
             Log.i(TAG, "Uploading Image to Server...")
 
-            try {
-                imageFile?.let {
-                    // Verify the file's readability and size
-                    if (!imageFile.exists() || !imageFile.canRead() || imageFile.length() <= 0) {
-                        Log.e(TAG, "Image file does not exist, is unreadable or empty")
-                        return
+            if (imageFile == null || !imageFile.exists() || !imageFile.canRead() || imageFile.length() <= 0) {
+                Log.e(TAG, "Image file does not exist or is unreadable.")
+                return
+            }
+
+            val prefs = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
+            val token = prefs.getString("access_token", "") ?: ""
+            if (token.isEmpty()) {
+                showToast(context, "Not logged in")
+                return
+            }
+
+            fun send(token: String) {
+                val requestBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+                    .addFormDataPart("image", imageFile.name, imageFile.asRequestBody("image/png".toMediaTypeOrNull()))
+                    .build()
+
+                val request = Request.Builder()
+                    .url("$SERVER_URL/api/upload/image")
+                    .addHeader("Authorization", "Bearer $token")
+                    .addHeader("User-Agent", "buildmode")
+                    .addHeader("X-App-Key", APP_KEY)
+                    .post(requestBody)
+                    .build()
+
+                OkHttpClient().newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        Log.e(TAG, "Upload failed: ${e.localizedMessage}")
+                        showToast(context, "Upload failed!")
                     }
 
-                    val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
-                    val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
-                    if (accessToken.isEmpty()) {
-                        Log.e(TAG, "Access token missing")
-                        showToast(context, "Not logged in")
-                        return
-                    }
-
-                    val requestBody = MultipartBody.Builder().setType(MultipartBody.FORM)
-                        .addFormDataPart(
-                            "image",
-                            imageFile.name,
-                            imageFile.asRequestBody("image/png".toMediaTypeOrNull())
-                        )
-                        .build()
-
-                    val request = Request.Builder()
-                        .url("$SERVER_URL/api/upload/image")
-                        .addHeader("Authorization", "Bearer $accessToken")
-                        .addHeader("User-Agent", "buildmode")
-                        .addHeader("X-App-Key", APP_KEY)
-                        .post(requestBody)
-                        .build()
-
-                    val client = OkHttpClient()
-                    client.newCall(request).enqueue(object : Callback {
-                        override fun onFailure(call: Call, e: IOException) {
-                            Log.e(TAG, "Image upload to Flask failed: ${e.localizedMessage}")
-                            showToast(context, "Save failed!")
-                        }
-
-                        override fun onResponse(call: Call, response: Response) {
-                            if (response.isSuccessful) {
-                                Log.i(TAG, "Image uploaded to Flask successfully: ${response.body?.string()}")
-                                showToast(context, "Image saved!")
-                            } else {
-                                Log.e(TAG, "Flask server returned error ${response.code}: ${response.body?.string()}")
-                                showToast(context, "Save failed!")
+                    override fun onResponse(call: Call, response: Response) {
+                        if (response.code == 401) {
+                            // Token expired, attempt refresh
+                            refreshAccessToken(context) { success, newToken ->
+                                if (success && !newToken.isNullOrEmpty()) {
+                                    send(newToken) // Retry with new token
+                                } else {
+                                    showToast(context, "Session expired. Please log in again.")
+                                }
                             }
+                            return
                         }
-                    })
-                }
+
+                        if (response.isSuccessful) {
+                            showToast(context, "Image uploaded successfully!")
+                        } else {
+                            Log.e(TAG, "Server error: ${response.code}")
+                            showToast(context, "Upload failed!")
+                        }
+                    }
+                })
             }
-            catch (e: Exception) {
-                when (e) {
-                    is FileNotFoundException -> Log.e(TAG, "Image file not found: ${e.message}")
-                    else -> Log.e(TAG, "Error in image upload: ${e.localizedMessage}")
-                }
-                e.printStackTrace()
-            }
+
+            send(token)
         }
 
         fun uploadImageFile(context: Context, imageFile: File) {
@@ -225,6 +222,11 @@ class Helpers {
 
             val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
             val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
+            if (accessToken.isEmpty()) {
+                Log.e(TAG, "Access token missing")
+                showToast(context, "Not logged in")
+                return
+            }
 
             fun sendRequest(token: String) {
                 val requestBody = MultipartBody.Builder()
@@ -267,11 +269,6 @@ class Helpers {
                         }
                     }
                 })
-            }
-
-            if (accessToken.isEmpty()) {
-                showToast(context, "Not logged in")
-                return
             }
 
             sendRequest(accessToken)
@@ -478,33 +475,52 @@ class Helpers {
                 "new_username": "$newUsername"
             }
             """.trimIndent()
-
             val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
 
-            val request = Request.Builder()
-                .url("$SERVER_URL/api/update-username")
-                .addHeader("Authorization", "Bearer $accessToken")
-                .addHeader("User-Agent", "buildmode")
-                .addHeader("X-App-Key", APP_KEY)
-                .post(requestBody)
-                .build()
+            fun send(token: String) {
+                val request = Request.Builder()
+                    .url("$SERVER_URL/api/update-username")
+                    .addHeader("Authorization", "Bearer $token")
+                    .addHeader("User-Agent", "buildmode")
+                    .addHeader("X-App-Key", APP_KEY)
+                    .post(requestBody)
+                    .build()
 
-            OkHttpClient().newCall(request).enqueue(object : Callback {
-                override fun onFailure(call: Call, e: IOException) {
-                    Log.e(TAG, "Edit username failed: ${e.localizedMessage}")
-                    callback(false)
-                }
-                override fun onResponse(call: Call, response: Response) {
-                    val responseBody = response.body?.string()
-                    if (response.isSuccessful) {
-                        Log.i(TAG, "Edit username successful: $response")
-                        callback(true)
-                        return
-                    } else {
-                        Log.e(TAG, "Edit username error ${response.code}: $responseBody")
+                OkHttpClient().newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        Log.e(TAG, "Edit username failed: ${e.localizedMessage}")
+                        showToast(context, "Edit failed!")
+                        callback(false)
                     }
-                }
-            })
+
+                    override fun onResponse(call: Call, response: Response) {
+                        val responseBody = response.body?.string()
+
+                        if (response.code == 401) {
+                            refreshAccessToken(context) { success, newToken ->
+                                if (success && !newToken.isNullOrEmpty()) {
+                                    send(newToken) // Retry with refreshed token
+                                } else {
+                                    showToast(context, "Session expired. Please log in again.")
+                                    callback(false)
+                                }
+                            }
+                            return
+                        }
+
+                        if (response.isSuccessful) {
+                            Log.i(TAG, "Edit username successful: $responseBody")
+                            callback(true)
+                        } else {
+                            Log.e(TAG, "Edit username error ${response.code}: $responseBody")
+                            showToast(context, "Edit failed!")
+                            callback(false)
+                        }
+                    }
+                })
+            }
+
+            send(accessToken)
         }
         // endregion
 
@@ -520,49 +536,54 @@ class Helpers {
                 return
             }
 
-            val jsonBody = """
+            fun sendRequest(token: String) {
+                val jsonBody = """
                 {
                     "searchText": "$query"
                 }
             """.trimIndent()
 
-            val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
-            val startTime = System.currentTimeMillis() // ⏱ Start timing
+                val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
+                val startTime = System.currentTimeMillis()
 
-            val request = Request.Builder()
-                .url("$SERVER_URL/api/query")
-                .addHeader("Authorization", "Bearer $accessToken")
-                .addHeader("User-Agent", "buildmode")
-                .addHeader("X-App-Key", APP_KEY)
-                .post(requestBody)
-                .build()
+                val request = Request.Builder()
+                    .url("$SERVER_URL/api/query")
+                    .addHeader("Authorization", "Bearer $token")
+                    .addHeader("User-Agent", "buildmode")
+                    .addHeader("X-App-Key", APP_KEY)
+                    .post(requestBody)
+                    .build()
 
-            OkHttpClient().newCall(request).enqueue(object : Callback {
-                override fun onFailure(call: Call, e: IOException) {
-                    Log.e(TAG, "Query failed: ${e.localizedMessage}")
-                    showToast(context, "Query failed!")
-                    callback(null)
-                }
-
-                override fun onResponse(call: Call, response: Response) {
-                    val endTime = System.currentTimeMillis()
-                    val elapsedTime = endTime - startTime
-                    Log.i(TAG, "Query roundtrip time: $elapsedTime ms") // 🧪 Measure and log roundtrip
-
-                    val responseBody = response.body?.string()
-                    if (response.isSuccessful && responseBody != null) {
-                        Log.i(TAG, "Query successful!")
-                        callback(responseBody)
-                    } else if (response.isSuccessful && responseBody != null) {
-                        Log.i(TAG, "Query successful!")
-                        callback(responseBody)
-                    } else {
-                        Log.e(TAG, "Query error ${response.code}: $responseBody")
-                        showToast(context, "Query error!")
+                OkHttpClient().newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        Log.e(TAG, "Query failed: ${e.localizedMessage}")
+                        showToast(context, "Query failed!")
                         callback(null)
                     }
-                }
-            })
+
+                    override fun onResponse(call: Call, response: Response) {
+                        if (response.code == 401) {
+                            refreshAccessToken(context) { success, newToken ->
+                                if (success && newToken != null) sendRequest(newToken)
+                                else showToast(context, "Login expired")
+                            }
+                            return
+                        }
+
+                        if (response.isSuccessful) {
+                            val endTime = System.currentTimeMillis()
+                            val elapsedTime = endTime - startTime
+                            Log.i(TAG, "Query roundtrip time: $elapsedTime ms")
+                            val responseBody = response.body?.string()
+                            callback(responseBody)
+                        } else {
+                            showToast(context, "Query failed!")
+                        }
+                    }
+                })
+            }
+
+            sendRequest(accessToken)
         }
         // endregion
 
