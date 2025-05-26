@@ -26,14 +26,14 @@
     <LinearLayout
         android:id="@+id/linearLayout5"
         android:layout_width="match_parent"
-
         android:layout_height="wrap_content"
-
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="16dp"
+
         android:background="@drawable/data_background"
         android:orientation="vertical"
+
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
@@ -85,12 +85,11 @@
             android:id="@+id/editUsername"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-
             android:layout_marginTop="8dp"
+            android:padding="24dp"
+
             android:enabled="true"
             android:fontFamily="@font/venus_cormier"
-
-            android:padding="24dp"
             android:stateListAnimator="@null"
             android:text="@string/settingsEditUsername"
             android:textSize="14sp"

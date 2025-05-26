@@ -557,7 +557,6 @@ class Helpers {
                 OkHttpClient().newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException) {
                         Log.e(TAG, "Query failed: ${e.localizedMessage}")
-                        showToast(context, "Query failed!")
                         callback(null)
                     }
 
@@ -576,8 +575,6 @@ class Helpers {
                             Log.i(TAG, "Query roundtrip time: $elapsedTime ms")
                             val responseBody = response.body?.string()
                             callback(responseBody)
-                        } else {
-                            showToast(context, "Query failed!")
                         }
                     }
                 })
