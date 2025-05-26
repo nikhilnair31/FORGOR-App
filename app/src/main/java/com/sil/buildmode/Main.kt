@@ -17,6 +17,7 @@ import androidx.core.widget.doAfterTextChanged
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.sil.others.Helpers
+import com.sil.services.OverlayService
 import com.sil.services.ScreenshotService
 import org.json.JSONObject
 
@@ -25,6 +26,7 @@ class Main : AppCompatActivity() {
     private val TAG = "Main"
     private val PREFS_GENERAL = "com.sil.buildmode.generalSharedPrefs"
     private val KEY_SCREENSHOT_ENABLED = "isScreenshotMonitoringEnabled"
+    private val KEY_OVERLAY_ENABLED = "isOverlayEnabled"
 
     private lateinit var generalSharedPreferences: SharedPreferences
 
@@ -46,7 +48,8 @@ class Main : AppCompatActivity() {
         generalSharedPreferences = getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
 
         initUI()
-        checkServiceStatus()
+        checkScreenshotServiceStatus()
+        checkOverlayServiceStatus()
     }
 
     private fun initUI() {
@@ -126,21 +129,40 @@ class Main : AppCompatActivity() {
     // endregion
 
     // region Service Related
-    private fun checkServiceStatus() {
+    private fun checkScreenshotServiceStatus() {
         val wasScreenshotServiceRunning = generalSharedPreferences.getBoolean(KEY_SCREENSHOT_ENABLED, false)
         val isScreenshotServiceRunning = Helpers.isServiceRunning(this, ScreenshotService::class.java)
+
+        val screenshotServiceIntent = Intent(this, ScreenshotService::class.java)
+
         if (wasScreenshotServiceRunning && !isScreenshotServiceRunning) {
             Log.i(TAG, "ScreenshotService was running but is not running anymore. Starting it again.")
-            val serviceIntent = Intent(this@Main, ScreenshotService::class.java)
-            startForegroundService(serviceIntent)
+            startForegroundService(screenshotServiceIntent)
         }
         else if (!wasScreenshotServiceRunning && isScreenshotServiceRunning) {
             Log.i(TAG, "ScreenshotService was not running but is running now. Stopping it.")
-            val serviceIntent = Intent(this@Main, ScreenshotService::class.java)
-            stopService(serviceIntent)
+            stopService(screenshotServiceIntent)
         }
         else {
             Log.i(TAG, "ScreenshotService status is as expected.")
+        }
+    }
+    private fun checkOverlayServiceStatus() {
+        val wasOverlayServiceRunning = generalSharedPreferences.getBoolean(KEY_OVERLAY_ENABLED, false)
+        val isOverlayServiceRunning = Helpers.isServiceRunning(this, OverlayService::class.java)
+
+        val overlayServiceIntent = Intent(this, OverlayService::class.java)
+
+        if (wasOverlayServiceRunning && !isOverlayServiceRunning) {
+            Log.i(TAG, "OverlayService was running but is not running anymore. Starting it again.")
+            startForegroundService(overlayServiceIntent)
+        }
+        else if (!wasOverlayServiceRunning && isOverlayServiceRunning) {
+            Log.i(TAG, "OverlayService was not running but is running now. Stopping it.")
+            stopService(overlayServiceIntent)
+        }
+        else {
+            Log.i(TAG, "OverlayService status is as expected.")
         }
     }
     // endregion

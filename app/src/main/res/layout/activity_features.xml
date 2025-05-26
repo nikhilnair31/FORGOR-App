@@ -69,18 +69,36 @@
             android:layout_width="match_parent"
             android:layout_height="64dp"
             android:layout_marginTop="8dp"
-            android:paddingStart="32dp"
 
             app:elevation="0dp"
             android:background="@color/base_0"
             android:drawableTint="@color/accent_1"
             android:checked="false"
-            android:drawableStart="@drawable/ic_baseline_screenshot_on_24"
             android:fontFamily="@font/venus_cormier"
             android:stateListAnimator="@null"
             android:textColor="@color/accent_1"
             android:textOff="@string/screenshotToggleOffText"
             android:textOn="@string/screenshotToggleOnText"
+
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/featuresTextView" />
+
+        <ToggleButton
+            android:id="@+id/overlayToggleButton"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:layout_marginTop="8dp"
+
+            app:elevation="0dp"
+            android:checked="false"
+            android:background="@color/base_0"
+            android:drawableTint="@color/accent_1"
+            android:fontFamily="@font/venus_cormier"
+            android:stateListAnimator="@null"
+            android:textColor="@color/accent_1"
+            android:textOff="@string/overlayToggleOffText"
+            android:textOn="@string/overlayToggleOnText"
 
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"

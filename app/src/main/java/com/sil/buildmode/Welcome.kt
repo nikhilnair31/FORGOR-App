@@ -32,7 +32,6 @@ class Welcome : AppCompatActivity() {
 
     private fun generalInitRelated() {
         val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
-        Log.i(TAG, "access_token: $accessToken")
         if (!accessToken.isEmpty()) {
             launchNextActivity(Main::class.java)
         }

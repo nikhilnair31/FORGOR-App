@@ -30,6 +30,11 @@
             android:name="com.sil.services.ScreenshotService"
             android:enabled="true"
             android:exported="false" />
+        <service
+            android:name="com.sil.services.OverlayService"
+            android:enabled="true"
+            android:foregroundServiceType="mediaProjection"
+            android:exported="false" />
 
         <activity
             android:name=".Welcome"
@@ -63,6 +68,9 @@
             android:name=".Settings"
             android:windowSoftInputMode="adjustResize"
             android:exported="false" />
+        <activity
+            android:name=".MediaProjectionRequestActivity"
+            android:theme="@style/Theme.TransparentActivity" />
         <activity
             android:name=".Share"
             android:exported="true"
