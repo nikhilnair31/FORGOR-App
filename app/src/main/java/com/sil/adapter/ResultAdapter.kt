@@ -2,26 +2,26 @@ package com.sil.buildmode
 
 import android.content.Context
 import android.content.Intent
-import com.bumptech.glide.load.model.GlideUrl
-import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
-import android.net.Uri
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import android.widget.TextView
-import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
+import androidx.core.graphics.drawable.toDrawable
+import androidx.core.net.toUri
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.bumptech.glide.request.RequestOptions
-import org.json.JSONObject
-import androidx.core.graphics.drawable.toDrawable
-import com.sil.others.Helpers
-import androidx.core.net.toUri
 import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.model.GlideUrl
+import com.bumptech.glide.request.RequestOptions
+import com.sil.others.Helpers
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
 
 class ResultAdapter(private val context: Context, private val dataList: MutableList<JSONObject>) :
 RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
@@ -57,42 +57,72 @@ RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
         Log.i(TAG, "imageUrl: $imageUrl, postUrl: $postUrl")
 
         val blankDrawable = R.color.accent_0.toDrawable()
-        val glideUrl = Helpers.getImageURL(context, imageUrl)
 
-        if (glideUrl == null) {
-            holder.imageView.setImageDrawable(blankDrawable)
-            return
-        }
+        if (Helpers.isPdfFile(imagePath)) {
+            // Show a generic PDF icon
+            holder.imageView.setImageResource(android.R.drawable.ic_popup_disk_full) // Add your own `ic_pdf` icon to res/drawable
 
-        Glide.with(context)
-            .load(glideUrl)
-            .apply(
-                RequestOptions()
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .placeholder(R.color.accent_0.toDrawable())
-                    .error(R.color.accent_0.toDrawable())
-                    .fitCenter()  // or centerCrop() if you want more even alignment
-            )
-            .into(holder.imageView)
+            holder.itemView.setOnClickListener {
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        val localFile = Helpers.downloadPdfToCache(context, imageUrl)  // ✅ Use raw imageUrl, not GlideUrl.toString()
+                        val pdfUri = FileProvider.getUriForFile(
+                            context,
+                            "${context.packageName}.provider",
+                            localFile
+                        )
 
-        // Show link icon if postUrl is valid
-        if (postUrl.isBlank() || postUrl == "-") {
-            holder.linkIcon.visibility = View.GONE
-        } else {
-            holder.linkIcon.visibility = View.VISIBLE
-            holder.linkIcon.setOnClickListener {
-                val intent = Intent(Intent.ACTION_VIEW, postUrl.toUri())
-                context.startActivity(intent)
+                        val viewIntent = Intent(Intent.ACTION_VIEW)
+                        viewIntent.setDataAndType(pdfUri, "application/pdf")
+                        viewIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        context.startActivity(viewIntent)
+                    } catch (e: Exception) {
+                        withContext(Dispatchers.Main) {
+                            Helpers.showToast(context, "Failed to open PDF")
+                            Log.e(TAG, "Failed to open PDF", e)
+                        }
+                    }
+                }
             }
         }
+        else {
+            val glideUrl = Helpers.getImageURL(context, imageUrl)
 
-        holder.itemView.setOnClickListener {
-            if (imageUrl.isNotBlank()) {
-                val intent = Intent(context, FullImage::class.java)
-                intent.putExtra("imagePath", imagePath)
-                intent.putExtra("imageUrl", imageUrl)
-                intent.putExtra("postUrl", postUrl)
-                context.startActivity(intent)
+            if (glideUrl == null) {
+                holder.imageView.setImageDrawable(blankDrawable)
+                return
+            }
+
+            Glide.with(context)
+                .load(glideUrl)
+                .apply(
+                    RequestOptions()
+                        .diskCacheStrategy(DiskCacheStrategy.ALL)
+                        .placeholder(R.color.accent_0.toDrawable())
+                        .error(R.color.accent_0.toDrawable())
+                        .fitCenter()  // or centerCrop() if you want more even alignment
+                )
+                .into(holder.imageView)
+
+            // Show link icon if postUrl is valid
+            if (postUrl.isBlank() || postUrl == "-") {
+                holder.linkIcon.visibility = View.GONE
+            } else {
+                holder.linkIcon.visibility = View.VISIBLE
+                holder.linkIcon.setOnClickListener {
+                    val intent = Intent(Intent.ACTION_VIEW, postUrl.toUri())
+                    context.startActivity(intent)
+                }
+            }
+
+            holder.itemView.setOnClickListener {
+                if (imageUrl.isNotBlank()) {
+                    val intent = Intent(context, FullImage::class.java)
+                    intent.putExtra("imagePath", imagePath)
+                    intent.putExtra("imageUrl", imageUrl)
+                    intent.putExtra("postUrl", postUrl)
+                    context.startActivity(intent)
+                }
             }
         }
     }

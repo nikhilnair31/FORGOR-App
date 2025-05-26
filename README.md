@@ -15,6 +15,7 @@ Meet FORGOR
 - [ ] Add a new overlay/quick setting/icon to quick add
 
 ### Done
+- [x] Add basic text sharing
 - [x] Add delete post button
 - [x] Auto sign out after refresh token expires?
 - [x] Show image in a new activity

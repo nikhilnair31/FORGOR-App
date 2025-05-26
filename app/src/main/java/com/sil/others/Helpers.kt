@@ -34,6 +34,8 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
+import okio.buffer
+import okio.sink
 import org.json.JSONObject
 import java.io.File
 import java.io.FileNotFoundException
@@ -264,6 +266,101 @@ class Helpers {
                     lowerCaseName.endsWith(".jpeg") ||
                     lowerCaseName.endsWith(".png") ||
                     lowerCaseName.endsWith(".webp")
+        }
+        // endregion
+
+        // region Pdf Related
+        fun uploadPdfFileToServer(context: Context, pdfFile: File?) {
+            Log.i(TAG, "Uploading Pdf to Server...")
+
+            if (pdfFile == null || !pdfFile.exists() || !pdfFile.canRead() || pdfFile.length() <= 0) {
+                Log.e(TAG, "Pdf file does not exist or is unreadable.")
+                return
+            }
+
+            val prefs = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
+            val token = prefs.getString("access_token", "") ?: ""
+            if (token.isEmpty()) {
+                showToast(context, "Not logged in")
+                return
+            }
+
+            fun sendRequest(token: String) {
+                val requestBody = MultipartBody.Builder()
+                    .setType(MultipartBody.FORM)
+                    .addFormDataPart(
+                        "pdf",
+                        pdfFile.name,
+                        pdfFile.asRequestBody("application/pdf".toMediaTypeOrNull())
+                    )
+                    .build()
+
+                val request = Request.Builder()
+                    .url("$SERVER_URL/api/upload/pdf")
+                    .addHeader("Authorization", "Bearer $token")
+                    .addHeader("User-Agent", "buildmode")
+                    .addHeader("X-App-Key", APP_KEY)
+                    .post(requestBody)
+                    .build()
+
+                OkHttpClient().newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        Log.e(TAG, "Upload Pdf failed: ${e.localizedMessage}")
+                        showToast(context, "Upload Pdf failed!")
+                    }
+
+                    override fun onResponse(call: Call, response: Response) {
+                        if (response.code == 401) {
+                            // Token expired, attempt refresh
+                            refreshAccessToken(context) { success, newToken ->
+                                if (success && !newToken.isNullOrEmpty()) {
+                                    sendRequest(newToken) // Retry with new token
+                                } else {
+                                    showToast(context, "Session expired. Please log in again.")
+                                }
+                            }
+                            return
+                        }
+
+                        if (response.isSuccessful) {
+                            showToast(context, "Pdf uploaded successfully!")
+                        } else {
+                            Log.e(TAG, "Server error: ${response.code}")
+                            showToast(context, "Pdf upload failed!")
+                        }
+                    }
+                })
+            }
+
+            sendRequest(token)
+        }
+
+        fun isPdfFile(fileName: String): Boolean {
+            return fileName.lowercase().endsWith(".pdf")
+        }
+
+        fun downloadPdfToCache(context: Context, url: String): File {
+            val prefs = context.getSharedPreferences("com.sil.buildmode.generalSharedPrefs", Context.MODE_PRIVATE)
+            val token = prefs.getString("access_token", "") ?: ""
+            val appKey = BuildConfig.APP_KEY
+
+            val request = Request.Builder()
+                .url(url)
+                .addHeader("Authorization", "Bearer $token")
+                .addHeader("User-Agent", "buildmode")
+                .addHeader("X-App-Key", appKey)
+                .build()
+
+            val client = OkHttpClient()
+            val response = client.newCall(request).execute()
+            if (!response.isSuccessful) throw IOException("Failed to download PDF (code ${response.code})")
+
+            val file = File(context.cacheDir, "shared_${System.currentTimeMillis()}.pdf")
+            val sink = file.sink().buffer()
+            sink.writeAll(response.body!!.source())
+            sink.close()
+
+            return file
         }
         // endregion
 

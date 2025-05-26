@@ -48,6 +48,12 @@ class Share : AppCompatActivity() {
                     handleSendText(sharedText)
                 }
             }
+            type == "application/pdf" -> {
+                if (action == Intent.ACTION_SEND) {
+                    val pdfUri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
+                    handleSendPdf(pdfUri)
+                }
+            }
         }
 
         finish()
@@ -88,6 +94,20 @@ class Share : AppCompatActivity() {
         text?.let {
             Log.d(TAG, "handleSendText | received text: $it")
             Helpers.uploadPostText(this, it)
+        }
+    }
+    private fun handleSendPdf(pdfUri: Uri?) {
+        pdfUri?.let {
+            var realPath = Helpers.getRealPathFromUri(this, it)
+            if (realPath == null) {
+                val tempFile = Helpers.copyUriToTempFile(this, it)
+                realPath = tempFile?.absolutePath
+            }
+
+            realPath?.let { path ->
+                val file = File(path)
+                Helpers.uploadPdfFileToServer(this, file)
+            }
         }
     }
     // endregion
