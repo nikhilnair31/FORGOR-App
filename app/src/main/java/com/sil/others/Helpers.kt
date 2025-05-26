@@ -51,9 +51,103 @@ class Helpers {
         private const val PREFS_GENERAL = "com.sil.buildmode.generalSharedPrefs"
         private const val SERVER_URL = BuildConfig.SERVER_URL
         private const val APP_KEY = BuildConfig.APP_KEY
+        private const val USER_AGENT = BuildConfig.USER_AGENT
         // endregion
 
         // region Image Related
+        fun uploadImageFileToServer(context: Context, imageFile: File?) {
+            Log.i(TAG, "Uploading Image to Server...")
+
+            if (imageFile == null || !imageFile.exists() || !imageFile.canRead() || imageFile.length() <= 0) {
+                Log.e(TAG, "Image file does not exist or is unreadable.")
+                return
+            }
+
+            val prefs = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
+            val token = prefs.getString("access_token", "") ?: ""
+            if (token.isEmpty()) {
+                showToast(context, "Not logged in")
+                return
+            }
+
+            fun sendRequest(token: String) {
+                val requestBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+                    .addFormDataPart("image", imageFile.name, imageFile.asRequestBody("image/png".toMediaTypeOrNull()))
+                    .build()
+
+                val request = Request.Builder()
+                    .url("$SERVER_URL/api/upload/image")
+                    .addHeader("Authorization", "Bearer $token")
+                    .addHeader("User-Agent", USER_AGENT)
+                    .addHeader("X-App-Key", APP_KEY)
+                    .post(requestBody)
+                    .build()
+
+                OkHttpClient().newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        Log.e(TAG, "Upload failed: ${e.localizedMessage}")
+                        showToast(context, "Upload failed!")
+                    }
+
+                    override fun onResponse(call: Call, response: Response) {
+                        if (response.code == 401) {
+                            // Token expired, attempt refresh
+                            refreshAccessToken(context) { success, newToken ->
+                                if (success && !newToken.isNullOrEmpty()) {
+                                    sendRequest(newToken) // Retry with new token
+                                } else {
+                                    showToast(context, "Session expired. Please log in again.")
+                                }
+                            }
+                            return
+                        }
+
+                        if (response.isSuccessful) {
+                            showToast(context, "Image uploaded successfully!")
+                        } else {
+                            Log.e(TAG, "Server error: ${response.code}")
+                            showToast(context, "Upload failed!")
+                        }
+                    }
+                })
+            }
+
+            sendRequest(token)
+        }
+        fun uploadImageFile(context: Context, imageFile: File) {
+            CoroutineScope(Dispatchers.IO).launch {
+                // Start upload process
+                scheduleImageUploadWork(
+                    context,
+                    "image",
+                    imageFile
+                )
+            }
+        }
+        fun scheduleImageUploadWork(context: Context, uploadType: String, file: File?) {
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
+
+            val inputData = workDataOf(
+                "uploadType" to uploadType,
+                "filePath" to file?.absolutePath
+            )
+
+            val uploadWorkRequest = OneTimeWorkRequestBuilder<UploadWorker>()
+                .setBackoffCriteria(
+                    BackoffPolicy.EXPONENTIAL,
+                    OneTimeWorkRequest.MIN_BACKOFF_MILLIS,
+                    TimeUnit.MILLISECONDS
+                )
+                .setConstraints(constraints)
+                .setInputData(inputData)
+                .build()
+
+            val appContext = context.applicationContext
+            WorkManager.getInstance(appContext).enqueue(uploadWorkRequest)
+        }
+
         fun deleteImageFile(context: Context, imagePath: String) {
             Log.i(TAG, "Deleting image file: $imagePath")
 
@@ -73,7 +167,7 @@ class Helpers {
                 val request = Request.Builder()
                     .url("$SERVER_URL/api/delete/image")
                     .addHeader("Authorization", "Bearer $token")
-                    .addHeader("User-Agent", "buildmode")
+                    .addHeader("User-Agent", USER_AGENT)
                     .addHeader("X-App-Key", APP_KEY)
                     .post(requestBody)
                     .build()
@@ -110,101 +204,6 @@ class Helpers {
             sendRequest(token)
         }
 
-        fun uploadImageFileToServer(context: Context, imageFile: File?) {
-            Log.i(TAG, "Uploading Image to Server...")
-
-            if (imageFile == null || !imageFile.exists() || !imageFile.canRead() || imageFile.length() <= 0) {
-                Log.e(TAG, "Image file does not exist or is unreadable.")
-                return
-            }
-
-            val prefs = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
-            val token = prefs.getString("access_token", "") ?: ""
-            if (token.isEmpty()) {
-                showToast(context, "Not logged in")
-                return
-            }
-
-            fun sendRequest(token: String) {
-                val requestBody = MultipartBody.Builder().setType(MultipartBody.FORM)
-                    .addFormDataPart("image", imageFile.name, imageFile.asRequestBody("image/png".toMediaTypeOrNull()))
-                    .build()
-
-                val request = Request.Builder()
-                    .url("$SERVER_URL/api/upload/image")
-                    .addHeader("Authorization", "Bearer $token")
-                    .addHeader("User-Agent", "buildmode")
-                    .addHeader("X-App-Key", APP_KEY)
-                    .post(requestBody)
-                    .build()
-
-                OkHttpClient().newCall(request).enqueue(object : Callback {
-                    override fun onFailure(call: Call, e: IOException) {
-                        Log.e(TAG, "Upload failed: ${e.localizedMessage}")
-                        showToast(context, "Upload failed!")
-                    }
-
-                    override fun onResponse(call: Call, response: Response) {
-                        if (response.code == 401) {
-                            // Token expired, attempt refresh
-                            refreshAccessToken(context) { success, newToken ->
-                                if (success && !newToken.isNullOrEmpty()) {
-                                    sendRequest(newToken) // Retry with new token
-                                } else {
-                                    showToast(context, "Session expired. Please log in again.")
-                                }
-                            }
-                            return
-                        }
-
-                        if (response.isSuccessful) {
-                            showToast(context, "Image uploaded successfully!")
-                        } else {
-                            Log.e(TAG, "Server error: ${response.code}")
-                            showToast(context, "Upload failed!")
-                        }
-                    }
-                })
-            }
-
-            sendRequest(token)
-        }
-
-        fun uploadImageFile(context: Context, imageFile: File) {
-            CoroutineScope(Dispatchers.IO).launch {
-                // Start upload process
-                scheduleImageUploadWork(
-                    context,
-                    "image",
-                    imageFile
-                )
-            }
-        }
-
-        fun scheduleImageUploadWork(context: Context, uploadType: String, file: File?) {
-            val constraints = Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.CONNECTED)
-                .build()
-
-            val inputData = workDataOf(
-                "uploadType" to uploadType,
-                "filePath" to file?.absolutePath
-            )
-
-            val uploadWorkRequest = OneTimeWorkRequestBuilder<UploadWorker>()
-                .setBackoffCriteria(
-                    BackoffPolicy.EXPONENTIAL,
-                    OneTimeWorkRequest.MIN_BACKOFF_MILLIS,
-                    TimeUnit.MILLISECONDS
-                )
-                .setConstraints(constraints)
-                .setInputData(inputData)
-                .build()
-
-            val appContext = context.applicationContext
-            WorkManager.getInstance(appContext).enqueue(uploadWorkRequest)
-        }
-
         fun getImageURL(context: Context, imageUrl: String): GlideUrl? {
             // Log.i(TAG, "getImageURL | getting image URL...")
 
@@ -219,7 +218,7 @@ class Helpers {
 
                 val glideUrl = GlideUrl(imageUrl, LazyHeaders.Builder()
                     .addHeader("Authorization", "Bearer $accessToken")
-                    .addHeader("User-Agent", "buildmode")
+                    .addHeader("User-Agent", USER_AGENT)
                     .addHeader("X-App-Key", APP_KEY)
                     .build())
 
@@ -298,7 +297,7 @@ class Helpers {
                 val request = Request.Builder()
                     .url("$SERVER_URL/api/upload/pdf")
                     .addHeader("Authorization", "Bearer $token")
-                    .addHeader("User-Agent", "buildmode")
+                    .addHeader("User-Agent", USER_AGENT)
                     .addHeader("X-App-Key", APP_KEY)
                     .post(requestBody)
                     .build()
@@ -335,20 +334,16 @@ class Helpers {
             sendRequest(token)
         }
 
-        fun isPdfFile(fileName: String): Boolean {
-            return fileName.lowercase().endsWith(".pdf")
-        }
-
         fun downloadPdfToCache(context: Context, url: String): File {
-            val prefs = context.getSharedPreferences("com.sil.buildmode.generalSharedPrefs", Context.MODE_PRIVATE)
+            val prefs = context.getSharedPreferences(TAG, Context.MODE_PRIVATE)
             val token = prefs.getString("access_token", "") ?: ""
             val appKey = BuildConfig.APP_KEY
 
             val request = Request.Builder()
                 .url(url)
                 .addHeader("Authorization", "Bearer $token")
-                .addHeader("User-Agent", "buildmode")
-                .addHeader("X-App-Key", appKey)
+                .addHeader("User-Agent", USER_AGENT)
+                .addHeader("X-App-Key", APP_KEY)
                 .build()
 
             val client = OkHttpClient()
@@ -362,9 +357,13 @@ class Helpers {
 
             return file
         }
+
+        fun isPdfFile(fileName: String): Boolean {
+            return fileName.lowercase().endsWith(".pdf")
+        }
         // endregion
 
-        // region URL Related
+        // region Text Related
         fun uploadPostTextToServer(context: Context, postText: String) {
             Log.i(TAG, "Uploading text to server...")
 
@@ -385,7 +384,7 @@ class Helpers {
                 val request = Request.Builder()
                     .url("$SERVER_URL/api/upload/text")
                     .addHeader("Authorization", "Bearer $token")
-                    .addHeader("User-Agent", "buildmode")
+                    .addHeader("User-Agent", USER_AGENT)
                     .addHeader("X-App-Key", APP_KEY)
                     .post(requestBody)
                     .build()
@@ -421,7 +420,6 @@ class Helpers {
 
             sendRequest(accessToken)
         }
-
         fun uploadPostText(context: Context, postText: String) {
             CoroutineScope(Dispatchers.IO).launch {
                 // Start upload process
@@ -432,7 +430,6 @@ class Helpers {
                 )
             }
         }
-
         fun schedulePostURLUploadWork(context: Context, uploadType: String, postText: String) {
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
@@ -456,6 +453,48 @@ class Helpers {
             val appContext = context.applicationContext
             WorkManager.getInstance(appContext).enqueue(uploadWorkRequest)
         }
+
+        fun getTxtToCache(context: Context, url: String): File? {
+            try {
+                val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
+                val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
+                if (accessToken.isEmpty()) {
+                    Log.e(TAG, "Access token missing")
+                    showToast(context, "Not logged in")
+                    return null
+                }
+
+                val request = Request.Builder()
+                    .url(url)
+                    .addHeader("Authorization", "Bearer $accessToken")
+                    .addHeader("User-Agent", USER_AGENT)
+                    .addHeader("X-App-Key", APP_KEY)
+                    .build()
+
+                val client = OkHttpClient()
+                val response = client.newCall(request).execute()
+                if (!response.isSuccessful) throw IOException("Failed to download txt (code ${response.code})")
+
+                val file = File(context.cacheDir, "shared_${System.currentTimeMillis()}.txt")
+                val sink = file.sink().buffer()
+                sink.writeAll(response.body!!.source())
+                sink.close()
+
+                return file
+            }
+            catch (e: Exception) {
+                when (e) {
+                    is FileNotFoundException -> Log.e(TAG, "text file not found: ${e.message}")
+                    else -> Log.e(TAG, "Error in text download: ${e.localizedMessage}")
+                }
+                e.printStackTrace()
+                return null
+            }
+        }
+
+        fun isTextFile(fileName: String): Boolean {
+            return fileName.lowercase().endsWith(".txt")
+        }
         // endregion
 
         // region Auth Related
@@ -478,7 +517,7 @@ class Helpers {
             val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
             val request = Request.Builder()
                 .url("$SERVER_URL/api/refresh_token")
-                .addHeader("User-Agent", "buildmode")
+                .addHeader("User-Agent", USER_AGENT)
                 .addHeader("X-App-Key", APP_KEY)
                 .post(requestBody)
                 .build()
@@ -528,7 +567,7 @@ class Helpers {
 
             val request = Request.Builder()
                 .url("$SERVER_URL/api/register")
-                .addHeader("User-Agent", "buildmode")
+                .addHeader("User-Agent", USER_AGENT)
                 .addHeader("X-App-Key", APP_KEY)
                 .post(requestBody)
                 .build()
@@ -571,7 +610,7 @@ class Helpers {
 
             val request = Request.Builder()
                 .url("$SERVER_URL/api/login")
-                .addHeader("User-Agent", "buildmode")
+                .addHeader("User-Agent", USER_AGENT)
                 .addHeader("X-App-Key", APP_KEY)
                 .post(requestBody)
                 .build()
@@ -631,7 +670,7 @@ class Helpers {
                 val request = Request.Builder()
                     .url("$SERVER_URL/api/update-username")
                     .addHeader("Authorization", "Bearer $token")
-                    .addHeader("User-Agent", "buildmode")
+                    .addHeader("User-Agent", USER_AGENT)
                     .addHeader("X-App-Key", APP_KEY)
                     .post(requestBody)
                     .build()
@@ -715,7 +754,7 @@ class Helpers {
                 val request = Request.Builder()
                     .url("$SERVER_URL/api/query")
                     .addHeader("Authorization", "Bearer $token")
-                    .addHeader("User-Agent", "buildmode")
+                    .addHeader("User-Agent", USER_AGENT)
                     .addHeader("X-App-Key", APP_KEY)
                     .post(requestBody)
                     .build()

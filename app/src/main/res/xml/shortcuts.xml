@@ -4,7 +4,7 @@
         android:shortcutShortLabel="@string/shortcut_label_save_image"
         android:shortcutLongLabel="@string/shortcut_label_save_image"
         android:enabled="true"
-        android:icon="@mipmap/launcher_round">
+        android:icon="@mipmap/launcher_foreground">
 
         <share-target
             android:targetClass="com.sil.buildmode.Share">
