@@ -24,8 +24,11 @@ import androidx.core.net.toUri
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 
 class ResultAdapter(private val context: Context, private val dataList: MutableList<JSONObject>) :
-    RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
+RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
+    // region Vars
+    private val TAG = "ResultAdapter"
     private val SERVER_URL = BuildConfig.SERVER_URL
+    // endregion
 
     class ResultViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val imageView: ImageView = view.findViewById(R.id.imageView)
@@ -46,10 +49,12 @@ class ResultAdapter(private val context: Context, private val dataList: MutableL
 
     override fun onBindViewHolder(holder: ResultViewHolder, position: Int) {
         val item = dataList[position]
-        val rawUrl = item.optString("image_path", "")
-        val imageUrl = if (rawUrl.startsWith("http")) rawUrl else "$SERVER_URL/api/get_image/$rawUrl"
+        Log.i(TAG, "item: $item")
+
+        val imagePath = item.optString("image_path", "")
+        val imageUrl = if (imagePath.startsWith("http")) imagePath else "$SERVER_URL/api/get_image/$imagePath"
         val postUrl = item.optString("post_url", "").trim()
-        Log.i("ResultAdapter", "imageUrl: $imageUrl, postUrl: $postUrl")
+        Log.i(TAG, "imageUrl: $imageUrl, postUrl: $postUrl")
 
         val blankDrawable = R.color.accent_0.toDrawable()
         val glideUrl = Helpers.getImageURL(context, imageUrl)
@@ -84,6 +89,7 @@ class ResultAdapter(private val context: Context, private val dataList: MutableL
         holder.itemView.setOnClickListener {
             if (imageUrl.isNotBlank()) {
                 val intent = Intent(context, FullImage::class.java)
+                intent.putExtra("imagePath", imagePath)
                 intent.putExtra("imageUrl", imageUrl)
                 intent.putExtra("postUrl", postUrl)
                 context.startActivity(intent)
@@ -93,13 +99,7 @@ class ResultAdapter(private val context: Context, private val dataList: MutableL
 
     override fun getItemCount(): Int = dataList.size
 
-    private fun loadImageWithRetry(
-        imageView: ImageView,
-        glideUrl: GlideUrl,
-        attempt: Int,
-        maxRetries: Int,
-        baseDelayMillis: Long = 300L
-    ) {
+    private fun loadImageWithRetry(imageView: ImageView, glideUrl: GlideUrl, attempt: Int, maxRetries: Int, baseDelayMillis: Long = 300L) {
         Glide.with(context)
             .load(glideUrl)
             .apply(
@@ -122,17 +122,17 @@ class ResultAdapter(private val context: Context, private val dataList: MutableL
                 }
 
                 override fun onLoadFailed(errorDrawable: Drawable?) {
-                    Log.w("ResultAdapter", "onLoadFailed for $glideUrl (attempt $attempt)")
+                    Log.w(TAG, "onLoadFailed for $glideUrl (attempt $attempt)")
 
                     if (attempt < maxRetries) {
                         val delay = baseDelayMillis * (1 shl attempt)
 
                         imageView.postDelayed({
-                            Log.i("ResultAdapter", "Retrying $glideUrl (attempt ${attempt + 1}) after ${delay}ms")
+                            Log.i(TAG, "Retrying $glideUrl (attempt ${attempt + 1}) after ${delay}ms")
                             loadImageWithRetry(imageView, glideUrl, attempt + 1, maxRetries, baseDelayMillis)
                         }, delay)
                     } else {
-                        Log.e("ResultAdapter", "Image load failed after $maxRetries attempts: $glideUrl")
+                        Log.e(TAG, "Image load failed after $maxRetries attempts: $glideUrl")
                         imageView.setImageDrawable(errorDrawable)
                     }
                 }

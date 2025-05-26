@@ -1,6 +1,5 @@
 package com.sil.others
 
-import android.app.Activity
 import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
@@ -12,8 +11,6 @@ import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
 import androidx.core.content.edit
-import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.NetworkType
@@ -24,8 +21,6 @@ import androidx.work.workDataOf
 import com.bumptech.glide.load.model.GlideUrl
 import com.bumptech.glide.load.model.LazyHeaders
 import com.sil.buildmode.BuildConfig
-import com.sil.buildmode.R
-import com.sil.buildmode.ResultAdapter
 import com.sil.workers.UploadWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -57,6 +52,62 @@ class Helpers {
         // endregion
 
         // region Image Related
+        fun deleteImageFile(context: Context, imagePath: String) {
+            Log.i(TAG, "Deleting image file: $imagePath")
+
+            val prefs = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
+            val token = prefs.getString("access_token", "") ?: ""
+            if (token.isEmpty()) {
+                showToast(context, "Not logged in")
+                return
+            }
+
+            fun sendRequest(token: String) {
+                val requestBody = MultipartBody.Builder()
+                    .setType(MultipartBody.FORM)
+                    .addFormDataPart("image_name", imagePath)
+                    .build()
+
+                val request = Request.Builder()
+                    .url("$SERVER_URL/api/delete/image")
+                    .addHeader("Authorization", "Bearer $token")
+                    .addHeader("User-Agent", "buildmode")
+                    .addHeader("X-App-Key", APP_KEY)
+                    .post(requestBody)
+                    .build()
+
+                OkHttpClient().newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        Log.e(TAG, "Delete failed: ${e.localizedMessage}")
+                        showToast(context, "Delete failed!")
+                    }
+
+                    override fun onResponse(call: Call, response: Response) {
+                        if (response.code == 401) {
+                            // Token expired, attempt refresh
+                            refreshAccessToken(context) { success, newToken ->
+                                if (success && !newToken.isNullOrEmpty()) {
+                                    sendRequest(newToken) // Retry with new token
+                                } else {
+                                    showToast(context, "Session expired. Please log in again.")
+                                }
+                            }
+                            return
+                        }
+
+                        if (response.isSuccessful) {
+                            showToast(context, "Image deleted successfully!")
+                        } else {
+                            Log.e(TAG, "Server error: ${response.code}")
+                            showToast(context, "Image delete failed!")
+                        }
+                    }
+                })
+            }
+
+            sendRequest(token)
+        }
+
         fun uploadImageFileToServer(context: Context, imageFile: File?) {
             Log.i(TAG, "Uploading Image to Server...")
 
@@ -72,7 +123,7 @@ class Helpers {
                 return
             }
 
-            fun send(token: String) {
+            fun sendRequest(token: String) {
                 val requestBody = MultipartBody.Builder().setType(MultipartBody.FORM)
                     .addFormDataPart("image", imageFile.name, imageFile.asRequestBody("image/png".toMediaTypeOrNull()))
                     .build()
@@ -96,7 +147,7 @@ class Helpers {
                             // Token expired, attempt refresh
                             refreshAccessToken(context) { success, newToken ->
                                 if (success && !newToken.isNullOrEmpty()) {
-                                    send(newToken) // Retry with new token
+                                    sendRequest(newToken) // Retry with new token
                                 } else {
                                     showToast(context, "Session expired. Please log in again.")
                                 }
@@ -114,7 +165,7 @@ class Helpers {
                 })
             }
 
-            send(token)
+            sendRequest(token)
         }
 
         fun uploadImageFile(context: Context, imageFile: File) {
@@ -479,7 +530,7 @@ class Helpers {
             """.trimIndent()
             val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
 
-            fun send(token: String) {
+            fun sendRequest(token: String) {
                 val request = Request.Builder()
                     .url("$SERVER_URL/api/update-username")
                     .addHeader("Authorization", "Bearer $token")
@@ -501,7 +552,7 @@ class Helpers {
                         if (response.code == 401) {
                             refreshAccessToken(context) { success, newToken ->
                                 if (success && !newToken.isNullOrEmpty()) {
-                                    send(newToken) // Retry with refreshed token
+                                    sendRequest(newToken) // Retry with refreshed token
                                 } else {
                                     showToast(context, "Session expired. Please log in again.")
                                     callback(false)
@@ -522,7 +573,7 @@ class Helpers {
                 })
             }
 
-            send(accessToken)
+            sendRequest(accessToken)
         }
 
         fun autoLogout(context: Context) {
