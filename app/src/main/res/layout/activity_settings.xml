@@ -154,26 +154,6 @@
 
             />
 
-        <ToggleButton
-            android:id="@+id/overlayToggleButton"
-            android:layout_width="match_parent"
-            android:layout_height="64dp"
-            android:layout_marginTop="8dp"
-
-            app:elevation="0dp"
-            android:checked="false"
-            android:background="@color/base_0"
-            android:drawableTint="@color/accent_1"
-            android:fontFamily="@font/venus_cormier"
-            android:stateListAnimator="@null"
-            android:textColor="@color/accent_1"
-            android:textOff="@string/overlayToggleOffText"
-            android:textOn="@string/overlayToggleOnText"
-
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/featuresTextView" />
-
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

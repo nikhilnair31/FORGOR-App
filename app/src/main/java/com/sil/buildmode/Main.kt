@@ -20,7 +20,6 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.sil.others.Helpers
-import com.sil.services.OverlayService
 import com.sil.services.ScreenshotService
 import org.json.JSONObject
 
@@ -52,7 +51,6 @@ class Main : AppCompatActivity() {
 
         initUI()
         checkScreenshotServiceStatus()
-        checkOverlayServiceStatus()
     }
 
     private fun initUI() {
@@ -148,24 +146,6 @@ class Main : AppCompatActivity() {
         }
         else {
             Log.i(TAG, "ScreenshotService status is as expected.")
-        }
-    }
-    private fun checkOverlayServiceStatus() {
-        val wasOverlayServiceRunning = generalSharedPreferences.getBoolean(KEY_OVERLAY_ENABLED, false)
-        val isOverlayServiceRunning = Helpers.isServiceRunning(this, OverlayService::class.java)
-
-        val overlayServiceIntent = Intent(this, OverlayService::class.java)
-
-        if (wasOverlayServiceRunning && !isOverlayServiceRunning) {
-            Log.i(TAG, "OverlayService was running but is not running anymore. Starting it again.")
-            startForegroundService(overlayServiceIntent)
-        }
-        else if (!wasOverlayServiceRunning && isOverlayServiceRunning) {
-            Log.i(TAG, "OverlayService was not running but is running now. Stopping it.")
-            stopService(overlayServiceIntent)
-        }
-        else {
-            Log.i(TAG, "OverlayService status is as expected.")
         }
     }
     // endregion

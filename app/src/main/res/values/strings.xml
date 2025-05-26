@@ -26,8 +26,6 @@
     <string name="featuresText">FEATURES</string>
     <string name="screenshotToggleOnText">MONITORING ALL SCREENSHOTS</string>
     <string name="screenshotToggleOffText">MONITOR SCREENSHOTS</string>
-    <string name="overlayToggleOnText">OVERLAY ON</string>
-    <string name="overlayToggleOffText">OVERLAY OFF</string>
     <string name="stopForgoringText">STOP FORGORING</string>
 
     <string name="searchImagesDescription">SEARCH IMAGES</string>

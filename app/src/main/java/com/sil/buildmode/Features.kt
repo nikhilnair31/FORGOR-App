@@ -16,7 +16,6 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import com.sil.others.Helpers.Companion.showToast
-import com.sil.services.OverlayService
 import com.sil.services.ScreenshotService
 import androidx.core.net.toUri
 
@@ -25,18 +24,14 @@ class Features : AppCompatActivity() {
     private val TAG = "Features"
     private val PREFS_GENERAL = "com.sil.buildmode.generalSharedPrefs"
     private val KEY_SCREENSHOT_ENABLED = "isScreenshotMonitoringEnabled"
-    private val KEY_OVERLAY_ENABLED = "isOverlayEnabled"
-
     private lateinit var generalSharedPreferences: SharedPreferences
 
     private val initRequestCode = 100
     private val batteryUnrestrictedRequestCode = 103
-    private val overlayPermissionRequestCode = 104
 
     private var pendingToggle: (() -> Unit)? = null
 
     private lateinit var screenshotToggleButton: ToggleButton
-    private lateinit var overlayToggleButton: ToggleButton
     private lateinit var buttonToMain: Button
     // endregion
 
@@ -52,7 +47,6 @@ class Features : AppCompatActivity() {
 
     private fun initRelated() {
         screenshotToggleButton = findViewById(R.id.screenshotToggleButton)
-        overlayToggleButton = findViewById(R.id.overlayToggleButton)
         buttonToMain = findViewById(R.id.buttonToMain)
 
         screenshotToggleButton.setOnCheckedChangeListener { _, isChecked ->
@@ -75,26 +69,6 @@ class Features : AppCompatActivity() {
                 updateToggle(screenshotToggleButton, false)
             }
         }
-        overlayToggleButton.setOnCheckedChangeListener { _, isChecked ->
-            Log.i(TAG, "Overlay toggle changed: isChecked=$isChecked")
-
-            overlayToggleButton.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-
-            val serviceIntent = Intent(this, OverlayService::class.java)
-            if (isChecked) {
-                if (areOverlayPermissionsGranted()) {
-                    startOverlayService(serviceIntent)
-                } else {
-                    pendingToggle = { startOverlayService(serviceIntent) }
-                    requestOverlayPermission()
-                    overlayToggleButton.isChecked = false
-                }
-            } else {
-                stopService(serviceIntent)
-                generalSharedPreferences.edit { putBoolean(KEY_OVERLAY_ENABLED, false) }
-                updateToggle(overlayToggleButton, false)
-            }
-        }
         buttonToMain.setOnClickListener {
             val intent = Intent(this, Main::class.java)
             startActivity(intent)
@@ -110,19 +84,12 @@ class Features : AppCompatActivity() {
 
         toggle.text = when (toggle) {
             screenshotToggleButton -> getString(if (isChecked) R.string.screenshotToggleOnText else R.string.screenshotToggleOffText)
-            overlayToggleButton -> getString(if (isChecked) R.string.overlayToggleOnText else R.string.overlayToggleOffText)
             else -> ""
         }
     }
     // endregion
 
     // region Service Related
-    private fun startOverlayService(serviceIntent: Intent) {
-        startService(serviceIntent)
-        generalSharedPreferences.edit { putBoolean(KEY_SCREENSHOT_ENABLED, true) }
-        updateToggle(overlayToggleButton, true)
-    }
-
     private fun startScreenshotService(serviceIntent: Intent) {
         startForegroundService(serviceIntent)
         generalSharedPreferences.edit { putBoolean(KEY_SCREENSHOT_ENABLED, true) }
@@ -142,17 +109,6 @@ class Features : AppCompatActivity() {
             requestIgnoreBatteryOptimizations()
         } else {
             onScreenshotPermissionsGranted()
-        }
-    }
-    private fun requestOverlayPermission() {
-        if (!android.provider.Settings.canDrawOverlays(this)) {
-            val intent = Intent(
-                android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                "package:$packageName".toUri()
-            )
-            startActivityForResult(intent, overlayPermissionRequestCode)
-        } else {
-            onOverlayPermissionGranted()
         }
     }
 
@@ -175,14 +131,6 @@ class Features : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
 
         when (requestCode) {
-            overlayPermissionRequestCode -> {
-                if (android.provider.Settings.canDrawOverlays(this)) {
-                    onOverlayPermissionGranted()
-                } else {
-                    showToast(this, "Overlay permission not granted.")
-                    overlayToggleButton.isChecked = false
-                }
-            }
             batteryUnrestrictedRequestCode -> {
                 if (isBatteryOptimized()) {
                     onScreenshotPermissionsGranted()
@@ -223,12 +171,6 @@ class Features : AppCompatActivity() {
         Log.i(TAG, "Screenshot permissions granted")
         pendingToggle?.invoke()
         pendingToggle = null
-    }
-    private fun onOverlayPermissionGranted() {
-        val intent = Intent(this, OverlayService::class.java)
-        startService(intent)
-        generalSharedPreferences.edit { putBoolean(KEY_OVERLAY_ENABLED, true) }
-        updateToggle(overlayToggleButton, true)
     }
     // endregion
 }
