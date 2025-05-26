@@ -28,12 +28,12 @@ class UploadWorker(context: Context, workerParams: WorkerParameters) : Worker(co
             return Result.success()
         }
         else if (uploadType == "text") {
-            val postURL = inputData.getString("postURL")
+            val postText = inputData.getString("postText")
 
-            if (!postURL.isNullOrEmpty()) {
-                Helpers.uploadPostURLToServer(
+            if (!postText.isNullOrEmpty()) {
+                Helpers.uploadPostTextToServer(
                     applicationContext,
-                    postURL
+                    postText
                 )
                 return Result.success()
             }

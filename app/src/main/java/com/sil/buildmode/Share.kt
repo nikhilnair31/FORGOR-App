@@ -87,7 +87,7 @@ class Share : AppCompatActivity() {
     private fun handleSendText(text: String?) {
         text?.let {
             Log.d(TAG, "handleSendText | received text: $it")
-            Helpers.uploadPostURL(this, it)
+            Helpers.uploadPostText(this, it)
         }
     }
     // endregion

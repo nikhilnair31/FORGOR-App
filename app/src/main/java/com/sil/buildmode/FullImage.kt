@@ -29,7 +29,6 @@ class FullImage : AppCompatActivity() {
             .into(imageView)
 
         if (postUrl.isNotBlank() && postUrl != "-") {
-            linkTextView.text = "${R.string.viewPost}"
             linkTextView.setOnClickListener {
                 val browserIntent = android.content.Intent(android.content.Intent.ACTION_VIEW, postUrl.toUri())
                 startActivity(browserIntent)

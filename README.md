@@ -7,7 +7,6 @@ Meet FORGOR
 ## Tasks
 
 ### To-Do
-- [ ] Add delete post button
 - [ ] Find app signing key for Play Store
 - [ ] Create signed app bundle
 
@@ -16,6 +15,7 @@ Meet FORGOR
 - [ ] Add a new overlay/quick setting/icon to quick add
 
 ### Done
+- [x] Add delete post button
 - [x] Auto sign out after refresh token expires?
 - [x] Show image in a new activity
 - [x] Show a "Similar" button in the new activity

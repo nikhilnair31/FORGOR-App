@@ -268,8 +268,8 @@ class Helpers {
         // endregion
 
         // region URL Related
-        fun uploadPostURLToServer(context: Context, postURL: String) {
-            Log.i(TAG, "Uploading URL to server...")
+        fun uploadPostTextToServer(context: Context, postText: String) {
+            Log.i(TAG, "Uploading text to server...")
 
             val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
             val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
@@ -282,11 +282,11 @@ class Helpers {
             fun sendRequest(token: String) {
                 val requestBody = MultipartBody.Builder()
                     .setType(MultipartBody.FORM)
-                    .addFormDataPart("url", postURL)
+                    .addFormDataPart("text", postText)
                     .build()
 
                 val request = Request.Builder()
-                    .url("$SERVER_URL/api/upload/url")
+                    .url("$SERVER_URL/api/upload/text")
                     .addHeader("Authorization", "Bearer $token")
                     .addHeader("User-Agent", "buildmode")
                     .addHeader("X-App-Key", APP_KEY)
@@ -301,7 +301,7 @@ class Helpers {
                 client.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException) {
                         Log.e(TAG, "Upload failed: ${e.localizedMessage}")
-                        showToast(context, "Save failed!")
+                        showToast(context, "Text save failed!")
                     }
 
                     override fun onResponse(call: Call, response: Response) {
@@ -314,9 +314,9 @@ class Helpers {
                         }
 
                         if (response.isSuccessful) {
-                            showToast(context, "Image saved!")
+                            showToast(context, "Text saved!")
                         } else {
-                            showToast(context, "Save failed!")
+                            showToast(context, "Text save failed!")
                         }
                     }
                 })
@@ -325,25 +325,25 @@ class Helpers {
             sendRequest(accessToken)
         }
 
-        fun uploadPostURL(context: Context, postURL: String) {
+        fun uploadPostText(context: Context, postText: String) {
             CoroutineScope(Dispatchers.IO).launch {
                 // Start upload process
                 schedulePostURLUploadWork(
                     context,
                     "text",
-                    postURL
+                    postText
                 )
             }
         }
 
-        fun schedulePostURLUploadWork(context: Context, uploadType: String, postURL: String) {
+        fun schedulePostURLUploadWork(context: Context, uploadType: String, postText: String) {
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build()
 
             val inputData = workDataOf(
                 "uploadType" to uploadType,
-                "postURL" to postURL,
+                "postText" to postText,
             )
 
             val uploadWorkRequest = OneTimeWorkRequestBuilder<UploadWorker>()
