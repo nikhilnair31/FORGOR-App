@@ -62,9 +62,6 @@
             android:exported="false" >
         </activity>
         <activity
-            android:name=".FullImageActivity"
-        />
-        <activity
             android:name=".Settings"
             android:windowSoftInputMode="adjustResize"
             android:exported="false" />

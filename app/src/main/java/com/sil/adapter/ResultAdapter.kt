@@ -83,10 +83,7 @@ class ResultAdapter(private val context: Context, private val dataList: MutableL
 
         holder.itemView.setOnClickListener {
             if (imageUrl.isNotBlank()) {
-                val intent = Intent(context, FullImageActivity::class.java)
-                intent.putExtra("imageUrl", imageUrl)
-                intent.putExtra("postUrl", postUrl)
-                context.startActivity(intent)
+                showImagePopup(imageUrl, postUrl)
             }
         }
     }
