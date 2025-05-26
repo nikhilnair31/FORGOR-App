@@ -9,6 +9,4 @@
         <item name="android:windowBackground">@color/base_0</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>
-    <style name="Base.Theme.BUILDMODE" parent="Theme.Material3.DayNight.NoActionBar">
-    </style>
 </resources>

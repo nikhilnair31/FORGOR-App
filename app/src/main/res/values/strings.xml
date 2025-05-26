@@ -3,11 +3,8 @@
 
     <string name="shortcut_label_save_image">Save to FORGOR</string>
 
-    <string name="nextButton">next button</string>
-
     <string name="appLogoDescription">app logo</string>
 
-    <string name="welcomeText">WELCOME</string>
     <string name="signInText">SIGN IN</string>
     <string name="createAccountText">CREATE ACCOUNT</string>
     <string name="otherSignInText">OTHER SIGN IN</string>
@@ -31,7 +28,6 @@
     <string name="searchImagesDescription">SEARCH IMAGES</string>
     <string name="searchHint">WHAT ARE YOU LOOKING FOR?</string>
     <string name="imageDescription">SEARCH IMAGE RESULT</string>
-    <string name="noMatchingSearchResults">NO RESULTS :(</string>
 
     <string name="settingsText">SETTINGS</string>
     <string name="settingsUsernameText">USER</string>

@@ -25,7 +25,6 @@
         <!-- Permission Related-->
 
         <TextView
-            android:id="@+id/signInTextView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="12dp"
@@ -59,7 +58,6 @@
             app:layout_constraintTop_toBottomOf="@+id/permissionsTextView" />
 
         <TextView
-            android:id="@+id/createAccountTextView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
 
@@ -96,7 +94,6 @@
             app:layout_constraintTop_toBottomOf="@+id/permissionsTextView" />
 
         <TextView
-            android:id="@+id/otherSignInTextView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
 

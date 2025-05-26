@@ -7,7 +7,6 @@
     tools:context=".Settings">
 
     <TextView
-        android:id="@+id/textView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
 
