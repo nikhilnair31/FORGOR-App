@@ -314,9 +314,9 @@ class Helpers {
         fun refreshAccessToken(context: Context, onComplete: (success: Boolean, newToken: String?) -> Unit) {
             val prefs = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
             val refreshToken = prefs.getString("refresh_token", "") ?: ""
-
             if (refreshToken.isEmpty()) {
                 Log.e(TAG, "Refresh token missing")
+                autoLogout(context)
                 onComplete(false, null)
                 return
             }
@@ -338,6 +338,7 @@ class Helpers {
             OkHttpClient().newCall(request).enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
                     Log.e(TAG, "Refresh token failed: ${e.localizedMessage}")
+                    autoLogout(context)
                     onComplete(false, null)
                 }
 
@@ -359,6 +360,7 @@ class Helpers {
                     } else {
                         Log.e(TAG, "Refresh token failed: $responseBody")
                     }
+                    autoLogout(context)
                     onComplete(false, null)
                 }
             })
@@ -521,6 +523,22 @@ class Helpers {
             }
 
             send(accessToken)
+        }
+
+        fun autoLogout(context: Context) {
+            Log.i(TAG, "autoLogout | Logging out user...")
+
+            val prefs = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
+            prefs.edit {
+                remove("access_token")
+                remove("refresh_token")
+            }
+
+            showToast(context, "Session expired. Please sign in again.")
+
+            val intent = Intent(context, com.sil.buildmode.Welcome::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            context.startActivity(intent)
         }
         // endregion
 

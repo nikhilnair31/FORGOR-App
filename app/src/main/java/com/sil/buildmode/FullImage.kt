@@ -1,6 +1,7 @@
 package com.sil.buildmode
 
 import android.os.Bundle
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -16,6 +17,7 @@ class FullImage : AppCompatActivity() {
 
         val imageView = findViewById<ImageView>(R.id.fullImageView)
         val linkTextView = findViewById<TextView>(R.id.linkTextView)
+        val deleteButton = findViewById<ImageButton>(R.id.deleteButton)
 
         Glide.with(this)
             .load(imageUrl)
@@ -29,6 +31,10 @@ class FullImage : AppCompatActivity() {
             }
         } else {
             linkTextView.visibility = android.view.View.GONE
+        }
+
+        deleteButton.setOnClickListener {
+            // Handle delete button click
         }
     }
 }

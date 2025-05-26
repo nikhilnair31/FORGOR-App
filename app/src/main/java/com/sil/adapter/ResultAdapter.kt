@@ -138,34 +138,4 @@ class ResultAdapter(private val context: Context, private val dataList: MutableL
                 }
             })
     }
-
-    private fun showImagePopup(imageUrl: String, postUrl: String) {
-        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_full_image, null)
-        val imageView = dialogView.findViewById<com.github.chrisbanes.photoview.PhotoView>(R.id.dialogImageView)
-        val linkView = dialogView.findViewById<TextView>(R.id.linkTextView)
-
-        Glide.with(context)
-            .load(imageUrl)
-            .into(imageView)
-
-        val dialog = android.app.AlertDialog.Builder(context)
-            .setView(dialogView)
-            .setCancelable(true)
-            .create()
-
-        val darkColor = ContextCompat.getColor(context, R.color.accent_1)
-        val darkBackgroundDrawable = darkColor.toDrawable()
-        dialog.window?.setBackgroundDrawable(darkBackgroundDrawable)
-        dialog.show()
-
-        if (postUrl.isNotBlank() && postUrl != "-") {
-            linkView.visibility = View.VISIBLE
-            linkView.setOnClickListener {
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(postUrl))
-                context.startActivity(intent)
-            }
-        } else {
-            linkView.visibility = View.GONE
-        }
-    }
 }
