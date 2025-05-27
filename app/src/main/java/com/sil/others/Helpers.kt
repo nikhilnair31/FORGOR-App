@@ -42,6 +42,7 @@ import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStream
+import java.util.TimeZone
 import java.util.concurrent.TimeUnit
 
 class Helpers {
@@ -75,11 +76,14 @@ class Helpers {
                     .addFormDataPart("image", imageFile.name, imageFile.asRequestBody("image/png".toMediaTypeOrNull()))
                     .build()
 
+                val timeZoneId = TimeZone.getDefault().id
+
                 val request = Request.Builder()
                     .url("$SERVER_URL/api/upload/image")
                     .addHeader("Authorization", "Bearer $token")
                     .addHeader("User-Agent", USER_AGENT)
                     .addHeader("X-App-Key", APP_KEY)
+                    .addHeader("X-Timezone", timeZoneId)
                     .post(requestBody)
                     .build()
 
@@ -99,6 +103,10 @@ class Helpers {
                                     showToast(context, "Session expired. Please log in again.")
                                 }
                             }
+                            return
+                        }
+                        if (response.code == 403) {
+                            showToast(context, "Daily save limit reached")
                             return
                         }
 
@@ -164,11 +172,14 @@ class Helpers {
                     .addFormDataPart("file_name", fileName)
                     .build()
 
+                val timeZoneId = TimeZone.getDefault().id
+
                 val request = Request.Builder()
                     .url("$SERVER_URL/api/delete/file")
                     .addHeader("Authorization", "Bearer $token")
                     .addHeader("User-Agent", USER_AGENT)
                     .addHeader("X-App-Key", APP_KEY)
+                    .addHeader("X-Timezone", timeZoneId)
                     .post(requestBody)
                     .build()
 
@@ -188,6 +199,10 @@ class Helpers {
                                     showToast(context, "Session expired. Please log in again.")
                                 }
                             }
+                            return
+                        }
+                        if (response.code == 403) {
+                            showToast(context, "Daily save limit reached")
                             return
                         }
 
@@ -216,10 +231,13 @@ class Helpers {
                     return null
                 }
 
+                val timeZoneId = TimeZone.getDefault().id
+
                 val glideUrl = GlideUrl(imageUrl, LazyHeaders.Builder()
                     .addHeader("Authorization", "Bearer $accessToken")
                     .addHeader("User-Agent", USER_AGENT)
                     .addHeader("X-App-Key", APP_KEY)
+                    .addHeader("X-Timezone", timeZoneId)
                     .build())
 
                 return glideUrl
@@ -294,11 +312,14 @@ class Helpers {
                     )
                     .build()
 
+                val timeZoneId = TimeZone.getDefault().id
+
                 val request = Request.Builder()
                     .url("$SERVER_URL/api/upload/pdf")
                     .addHeader("Authorization", "Bearer $token")
                     .addHeader("User-Agent", USER_AGENT)
                     .addHeader("X-App-Key", APP_KEY)
+                    .addHeader("X-Timezone", timeZoneId)
                     .post(requestBody)
                     .build()
 
@@ -318,6 +339,10 @@ class Helpers {
                                     showToast(context, "Session expired. Please log in again.")
                                 }
                             }
+                            return
+                        }
+                        if (response.code == 403) {
+                            showToast(context, "Daily save limit reached")
                             return
                         }
 
@@ -343,11 +368,14 @@ class Helpers {
                 return File("")
             }
 
+            val timeZoneId = TimeZone.getDefault().id
+
             val request = Request.Builder()
                 .url(url)
                 .addHeader("Authorization", "Bearer $accessToken")
                 .addHeader("User-Agent", USER_AGENT)
                 .addHeader("X-App-Key", APP_KEY)
+                .addHeader("X-Timezone", timeZoneId)
                 .build()
 
             try {
@@ -393,11 +421,14 @@ class Helpers {
                     .addFormDataPart("text", postText)
                     .build()
 
+                val timeZoneId = TimeZone.getDefault().id
+
                 val request = Request.Builder()
                     .url("$SERVER_URL/api/upload/text")
                     .addHeader("Authorization", "Bearer $token")
                     .addHeader("User-Agent", USER_AGENT)
                     .addHeader("X-App-Key", APP_KEY)
+                    .addHeader("X-Timezone", timeZoneId)
                     .post(requestBody)
                     .build()
 
@@ -418,6 +449,10 @@ class Helpers {
                                 if (success && newToken != null) sendRequest(newToken)
                                 else showToast(context, "Login expired")
                             }
+                            return
+                        }
+                        if (response.code == 403) {
+                            showToast(context, "Daily save limit reached")
                             return
                         }
 
@@ -476,11 +511,14 @@ class Helpers {
                     return null
                 }
 
+                val timeZoneId = TimeZone.getDefault().id
+
                 val request = Request.Builder()
                     .url(url)
                     .addHeader("Authorization", "Bearer $accessToken")
                     .addHeader("User-Agent", USER_AGENT)
                     .addHeader("X-App-Key", APP_KEY)
+                    .addHeader("X-Timezone", timeZoneId)
                     .build()
 
                 val client = OkHttpClient()
@@ -509,6 +547,78 @@ class Helpers {
         }
         // endregion
 
+        // region Saving Related
+        fun getSavesLeft(context: Context, callback: (Int) -> Unit) {
+            Log.i(TAG, "Getting saves left from server...")
+
+            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
+            val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
+            if (accessToken.isEmpty()) {
+                Log.e(TAG, "Access token missing")
+                showToast(context, "Not logged in")
+                callback(0)
+                return
+            }
+
+            val timeZoneId = TimeZone.getDefault().id
+
+            fun sendRequest(token: String) {
+                val request = Request.Builder()
+                    .url("$SERVER_URL/api/get_saves_left")
+                    .addHeader("Authorization", "Bearer $token")
+                    .addHeader("User-Agent", USER_AGENT)
+                    .addHeader("X-App-Key", APP_KEY)
+                    .addHeader("X-Timezone", timeZoneId)
+                    .build()
+
+                OkHttpClient().newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        Log.e(TAG, "Failed to check saves: ${e.localizedMessage}")
+                        showToast(context, "Failed to check saves!")
+                        callback(0)
+                    }
+
+                    override fun onResponse(call: Call, response: Response) {
+                        if (response.code == 401) {
+                            refreshAccessToken(context) { success, newToken ->
+                                if (success && newToken != null) sendRequest(newToken)
+                                else {
+                                    showToast(context, "Login expired")
+                                    callback(0)
+                                }
+                            }
+                            return
+                        }
+                        if (response.code == 403) {
+                            showToast(context, "Daily save limit reached")
+                            return
+                        }
+
+                        if (response.isSuccessful) {
+                            response.body?.string()?.let { body ->
+                                try {
+                                    val json = JSONObject(body)
+                                    val savesLeft = json.getInt("uploads_left")
+                                    callback(savesLeft)
+                                } catch (e: Exception) {
+                                    Log.e(TAG, "JSON parsing error: ${e.localizedMessage}")
+                                    callback(0)
+                                }
+                            } ?: run {
+                                callback(0)
+                            }
+                        } else {
+                            showToast(context, "Could not get saves left")
+                            callback(0)
+                        }
+                    }
+                })
+            }
+
+            sendRequest(accessToken)
+        }
+        // endregion
+
         // region Auth Related
         fun refreshAccessToken(context: Context, onComplete: (success: Boolean, newToken: String?) -> Unit) {
             val prefs = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
@@ -526,11 +636,14 @@ class Helpers {
                 }
             """.trimIndent()
 
+            val timeZoneId = TimeZone.getDefault().id
+
             val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
             val request = Request.Builder()
                 .url("$SERVER_URL/api/refresh_token")
                 .addHeader("User-Agent", USER_AGENT)
                 .addHeader("X-App-Key", APP_KEY)
+                .addHeader("X-Timezone", timeZoneId)
                 .post(requestBody)
                 .build()
 
@@ -577,10 +690,13 @@ class Helpers {
 
             val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
 
+            val timeZoneId = TimeZone.getDefault().id
+
             val request = Request.Builder()
                 .url("$SERVER_URL/api/register")
                 .addHeader("User-Agent", USER_AGENT)
                 .addHeader("X-App-Key", APP_KEY)
+                .addHeader("X-Timezone", timeZoneId)
                 .post(requestBody)
                 .build()
 
@@ -620,10 +736,13 @@ class Helpers {
 
             val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
 
+            val timeZoneId = TimeZone.getDefault().id
+
             val request = Request.Builder()
                 .url("$SERVER_URL/api/login")
                 .addHeader("User-Agent", USER_AGENT)
                 .addHeader("X-App-Key", APP_KEY)
+                .addHeader("X-Timezone", timeZoneId)
                 .post(requestBody)
                 .build()
 
@@ -678,12 +797,15 @@ class Helpers {
             """.trimIndent()
             val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
 
+            val timeZoneId = TimeZone.getDefault().id
+
             fun sendRequest(token: String) {
                 val request = Request.Builder()
                     .url("$SERVER_URL/api/update-username")
                     .addHeader("Authorization", "Bearer $token")
                     .addHeader("User-Agent", USER_AGENT)
                     .addHeader("X-App-Key", APP_KEY)
+                    .addHeader("X-Timezone", timeZoneId)
                     .post(requestBody)
                     .build()
 
@@ -706,6 +828,10 @@ class Helpers {
                                     callback(false)
                                 }
                             }
+                            return
+                        }
+                        if (response.code == 403) {
+                            showToast(context, "Daily save limit reached")
                             return
                         }
 
@@ -763,11 +889,14 @@ class Helpers {
                 val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
                 val startTime = System.currentTimeMillis()
 
+                val timeZoneId = TimeZone.getDefault().id
+
                 val request = Request.Builder()
                     .url("$SERVER_URL/api/query")
                     .addHeader("Authorization", "Bearer $token")
                     .addHeader("User-Agent", USER_AGENT)
                     .addHeader("X-App-Key", APP_KEY)
+                    .addHeader("X-Timezone", timeZoneId)
                     .post(requestBody)
                     .build()
 
@@ -784,6 +913,10 @@ class Helpers {
                                 if (success && newToken != null) sendRequest(newToken)
                                 else showToast(context, "Login expired")
                             }
+                            return
+                        }
+                        if (response.code == 403) {
+                            showToast(context, "Daily save limit reached")
                             return
                         }
 

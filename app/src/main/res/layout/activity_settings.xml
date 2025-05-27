@@ -42,12 +42,10 @@
             android:id="@+id/usernameTextView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:padding="12dp"
 
             android:fontFamily="@font/venus_cormier"
-
             android:gravity="start"
-
-            android:padding="12dp"
             android:text="@string/settingsUsernameText"
             android:textColor="@color/accent_1"
             android:textSize="14sp"
@@ -61,16 +59,15 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:autofillHints="username"
+            android:padding="24dp"
 
+            android:autofillHints="username"
             android:background="@color/base_0"
             android:editable="false"
             android:fontFamily="@font/venus_cormier"
             android:gravity="center"
             android:hint="@string/settingsAuthHintText"
-
             android:inputType="text"
-            android:padding="24dp"
             android:textAllCaps="false"
             android:textColor="#CACACA"
             android:textColorHint="#CACACA"
@@ -84,12 +81,11 @@
             android:id="@+id/editUsername"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-
             android:layout_marginTop="8dp"
+            android:padding="24dp"
+
             android:enabled="true"
             android:fontFamily="@font/venus_cormier"
-
-            android:padding="24dp"
             android:stateListAnimator="@null"
             android:text="@string/settingsEditUsername"
             android:textSize="14sp"
@@ -105,12 +101,11 @@
             android:id="@+id/userLogout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-
             android:layout_marginTop="8dp"
+            android:padding="24dp"
+
             android:enabled="true"
             android:fontFamily="@font/venus_cormier"
-
-            android:padding="24dp"
             android:stateListAnimator="@null"
             android:text="@string/settingsUserLogout"
             android:textSize="14sp"
@@ -121,37 +116,69 @@
             app:layout_constraintTop_toBottomOf="@+id/permissionsTextView" />
 
         <TextView
-            android:id="@+id/featuresTextView"
+            android:id="@+id/savingTextView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:padding="12dp"
 
             android:fontFamily="@font/venus_cormier"
-
             android:gravity="start"
-            android:padding="12dp"
-            android:text="@string/featuresText"
+            android:text="@string/saveText"
             android:textColor="@color/accent_1"
             android:textSize="14sp"
 
-            />
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@id/savesLeftText" />
+
+        <TextView
+            android:id="@+id/savesLeftText"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:layout_marginTop="8dp"
+            android:background="@color/base_0"
+
+            android:fontFamily="@font/venus_cormier"
+            android:gravity="start|center_vertical"
+            android:padding="12dp"
+            android:text="@string/savesLeftText"
+            android:textColor="@color/accent_0"
+            android:textSize="14sp"
+
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/featuresTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:padding="12dp"
+
+            android:fontFamily="@font/venus_cormier"
+            android:gravity="start"
+            android:text="@string/featuresText"
+            android:textColor="@color/accent_1"
+            android:textSize="14sp" />
 
         <ToggleButton
             android:id="@+id/screenshotToggleButton"
             android:layout_width="match_parent"
             android:layout_height="64dp"
-            android:background="@color/base_0"
+            android:layout_marginTop="8dp"
+            android:padding="12dp"
 
             android:checked="false"
+            android:background="@color/base_0"
             android:drawableTint="@color/accent_1"
             android:fontFamily="@font/venus_cormier"
             android:stateListAnimator="@null"
-
             android:textColor="@color/accent_1"
             android:textOff="@string/screenshotToggleOnText"
             android:textOn="@string/screenshotToggleOnText"
-            app:elevation="0dp"
-
-            />
+            app:elevation="0dp" />
 
     </LinearLayout>
 

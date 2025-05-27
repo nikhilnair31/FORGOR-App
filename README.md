@@ -9,12 +9,12 @@ Meet FORGOR
 ### To-Do
 - [ ] Fix the onclick of text posts
 - [ ] Add logic to find similar content
-- [ ] Add time/account based limits to saves
 
 ### Other
 - [ ] Add a new overlay/quick setting/icon to quick add
 
 ### Done
+- [x] Add time/account based limits to saves
 - [x] Find app signing key for Play Store
 - [x] Create signed app bundle
 - [x] Add basic text sharing

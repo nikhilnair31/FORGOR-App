@@ -37,5 +37,7 @@
     <string name="settingsAuthHintText">...</string>
     <string name="settingsEditUsername">EDIT USERNAME</string>
     <string name="settingsUserLogout">LOGOUT</string>
+    <string name="saveText">SAVING</string>
+    <string name="savesLeftText">SAVES LEFT TODAY: %1$d</string>
 
 </resources>

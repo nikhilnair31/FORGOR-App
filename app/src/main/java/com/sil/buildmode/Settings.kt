@@ -14,6 +14,7 @@ import android.widget.EditText
 import android.widget.TextView
 import android.widget.ToggleButton
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.ThemedSpinnerAdapter
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
@@ -32,11 +33,11 @@ class Settings : AppCompatActivity() {
 
     private val initRequestCode = 100
     private val batteryUnrestrictedRequestCode = 103
-    private val overlayPermissionRequestCode = 104
 
     private var pendingToggle: (() -> Unit)? = null
 
     private lateinit var usernameText: EditText
+    private lateinit var savesLeftText: TextView
     private lateinit var editUsernameButton: Button
     private lateinit var userLogoutButton: Button
     private lateinit var screenshotToggleButton: ToggleButton
@@ -55,10 +56,16 @@ class Settings : AppCompatActivity() {
         usernameText = findViewById(R.id.usernameEditText)
         editUsernameButton = findViewById(R.id.editUsername)
         userLogoutButton = findViewById(R.id.userLogout)
+        savesLeftText = findViewById(R.id.savesLeftText)
         screenshotToggleButton = findViewById(R.id.screenshotToggleButton)
 
         val username = generalSharedPreferences.getString("username", "")
         usernameText.text = Editable.Factory.getInstance().newEditable(username)
+
+        Helpers.getSavesLeft(this) { savesLeft ->
+            Log.i(TAG, "You have $savesLeft uploads left today!")
+            savesLeftText.text = getString(R.string.savesLeftText, savesLeft)
+        }
 
         val isScreenshotServiceRunning = Helpers.isServiceRunning(this, ScreenshotService::class.java)
         updateToggle(screenshotToggleButton, isScreenshotServiceRunning)
