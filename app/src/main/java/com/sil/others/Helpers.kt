@@ -148,8 +148,8 @@ class Helpers {
             WorkManager.getInstance(appContext).enqueue(uploadWorkRequest)
         }
 
-        fun deleteImageFile(context: Context, imagePath: String) {
-            Log.i(TAG, "Deleting image file: $imagePath")
+        fun deleteFile(context: Context, fileName: String) {
+            Log.i(TAG, "Deleting file: $fileName")
 
             val prefs = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
             val token = prefs.getString("access_token", "") ?: ""
@@ -161,11 +161,11 @@ class Helpers {
             fun sendRequest(token: String) {
                 val requestBody = MultipartBody.Builder()
                     .setType(MultipartBody.FORM)
-                    .addFormDataPart("image_name", imagePath)
+                    .addFormDataPart("file_name", fileName)
                     .build()
 
                 val request = Request.Builder()
-                    .url("$SERVER_URL/api/delete/image")
+                    .url("$SERVER_URL/api/delete/file")
                     .addHeader("Authorization", "Bearer $token")
                     .addHeader("User-Agent", USER_AGENT)
                     .addHeader("X-App-Key", APP_KEY)
@@ -174,8 +174,8 @@ class Helpers {
 
                 OkHttpClient().newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException) {
-                        Log.e(TAG, "Delete failed: ${e.localizedMessage}")
-                        showToast(context, "Delete failed!")
+                        Log.e(TAG, "File delete failed: ${e.localizedMessage}")
+                        showToast(context, "File delete failed!")
                     }
 
                     override fun onResponse(call: Call, response: Response) {
@@ -192,10 +192,10 @@ class Helpers {
                         }
 
                         if (response.isSuccessful) {
-                            showToast(context, "Image deleted successfully!")
+                            showToast(context, "File deleted successfully!")
                         } else {
                             Log.e(TAG, "Server error: ${response.code}")
-                            showToast(context, "Image delete failed!")
+                            showToast(context, "File delete failed!")
                         }
                     }
                 })
@@ -335,27 +335,39 @@ class Helpers {
         }
 
         fun downloadPdfToCache(context: Context, url: String): File {
-            val prefs = context.getSharedPreferences(TAG, Context.MODE_PRIVATE)
-            val token = prefs.getString("access_token", "") ?: ""
-            val appKey = BuildConfig.APP_KEY
+            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
+            val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
+            if (accessToken.isEmpty()) {
+                Log.e(TAG, "Access token missing")
+                showToast(context, "Not logged in")
+                return File("")
+            }
 
             val request = Request.Builder()
                 .url(url)
-                .addHeader("Authorization", "Bearer $token")
+                .addHeader("Authorization", "Bearer $accessToken")
                 .addHeader("User-Agent", USER_AGENT)
                 .addHeader("X-App-Key", APP_KEY)
                 .build()
 
-            val client = OkHttpClient()
-            val response = client.newCall(request).execute()
-            if (!response.isSuccessful) throw IOException("Failed to download PDF (code ${response.code})")
+            try {
+                val response = OkHttpClient().newCall(request).execute()
+                if (!response.isSuccessful) {
+                    Log.e(TAG, "Failed to download PDF (code ${response.code})")
+                    throw IOException("Failed to download PDF (code ${response.code})")
+                }
 
-            val file = File(context.cacheDir, "shared_${System.currentTimeMillis()}.pdf")
-            val sink = file.sink().buffer()
-            sink.writeAll(response.body!!.source())
-            sink.close()
+                val file = File(context.cacheDir, "shared_${System.currentTimeMillis()}.pdf")
+                val sink = file.sink().buffer()
+                sink.writeAll(response.body!!.source())
+                sink.close()
 
-            return file
+                return file
+            }
+            catch (e: Exception) {
+                Log.e(TAG, "Error in PDF download: ${e.localizedMessage}")
+                throw e
+            }
         }
 
         fun isPdfFile(fileName: String): Boolean {

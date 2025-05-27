@@ -53,12 +53,14 @@ RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
 
     override fun onBindViewHolder(holder: ResultViewHolder, position: Int) {
         val item = dataList[position]
-        Log.i(TAG, "item: $item")
+        // Log.i(TAG, "item: $item")
 
-        val filePath = item.optString("image_path", "")
-        val fileUrl = if (filePath.startsWith("http")) filePath else "$SERVER_URL/api/get_image/$filePath"
+        val timestampText = item.optString("timestamp_str", "")
         val postUrl = item.optString("post_url", "").trim()
-        Log.i(TAG, "fileUrl: $fileUrl")
+        val tagsText = item.optString("tags_text", "")
+        val fileName = item.optString("file_name", "")
+        val fileUrl = if (fileName.startsWith("http")) fileName else "$SERVER_URL/api/get_file/$fileName"
+        // Log.i(TAG, "fileUrl: $fileUrl")
 
         // Handle link icon
         holder.linkIcon.visibility = if (postUrl.isBlank() || postUrl == "-") View.GONE else View.VISIBLE
@@ -68,7 +70,7 @@ RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
         }
 
         // Handle PDFs
-        if (Helpers.isPdfFile(filePath)) {
+        if (Helpers.isPdfFile(fileName)) {
             // Show a generic PDF icon
             holder.imageView.setImageResource(android.R.drawable.ic_popup_disk_full) // Add your own `ic_pdf` icon to res/drawable
 
@@ -97,7 +99,7 @@ RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
         }
 
         // Handle text files
-        else if (Helpers.isTextFile(filePath)) {
+        else if (Helpers.isTextFile(fileName)) {
             holder.textText.visibility = View.VISIBLE
             holder.textText.text = "${R.string.loadingContent}"
 
@@ -116,7 +118,7 @@ RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
                     withContext(Dispatchers.Main) {
                         holder.textText.text = text
                         holder.itemView.setOnClickListener {
-                            openFileIntent(context, filePath, fileUrl, postUrl, textContent = text)
+                            openFileIntent(context, fileName, fileUrl, postUrl, textContent = text)
                         }
                     }
                 } catch (e: Exception) {
@@ -163,7 +165,7 @@ RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
             }
 
             holder.itemView.setOnClickListener {
-                openFileIntent(context, filePath, fileUrl, postUrl, textContent = "")
+                openFileIntent(context, fileName, fileUrl, postUrl, textContent = "")
             }
         }
     }
@@ -210,10 +212,10 @@ RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
             })
     }
 
-    private fun openFileIntent(context: Context, filePath: String, fileUrl: String, postUrl: String, textContent: String? = null) {
+    private fun openFileIntent(context: Context, fileName: String, fileUrl: String, postUrl: String, textContent: String? = null) {
         val intent = Intent(context, FullContent::class.java).apply {
-            putExtra("imagePath", filePath)
-            putExtra("imageUrl", fileUrl)
+            putExtra("fileName", fileName)
+            putExtra("fileUrl", fileUrl)
             putExtra("postUrl", postUrl)
             textContent?.let { putExtra("textContent", it) }
         }

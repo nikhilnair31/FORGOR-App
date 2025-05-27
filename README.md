@@ -7,7 +7,9 @@ Meet FORGOR
 ## Tasks
 
 ### To-Do
+- [ ] Fix the onclick of text posts
 - [ ] Add logic to find similar content
+- [ ] Add time/account based limits to saves
 
 ### Other
 - [ ] Add a new overlay/quick setting/icon to quick add

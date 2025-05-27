@@ -36,20 +36,20 @@ class FullContent : AppCompatActivity() {
         textTextView = findViewById(R.id.textText)
         deleteButton = findViewById(R.id.deleteButton)
 
-        val imagePath = intent.getStringExtra("imagePath") ?: ""
-        val imageUrl = intent.getStringExtra("imageUrl") ?: ""
+        val fileName = intent.getStringExtra("fileName") ?: ""
+        val fileUrl = intent.getStringExtra("fileUrl") ?: ""
         val postUrl = intent.getStringExtra("postUrl") ?: ""
         val textContent = intent.getStringExtra("textContent")
 
-        initRelated(imagePath, imageUrl, postUrl, textContent)
+        initRelated(fileName, fileUrl, postUrl, textContent)
     }
 
-    fun initRelated(imagePath: String, imageUrl: String, postUrl: String, textContent: String?) {
+    fun initRelated(fileName: String, fileUrl: String, postUrl: String, textContent: String?) {
         // Handle image content
-        if (imagePath.isNotBlank()) {
+        if (fileName.isNotBlank()) {
             imageView.visibility = View.VISIBLE
             Glide.with(this)
-                .load(imageUrl)
+                .load(fileUrl)
                 .into(imageView)
         }
 
@@ -75,7 +75,7 @@ class FullContent : AppCompatActivity() {
                 .setTitle("Delete File")
                 .setMessage("Are you sure you want to delete this file?")
                 .setPositiveButton("Delete") { _, _ ->
-                    Helpers.deleteImageFile(this, imagePath)
+                    Helpers.deleteFile(this, fileName)
                     finish()
                 }
                 .setNegativeButton("Cancel", null)
