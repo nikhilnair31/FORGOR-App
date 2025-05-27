@@ -26,7 +26,7 @@
     <string name="stopForgoringText">STOP FORGORING</string>
 
     <string name="searchImagesDescription">SEARCH IMAGES</string>
-    <string name="searchHint">WHAT ARE YOU LOOKING FOR?</string>
+    <string name="searchHint">WHAT ARE YOU FORGORING?</string>
     <string name="imageDescription">SEARCH IMAGE RESULT</string>
     <string name="loadingContent">LOADING…</string>
     <string name="failedLoadingContent">FAILED TO LOAD</string>

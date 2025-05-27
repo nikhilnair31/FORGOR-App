@@ -40,7 +40,8 @@
             android:focusable="true"
             android:fontFamily="@font/venus_cormier"
             android:textColor="@color/accent_1"
-            android:textSize="25sp"
+            android:lineSpacingExtra="8dp"
+            android:textSize="16sp"
 
             app:layout_constraintBottom_toTopOf="@+id/fullImageView"
             app:layout_constraintEnd_toEndOf="parent"
@@ -73,6 +74,7 @@
         android:layout_height="wrap_content"
         android:background="@color/base_1"
         android:orientation="vertical"
+        android:padding="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
@@ -82,9 +84,6 @@
             android:id="@+id/linkTextView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="16dp"
-            android:layout_marginEnd="16dp"
 
             android:background="@color/accent_1"
             android:fontFamily="@font/venus_cormier"
@@ -94,6 +93,7 @@
             android:text="@string/viewPost"
 
             android:textSize="14sp"
+            android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -114,6 +114,7 @@
             android:stateListAnimator="@null"
             android:text="SHOW SIMILAR"
             android:textSize="14sp"
+            android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.0"

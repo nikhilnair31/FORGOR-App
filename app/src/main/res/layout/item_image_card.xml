@@ -5,7 +5,7 @@
 
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
+    android:layout_margin="4dp"
     android:padding="8dp"
     android:background="@color/base_1"
     android:adjustViewBounds="true"
@@ -19,7 +19,7 @@
 
         android:fontFamily="@font/venus_cormier"
         android:textColor="@color/accent_1"
-        android:textSize="18sp"
+        android:textSize="14sp"
         android:maxLines="5"
         android:ellipsize="end"
         android:clickable="true"

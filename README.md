@@ -7,10 +7,9 @@ Meet FORGOR
 ## Tasks
 
 ### To-Do
-- [ ] idk
+- [ ] Add logic to find similar content
 
 ### Other
-- [ ] Add logic to find similar content
 - [ ] Add a new overlay/quick setting/icon to quick add
 
 ### Done

@@ -8,8 +8,10 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.sil.others.Helpers
 import androidx.core.net.toUri
+import androidx.core.view.WindowCompat
 import com.bumptech.glide.Glide
 
 class FullContent : AppCompatActivity() {
@@ -24,6 +26,9 @@ class FullContent : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_full_image)
+
+        window.navigationBarColor = ContextCompat.getColor(this, R.color.base_1)
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightNavigationBars = true
 
         textScrollView = findViewById(R.id.textScrollView)
         imageView = findViewById(R.id.fullImageView)
@@ -57,12 +62,11 @@ class FullContent : AppCompatActivity() {
 
         // Handle post URL
         if (postUrl.isNotBlank() && postUrl != "-") {
+            linkTextView.visibility = View.VISIBLE
             linkTextView.setOnClickListener {
                 val browserIntent = Intent(Intent.ACTION_VIEW, postUrl.toUri())
                 startActivity(browserIntent)
             }
-        } else {
-            linkTextView.visibility = View.GONE
         }
 
         // Handle delete
