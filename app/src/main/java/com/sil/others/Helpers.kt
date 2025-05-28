@@ -678,25 +678,21 @@ class Helpers {
             })
         }
 
-        fun authRegisterToServer(context: Context, username: String, password: String, callback: (success: Boolean) -> Unit) {
-            Log.i(TAG, "Trying to register with $username/$password")
+        fun authRegisterToServer(context: Context, username: String, password: String, timeZoneId: String, callback: (success: Boolean) -> Unit) {
+            Log.i(TAG, "Trying to register with $username and $password at $timeZoneId")
 
             val jsonBody = """
             {
                 "username": "$username",
-                "password": "$password"
+                "password": "$password",
+                "timezone": "$timeZoneId"
             }
             """.trimIndent()
-
             val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
-
-            val timeZoneId = TimeZone.getDefault().id
-
             val request = Request.Builder()
                 .url("$SERVER_URL/api/register")
                 .addHeader("User-Agent", USER_AGENT)
                 .addHeader("X-App-Key", APP_KEY)
-                .addHeader("X-Timezone", timeZoneId)
                 .post(requestBody)
                 .build()
 

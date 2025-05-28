@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import com.sil.others.Helpers
+import java.util.TimeZone
 
 class SignUp : AppCompatActivity() {
     // region Vars
@@ -73,8 +74,9 @@ class SignUp : AppCompatActivity() {
 
         val userNameText = usernameEditText.text.toString()
         val passwordText = passwordEditText.text.toString()
+        val timeZoneId = TimeZone.getDefault().id
 
-        Helpers.authRegisterToServer(this, userNameText, passwordText) { registerSuccess ->
+        Helpers.authRegisterToServer(this, userNameText, passwordText, timeZoneId) { registerSuccess ->
             runOnUiThread {
                 if (registerSuccess) {
                     Log.i(TAG, "Sign up success!")
