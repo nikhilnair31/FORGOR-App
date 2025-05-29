@@ -16,9 +16,15 @@ import androidx.core.view.WindowCompat
 import androidx.core.widget.doAfterTextChanged
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import com.sil.others.Helpers
 import com.sil.services.ScreenshotService
+import com.sil.workers.TokenRefreshWorker
 import org.json.JSONObject
+import java.util.concurrent.TimeUnit
 
 class Main : AppCompatActivity() {
     // region Vars
@@ -47,6 +53,7 @@ class Main : AppCompatActivity() {
 
         initUI()
         checkScreenshotServiceStatus()
+        scheduleTokenRefreshWorker()
     }
 
     private fun initUI() {
@@ -122,6 +129,26 @@ class Main : AppCompatActivity() {
 
             searchHandler.postDelayed(searchRunnable!!, 500) // 1000 ms = 1 second
         }
+    }
+    // endregion
+
+    // region Worker Related
+    private fun scheduleTokenRefreshWorker() {
+        val refreshRequest = PeriodicWorkRequestBuilder<TokenRefreshWorker>(11, TimeUnit.HOURS)
+            .build()
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "TokenRefreshWork",
+            ExistingPeriodicWorkPolicy.KEEP,
+            refreshRequest
+        )
+    }
+    private fun testTokenRefreshWorker() {
+        val testWork = OneTimeWorkRequestBuilder<TokenRefreshWorker>()
+            .setInitialDelay(10, TimeUnit.SECONDS) // short delay for testing
+            .build()
+
+        WorkManager.getInstance(this).enqueue(testWork)
     }
     // endregion
 
