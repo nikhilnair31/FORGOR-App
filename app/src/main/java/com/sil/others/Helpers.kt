@@ -900,7 +900,7 @@ class Helpers {
         // endregion
 
         // region Content Related
-        fun downloadAndShareFile(context: Context, fileName: String, downloadUrl: String) {
+        fun downloadAndShareFile(context: Context, fileName: String, downloadUrl: String, postUrl: String) {
             Log.d(TAG, "Attempting to download from: $downloadUrl")
             CoroutineScope(Dispatchers.IO).launch {
                 try {
@@ -922,31 +922,50 @@ class Helpers {
                         .build()
                     val response = client.newCall(request).execute()
 
-                    if (response.isSuccessful) {
-                        val file = File(context.cacheDir, fileName)
-                        response.body?.byteStream()?.use { input ->
-                            FileOutputStream(file).use { output ->
-                                input.copyTo(output)
-                            }
-                        }
-
-                        val fileUri = FileProvider.getUriForFile(
-                            context,
-                            "${BuildConfig.APPLICATION_ID}.provider",
-                            file
-                        )
-
-                        withContext(Dispatchers.Main) {
-                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                type = getMimeType(file.name) ?: "*/*"
-                                putExtra(Intent.EXTRA_STREAM, fileUri)
-                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            }
-                            context.startActivity(Intent.createChooser(shareIntent, "Share file via"))
-                        }
-                    } else {
+                    if (!response.isSuccessful) {
                         val errorBody = response.body?.string()
                         Log.e(TAG, "Error ${response.code}: $errorBody")
+                        return@launch
+                    }
+
+                    val file = File(context.cacheDir, fileName)
+                    response.body?.byteStream()?.use { input ->
+                        FileOutputStream(file).use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+
+                    withContext(Dispatchers.Main) {
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                            when {
+                                isTextFile(file.name) -> {
+                                    type = "text/plain"
+                                    val content = file.readText()
+                                    putExtra(Intent.EXTRA_TEXT, content)
+                                }
+                                isImageFile(file.name) -> {
+                                    type = getMimeType(file.name) ?: "image/*"
+                                    val uri = FileProvider.getUriForFile(context, "${BuildConfig.APPLICATION_ID}.provider", file)
+                                    putExtra(Intent.EXTRA_STREAM, uri)
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+
+                                    if (postUrl.isNotBlank() && postUrl != "-") {
+                                        putExtra(Intent.EXTRA_TEXT, postUrl)
+                                    }
+                                }
+                                else -> {
+                                    type = getMimeType(file.name) ?: "*/*"
+                                    val uri = FileProvider.getUriForFile(context, "${BuildConfig.APPLICATION_ID}.provider", file)
+                                    putExtra(Intent.EXTRA_STREAM, uri)
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+
+                                    if (postUrl.isNotBlank() && postUrl != "-") {
+                                        putExtra(Intent.EXTRA_TEXT, postUrl)
+                                    }
+                                }
+                            }
+                        }
+                        context.startActivity(Intent.createChooser(shareIntent, "Share file via"))
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Exception: ${e.message}")

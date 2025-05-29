@@ -93,7 +93,7 @@ class FullContent : AppCompatActivity() {
         // Handle sharing
         shareButton.setOnClickListener {
             if (fileName.isNotBlank()) {
-                Helpers.downloadAndShareFile(this, fileName, fileUrl)
+                Helpers.downloadAndShareFile(this, fileName, fileUrl, postUrl)
             }
         }
 
