@@ -60,7 +60,15 @@ class Settings : AppCompatActivity() {
         screenshotToggleButton = findViewById(R.id.screenshotToggleButton)
 
         val username = generalSharedPreferences.getString("username", "")
-        usernameText.text = Editable.Factory.getInstance().newEditable(username)
+        usernameText.setText(username)
+        editUsernameButton.isEnabled = false  // Disable by default
+        usernameText.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                editUsernameButton.isEnabled = s.toString() != username
+            }
+            override fun afterTextChanged(s: Editable?) {}
+        })
 
         val cachedSavesLeft = generalSharedPreferences.getInt("cached_saves_left", -1)
         if (cachedSavesLeft != -1) {
