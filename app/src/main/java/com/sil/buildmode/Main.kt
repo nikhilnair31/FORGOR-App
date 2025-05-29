@@ -56,6 +56,23 @@ class Main : AppCompatActivity() {
         checkScreenshotServiceStatus()
         scheduleTokenRefreshWorker()
     }
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == 101 && resultCode == RESULT_OK) {
+            val deletedFileName = data?.getStringExtra("deletedFileName")
+            if (!deletedFileName.isNullOrEmpty()) {
+                val currentList = resultAdapter.getData()
+                val updatedList = currentList.filter { it.optString("file_name") != deletedFileName }
+                resultAdapter.updateData(updatedList)
+
+                if (updatedList.isEmpty()) {
+                    recyclerView.visibility = View.GONE
+                    placeholder.visibility = View.VISIBLE
+                }
+            }
+        }
+    }
     // endregion
 
     // region Data Related

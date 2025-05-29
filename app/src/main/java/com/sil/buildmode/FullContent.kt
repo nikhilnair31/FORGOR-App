@@ -19,6 +19,7 @@ import androidx.core.view.WindowCompat
 import com.bumptech.glide.Glide
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -92,7 +93,7 @@ class FullContent : AppCompatActivity() {
         // Handle sharing
         shareButton.setOnClickListener {
             if (fileName.isNotBlank()) {
-                downloadAndShareFile(fileName, fileUrl)
+                Helpers.downloadAndShareFile(this, fileName, fileUrl)
             }
         }
 
@@ -103,69 +104,14 @@ class FullContent : AppCompatActivity() {
                 .setMessage("Are you sure you want to delete this file?")
                 .setPositiveButton("Delete") { _, _ ->
                     Helpers.deleteFile(this, fileName)
-                    finish()
+                    CoroutineScope(Dispatchers.Main).launch {
+                        delay(300)
+                        setResult(RESULT_OK, Intent().putExtra("deletedFileName", fileName))
+                        finish()
+                    }
                 }
                 .setNegativeButton("Cancel", null)
                 .show()
         }
-    }
-
-    fun downloadAndShareFile(fileName: String, downloadUrl: String) {
-        Log.d(TAG, "Attempting to download from: $downloadUrl")
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val sharedPrefs = getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
-                val accessToken = sharedPrefs.getString("access_token", "") ?: ""
-                if (accessToken.isEmpty()) {
-                    withContext(Dispatchers.Main) {
-                        Helpers.showToast(this@FullContent, "Not logged in")
-                    }
-                    return@launch
-                }
-
-                val client = OkHttpClient()
-                val request = Request.Builder()
-                    .url(downloadUrl)
-                    .addHeader("Authorization", "Bearer $accessToken")
-                    .addHeader("User-Agent", USER_AGENT)
-                    .addHeader("X-App-Key", APP_KEY)
-                    .build()
-                val response = client.newCall(request).execute()
-
-                if (response.isSuccessful) {
-                    val file = File(cacheDir, fileName)
-                    response.body?.byteStream()?.use { input ->
-                        FileOutputStream(file).use { output ->
-                            input.copyTo(output)
-                        }
-                    }
-
-                    val fileUri = FileProvider.getUriForFile(
-                        this@FullContent,
-                        "${BuildConfig.APPLICATION_ID}.provider",
-                        file
-                    )
-
-                    withContext(Dispatchers.Main) {
-                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                            type = getMimeType(file.name) ?: "*/*"
-                            putExtra(Intent.EXTRA_STREAM, fileUri)
-                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        }
-                        startActivity(Intent.createChooser(shareIntent, "Share file via"))
-                    }
-                } else {
-                    val errorBody = response.body?.string()
-                    Log.e(TAG, "Error ${response.code}: $errorBody")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Exception: ${e.message}")
-            }
-        }
-    }
-
-    fun getMimeType(fileName: String): String? {
-        val extension = fileName.substringAfterLast('.', "")
-        return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
     }
 }

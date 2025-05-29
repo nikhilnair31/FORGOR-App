@@ -2,6 +2,7 @@ package com.sil.others
 
 import android.app.ActivityManager
 import android.content.Context
+import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
@@ -9,7 +10,9 @@ import android.os.Environment
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.util.Log
+import android.webkit.MimeTypeMap
 import android.widget.Toast
+import androidx.core.content.FileProvider
 import androidx.core.content.edit
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
@@ -21,16 +24,19 @@ import androidx.work.workDataOf
 import com.bumptech.glide.load.model.GlideUrl
 import com.bumptech.glide.load.model.LazyHeaders
 import com.sil.buildmode.BuildConfig
+import com.sil.buildmode.FullContent
 import com.sil.workers.UploadWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
@@ -47,12 +53,51 @@ import java.util.concurrent.TimeUnit
 
 class Helpers {
     companion object {
-        // region API Keys
+        // region Vars
         private const val TAG = "Helper"
         private const val PREFS_GENERAL = "com.sil.buildmode.generalSharedPrefs"
+
         private const val SERVER_URL = BuildConfig.SERVER_URL
         private const val APP_KEY = BuildConfig.APP_KEY
         private const val USER_AGENT = BuildConfig.USER_AGENT
+
+        private val httpClient = OkHttpClient.Builder()
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .build()
+        // endregion
+
+        // region API Related
+        fun buildAuthorizedRequest(
+            url: String,
+            method: String = "POST",
+            token: String,
+            body: RequestBody? = null
+        ): Request {
+            val builder = Request.Builder()
+                .url(url)
+                .addHeader("Authorization", "Bearer $token")
+                .addHeader("User-Agent", USER_AGENT)
+                .addHeader("X-App-Key", APP_KEY)
+                .addHeader("X-Timezone", TimeZone.getDefault().id)
+
+            if (method == "POST") builder.post(body ?: ByteArray(0).toRequestBody())
+            return builder.build()
+        }
+        fun withValidToken(
+            context: Context,
+            onValid: (token: String) -> Unit,
+            onInvalid: (() -> Unit)? = null
+        ) {
+            val prefs = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
+            val token = prefs.getString("access_token", "") ?: ""
+            if (token.isEmpty()) {
+                showToast(context, "Not logged in")
+                onInvalid?.invoke()
+                return
+            }
+            onValid(token)
+        }
         // endregion
 
         // region Image Related
@@ -64,30 +109,18 @@ class Helpers {
                 return
             }
 
-            val prefs = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
-            val token = prefs.getString("access_token", "") ?: ""
-            if (token.isEmpty()) {
-                showToast(context, "Not logged in")
-                return
-            }
-
             fun sendRequest(token: String) {
                 val requestBody = MultipartBody.Builder().setType(MultipartBody.FORM)
                     .addFormDataPart("image", imageFile.name, imageFile.asRequestBody("image/png".toMediaTypeOrNull()))
                     .build()
 
-                val timeZoneId = TimeZone.getDefault().id
+                val request = buildAuthorizedRequest(
+                    "$SERVER_URL/api/upload/image",
+                    token = token,
+                    body = requestBody
+                )
 
-                val request = Request.Builder()
-                    .url("$SERVER_URL/api/upload/image")
-                    .addHeader("Authorization", "Bearer $token")
-                    .addHeader("User-Agent", USER_AGENT)
-                    .addHeader("X-App-Key", APP_KEY)
-                    .addHeader("X-Timezone", timeZoneId)
-                    .post(requestBody)
-                    .build()
-
-                OkHttpClient().newCall(request).enqueue(object : Callback {
+                httpClient.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException) {
                         Log.e(TAG, "Image save failed: ${e.localizedMessage}")
                         showToast(context, "Save failed!")
@@ -120,7 +153,7 @@ class Helpers {
                 })
             }
 
-            sendRequest(token)
+            withValidToken(context, { token -> sendRequest(token) })
         }
         fun uploadImageFile(context: Context, imageFile: File) {
             CoroutineScope(Dispatchers.IO).launch {
@@ -159,31 +192,19 @@ class Helpers {
         fun deleteFile(context: Context, fileName: String) {
             Log.i(TAG, "Deleting file: $fileName")
 
-            val prefs = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
-            val token = prefs.getString("access_token", "") ?: ""
-            if (token.isEmpty()) {
-                showToast(context, "Not logged in")
-                return
-            }
-
             fun sendRequest(token: String) {
                 val requestBody = MultipartBody.Builder()
                     .setType(MultipartBody.FORM)
                     .addFormDataPart("file_name", fileName)
                     .build()
 
-                val timeZoneId = TimeZone.getDefault().id
+                val request = buildAuthorizedRequest(
+                    "$SERVER_URL/api/delete/file",
+                    token = token,
+                    body = requestBody
+                )
 
-                val request = Request.Builder()
-                    .url("$SERVER_URL/api/delete/file")
-                    .addHeader("Authorization", "Bearer $token")
-                    .addHeader("User-Agent", USER_AGENT)
-                    .addHeader("X-App-Key", APP_KEY)
-                    .addHeader("X-Timezone", timeZoneId)
-                    .post(requestBody)
-                    .build()
-
-                OkHttpClient().newCall(request).enqueue(object : Callback {
+                httpClient.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException) {
                         Log.e(TAG, "File delete failed: ${e.localizedMessage}")
                         showToast(context, "File delete failed!")
@@ -216,7 +237,7 @@ class Helpers {
                 })
             }
 
-            sendRequest(token)
+            withValidToken(context, { token -> sendRequest(token) })
         }
 
         fun getImageURL(context: Context, imageUrl: String): GlideUrl? {
@@ -295,13 +316,6 @@ class Helpers {
                 return
             }
 
-            val prefs = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
-            val token = prefs.getString("access_token", "") ?: ""
-            if (token.isEmpty()) {
-                showToast(context, "Not logged in")
-                return
-            }
-
             fun sendRequest(token: String) {
                 val requestBody = MultipartBody.Builder()
                     .setType(MultipartBody.FORM)
@@ -312,18 +326,13 @@ class Helpers {
                     )
                     .build()
 
-                val timeZoneId = TimeZone.getDefault().id
+                val request = buildAuthorizedRequest(
+                    "$SERVER_URL/api/upload/pdf",
+                    token = token,
+                    body = requestBody
+                )
 
-                val request = Request.Builder()
-                    .url("$SERVER_URL/api/upload/pdf")
-                    .addHeader("Authorization", "Bearer $token")
-                    .addHeader("User-Agent", USER_AGENT)
-                    .addHeader("X-App-Key", APP_KEY)
-                    .addHeader("X-Timezone", timeZoneId)
-                    .post(requestBody)
-                    .build()
-
-                OkHttpClient().newCall(request).enqueue(object : Callback {
+                httpClient.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException) {
                         Log.e(TAG, "Upload Pdf failed: ${e.localizedMessage}")
                         showToast(context, "Save failed!")
@@ -356,7 +365,7 @@ class Helpers {
                 })
             }
 
-            sendRequest(token)
+            withValidToken(context, { token -> sendRequest(token) })
         }
 
         fun downloadPdfToCache(context: Context, url: String): File {
@@ -379,7 +388,7 @@ class Helpers {
                 .build()
 
             try {
-                val response = OkHttpClient().newCall(request).execute()
+                val response = httpClient.newCall(request).execute()
                 if (!response.isSuccessful) {
                     Log.e(TAG, "Failed to download PDF (code ${response.code})")
                     throw IOException("Failed to download PDF (code ${response.code})")
@@ -407,30 +416,17 @@ class Helpers {
         fun uploadPostTextToServer(context: Context, postText: String) {
             Log.i(TAG, "Uploading text to server...")
 
-            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
-            val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
-            if (accessToken.isEmpty()) {
-                Log.e(TAG, "Access token missing")
-                showToast(context, "Not logged in")
-                return
-            }
-
             fun sendRequest(token: String) {
                 val requestBody = MultipartBody.Builder()
                     .setType(MultipartBody.FORM)
                     .addFormDataPart("text", postText)
                     .build()
 
-                val timeZoneId = TimeZone.getDefault().id
-
-                val request = Request.Builder()
-                    .url("$SERVER_URL/api/upload/text")
-                    .addHeader("Authorization", "Bearer $token")
-                    .addHeader("User-Agent", USER_AGENT)
-                    .addHeader("X-App-Key", APP_KEY)
-                    .addHeader("X-Timezone", timeZoneId)
-                    .post(requestBody)
-                    .build()
+                val request = buildAuthorizedRequest(
+                    "$SERVER_URL/api/upload/text",
+                    token = token,
+                    body = requestBody
+                )
 
                 // ✅ Custom OkHttpClient with longer timeouts
                 val client = OkHttpClient.Builder()
@@ -465,7 +461,7 @@ class Helpers {
                 })
             }
 
-            sendRequest(accessToken)
+            withValidToken(context, { token -> sendRequest(token) })
         }
         fun uploadPostText(context: Context, postText: String) {
             CoroutineScope(Dispatchers.IO).launch {
@@ -521,7 +517,7 @@ class Helpers {
                     .addHeader("X-Timezone", timeZoneId)
                     .build()
 
-                val client = OkHttpClient()
+                val client = httpClient
                 val response = client.newCall(request).execute()
                 if (!response.isSuccessful) throw IOException("Failed to download txt (code ${response.code})")
 
@@ -551,27 +547,13 @@ class Helpers {
         fun getSavesLeft(context: Context, callback: (Int) -> Unit) {
             Log.i(TAG, "Getting saves left from server...")
 
-            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
-            val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
-            if (accessToken.isEmpty()) {
-                Log.e(TAG, "Access token missing")
-                showToast(context, "Not logged in")
-                callback(0)
-                return
-            }
-
-            val timeZoneId = TimeZone.getDefault().id
-
             fun sendRequest(token: String) {
-                val request = Request.Builder()
-                    .url("$SERVER_URL/api/get_saves_left")
-                    .addHeader("Authorization", "Bearer $token")
-                    .addHeader("User-Agent", USER_AGENT)
-                    .addHeader("X-App-Key", APP_KEY)
-                    .addHeader("X-Timezone", timeZoneId)
-                    .build()
+                val request = buildAuthorizedRequest(
+                    "$SERVER_URL/api/get_saves_left",
+                    token = token
+                )
 
-                OkHttpClient().newCall(request).enqueue(object : Callback {
+                httpClient.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException) {
                         Log.e(TAG, "Failed to check saves: ${e.localizedMessage}")
                         showToast(context, "Failed to check saves!")
@@ -615,7 +597,7 @@ class Helpers {
                 })
             }
 
-            sendRequest(accessToken)
+            withValidToken(context, { token -> sendRequest(token) })
         }
         // endregion
 
@@ -647,7 +629,7 @@ class Helpers {
                 .post(requestBody)
                 .build()
 
-            OkHttpClient().newCall(request).enqueue(object : Callback {
+            httpClient.newCall(request).enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
                     Log.e(TAG, "Refresh token failed: ${e.localizedMessage}")
                     autoLogout(context)
@@ -696,7 +678,7 @@ class Helpers {
                 .post(requestBody)
                 .build()
 
-            OkHttpClient().newCall(request).enqueue(object : Callback {
+            httpClient.newCall(request).enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
                     Log.e(TAG, "Register failed: ${e.localizedMessage}")
                     showToast(context, "Register failed!")
@@ -742,7 +724,7 @@ class Helpers {
                 .post(requestBody)
                 .build()
 
-            OkHttpClient().newCall(request).enqueue(object : Callback {
+            httpClient.newCall(request).enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
                     Log.e(TAG, "Login failed: ${e.localizedMessage}")
                     showToast(context, "Login failed!")
@@ -793,19 +775,14 @@ class Helpers {
             """.trimIndent()
             val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
 
-            val timeZoneId = TimeZone.getDefault().id
-
             fun sendRequest(token: String) {
-                val request = Request.Builder()
-                    .url("$SERVER_URL/api/update-username")
-                    .addHeader("Authorization", "Bearer $token")
-                    .addHeader("User-Agent", USER_AGENT)
-                    .addHeader("X-App-Key", APP_KEY)
-                    .addHeader("X-Timezone", timeZoneId)
-                    .post(requestBody)
-                    .build()
+                val request = buildAuthorizedRequest(
+                    "$SERVER_URL/api/update-username",
+                    token = token,
+                    body = requestBody
+                )
 
-                OkHttpClient().newCall(request).enqueue(object : Callback {
+                httpClient.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException) {
                         Log.e(TAG, "Edit username failed: ${e.localizedMessage}")
                         showToast(context, "Edit failed!")
@@ -867,36 +844,22 @@ class Helpers {
         fun searchToServer(context: Context, query: String, callback: (response: String?) -> Unit) {
             Log.i(TAG, "Trying to search for $query")
 
-            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
-            val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
-            if (accessToken.isEmpty()) {
-                Log.e(TAG, "Access token missing")
-                showToast(context, "Not logged in")
-                return
-            }
-
-            fun sendRequest(token: String) {
-                val jsonBody = """
+            val jsonBody = """
                 {
                     "searchText": "$query"
                 }
             """.trimIndent()
+            val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
+            val startTime = System.currentTimeMillis()
 
-                val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
-                val startTime = System.currentTimeMillis()
+            fun sendRequest(token: String) {
+                val request = buildAuthorizedRequest(
+                    "$SERVER_URL/api/query",
+                    token = token,
+                    body = requestBody
+                )
 
-                val timeZoneId = TimeZone.getDefault().id
-
-                val request = Request.Builder()
-                    .url("$SERVER_URL/api/query")
-                    .addHeader("Authorization", "Bearer $token")
-                    .addHeader("User-Agent", USER_AGENT)
-                    .addHeader("X-App-Key", APP_KEY)
-                    .addHeader("X-Timezone", timeZoneId)
-                    .post(requestBody)
-                    .build()
-
-                OkHttpClient().newCall(request).enqueue(object : Callback {
+                httpClient.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException) {
                         Log.e(TAG, "Query failed: ${e.localizedMessage}")
                         showToast(context, "Query failed!")
@@ -906,34 +869,90 @@ class Helpers {
                     override fun onResponse(call: Call, response: Response) {
                         if (response.code == 401) {
                             refreshAccessToken(context) { success, newToken ->
-                                if (success && newToken != null) sendRequest(newToken)
-                                else showToast(context, "Login expired")
+                                if (success && !newToken.isNullOrEmpty()) sendRequest(newToken)
+                                else {
+                                    showToast(context, "Login expired")
+                                    callback(null)
+                                }
                             }
                             return
                         }
                         if (response.code == 403) {
                             showToast(context, "Daily save limit reached")
+                            callback(null)
                             return
                         }
 
                         if (response.isSuccessful) {
                             val endTime = System.currentTimeMillis()
-                            val elapsedTime = endTime - startTime
-                            Log.i(TAG, "Query roundtrip time: $elapsedTime ms")
-                            val responseBody = response.body?.string()
-                            callback(responseBody)
+                            Log.i(TAG, "Query roundtrip time: ${endTime - startTime} ms")
+                            callback(response.body?.string())
                         } else {
                             showToast(context, "Query failed!")
+                            callback(null)
                         }
                     }
                 })
             }
 
-            sendRequest(accessToken)
+            withValidToken(context, { token -> sendRequest(token) }, onInvalid = { callback(null) })
         }
         // endregion
 
         // region Content Related
+        fun downloadAndShareFile(context: Context, fileName: String, downloadUrl: String) {
+            Log.d(TAG, "Attempting to download from: $downloadUrl")
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val sharedPrefs = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
+                    val accessToken = sharedPrefs.getString("access_token", "") ?: ""
+                    if (accessToken.isEmpty()) {
+                        withContext(Dispatchers.Main) {
+                            showToast(context, "Not logged in")
+                        }
+                        return@launch
+                    }
+
+                    val client = httpClient
+                    val request = Request.Builder()
+                        .url(downloadUrl)
+                        .addHeader("Authorization", "Bearer $accessToken")
+                        .addHeader("User-Agent", USER_AGENT)
+                        .addHeader("X-App-Key", APP_KEY)
+                        .build()
+                    val response = client.newCall(request).execute()
+
+                    if (response.isSuccessful) {
+                        val file = File(context.cacheDir, fileName)
+                        response.body?.byteStream()?.use { input ->
+                            FileOutputStream(file).use { output ->
+                                input.copyTo(output)
+                            }
+                        }
+
+                        val fileUri = FileProvider.getUriForFile(
+                            context,
+                            "${BuildConfig.APPLICATION_ID}.provider",
+                            file
+                        )
+
+                        withContext(Dispatchers.Main) {
+                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                type = getMimeType(file.name) ?: "*/*"
+                                putExtra(Intent.EXTRA_STREAM, fileUri)
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                            context.startActivity(Intent.createChooser(shareIntent, "Share file via"))
+                        }
+                    } else {
+                        val errorBody = response.body?.string()
+                        Log.e(TAG, "Error ${response.code}: $errorBody")
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Exception: ${e.message}")
+                }
+            }
+        }
         private fun queryContentResolver(context: Context, uri: Uri, selection: String?, selectionArgs: Array<String>?): String? {
             val projection = arrayOf(MediaStore.Images.Media.DATA)
             try {
@@ -1000,6 +1019,10 @@ class Helpers {
                 e.printStackTrace()
             }
             return tempFile
+        }
+        fun getMimeType(fileName: String): String? {
+            val extension = fileName.substringAfterLast('.', "")
+            return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
         }
         // endregion
 

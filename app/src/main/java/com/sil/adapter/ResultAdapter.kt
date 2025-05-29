@@ -39,6 +39,9 @@ RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
         val textText: TextView = view.findViewById(R.id.textText)
     }
 
+    fun getData(): MutableList<JSONObject> {
+        return dataList
+    }
     fun updateData(newData: List<JSONObject>) {
         dataList.clear()
         dataList.addAll(newData)
