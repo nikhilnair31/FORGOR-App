@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Bundle
 import android.os.PowerManager
 import android.util.Log
@@ -17,7 +16,6 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import com.sil.others.Helpers.Companion.showToast
 import com.sil.services.ScreenshotService
-import androidx.core.net.toUri
 
 class Features : AppCompatActivity() {
     // region Vars
