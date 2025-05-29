@@ -55,7 +55,9 @@ class Main : AppCompatActivity() {
         checkScreenshotServiceStatus()
         scheduleTokenRefreshWorker()
     }
+    // endregion
 
+    // region UI Related
     private fun initUI() {
         window.navigationBarColor = ContextCompat.getColor(this, R.color.accent_0)
         WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightNavigationBars = true

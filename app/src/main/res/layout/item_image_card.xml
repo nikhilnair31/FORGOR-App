@@ -6,7 +6,6 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="4dp"
-    android:padding="8dp"
     android:background="@color/base_1"
     android:adjustViewBounds="true"
     android:clickable="true" >
@@ -15,7 +14,7 @@
         android:id="@+id/textText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:padding="16dp"
 
         android:fontFamily="@font/venus_cormier"
         android:textColor="@color/accent_1"
@@ -31,6 +30,7 @@
         android:id="@+id/imageView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:padding="8dp"
 
         android:adjustViewBounds="true"
         android:scaleType="centerCrop"
@@ -42,12 +42,12 @@
         android:id="@+id/linkIcon"
         android:layout_width="32dp"
         android:layout_height="32dp"
-        android:padding="4dp"
+        android:padding="8dp"
 
+        app:tint="@color/accent_1"
         android:background="@color/accent_0"
         android:layout_gravity="top|end"
-        android:contentDescription="Open link"
+        android:contentDescription="@string/viewPost"
         android:src="@drawable/sharp_link_24"
-        android:visibility="visible"
-        app:tint="@color/accent_1" />
+        android:visibility="visible" />
 </FrameLayout>
