@@ -89,8 +89,8 @@ class Helpers {
 
                 OkHttpClient().newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException) {
-                        Log.e(TAG, "Upload failed: ${e.localizedMessage}")
-                        showToast(context, "Upload failed!")
+                        Log.e(TAG, "Image save failed: ${e.localizedMessage}")
+                        showToast(context, "Save failed!")
                     }
 
                     override fun onResponse(call: Call, response: Response) {
@@ -111,10 +111,10 @@ class Helpers {
                         }
 
                         if (response.isSuccessful) {
-                            showToast(context, "Image uploaded successfully!")
+                            showToast(context, "Saved!")
                         } else {
                             Log.e(TAG, "Server error: ${response.code}")
-                            showToast(context, "Upload failed!")
+                            showToast(context, "Save failed!")
                         }
                     }
                 })
@@ -326,7 +326,7 @@ class Helpers {
                 OkHttpClient().newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException) {
                         Log.e(TAG, "Upload Pdf failed: ${e.localizedMessage}")
-                        showToast(context, "Upload Pdf failed!")
+                        showToast(context, "Save failed!")
                     }
 
                     override fun onResponse(call: Call, response: Response) {
@@ -347,10 +347,10 @@ class Helpers {
                         }
 
                         if (response.isSuccessful) {
-                            showToast(context, "Pdf uploaded successfully!")
+                            showToast(context, "Saved!")
                         } else {
-                            Log.e(TAG, "Server error: ${response.code}")
-                            showToast(context, "Pdf upload failed!")
+                            Log.e(TAG, "Pdf save failed: ${response.code}")
+                            showToast(context, "Save failed!")
                         }
                     }
                 })
@@ -440,7 +440,7 @@ class Helpers {
                 client.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException) {
                         Log.e(TAG, "Upload failed: ${e.localizedMessage}")
-                        showToast(context, "Text save failed!")
+                        showToast(context, "Save failed!")
                     }
 
                     override fun onResponse(call: Call, response: Response) {
@@ -457,9 +457,9 @@ class Helpers {
                         }
 
                         if (response.isSuccessful) {
-                            showToast(context, "Text saved!")
+                            showToast(context, "Saved!")
                         } else {
-                            showToast(context, "Text save failed!")
+                            showToast(context, "Save failed!")
                         }
                     }
                 })
