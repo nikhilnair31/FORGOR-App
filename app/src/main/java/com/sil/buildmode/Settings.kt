@@ -62,9 +62,16 @@ class Settings : AppCompatActivity() {
         val username = generalSharedPreferences.getString("username", "")
         usernameText.text = Editable.Factory.getInstance().newEditable(username)
 
+        val cachedSavesLeft = generalSharedPreferences.getInt("cached_saves_left", -1)
+        if (cachedSavesLeft != -1) {
+            savesLeftText.text = getString(R.string.savesLeftText, cachedSavesLeft)
+        }
         Helpers.getSavesLeft(this) { savesLeft ->
             Log.i(TAG, "You have $savesLeft uploads left today!")
             savesLeftText.text = getString(R.string.savesLeftText, savesLeft)
+            generalSharedPreferences.edit {
+                putInt("cached_saves_left", savesLeft)
+            }
         }
 
         val isScreenshotServiceRunning = Helpers.isServiceRunning(this, ScreenshotService::class.java)
@@ -131,8 +138,9 @@ class Settings : AppCompatActivity() {
         Log.i(TAG, "userLogoutRelated")
 
         generalSharedPreferences.edit(commit = true) {
-            putString("username", "")
-            .putString("access_token", "")
+            remove("username")
+            .remove("access_token")
+            .remove("cached_saves_left")
             .putBoolean(KEY_SCREENSHOT_ENABLED, false)
         }  // ← block until written
 

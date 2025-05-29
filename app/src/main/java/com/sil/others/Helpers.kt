@@ -68,27 +68,17 @@ class Helpers {
         // endregion
 
         // region API Related
-        fun buildAuthorizedRequest(
-            url: String,
-            method: String = "POST",
-            token: String,
-            body: RequestBody? = null
-        ): Request {
+        fun buildAuthorizedRequest(url: String, method: String = "POST", token: String, body: RequestBody? = null): Request {
             val builder = Request.Builder()
                 .url(url)
                 .addHeader("Authorization", "Bearer $token")
                 .addHeader("User-Agent", USER_AGENT)
                 .addHeader("X-App-Key", APP_KEY)
-                .addHeader("X-Timezone", TimeZone.getDefault().id)
 
             if (method == "POST") builder.post(body ?: ByteArray(0).toRequestBody())
             return builder.build()
         }
-        fun withValidToken(
-            context: Context,
-            onValid: (token: String) -> Unit,
-            onInvalid: (() -> Unit)? = null
-        ) {
+        fun withValidToken(context: Context, onValid: (token: String) -> Unit, onInvalid: (() -> Unit)? = null) {
             val prefs = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
             val token = prefs.getString("access_token", "") ?: ""
             if (token.isEmpty()) {
@@ -549,7 +539,8 @@ class Helpers {
 
             fun sendRequest(token: String) {
                 val request = buildAuthorizedRequest(
-                    "$SERVER_URL/api/get_saves_left",
+                    url = "$SERVER_URL/api/get_saves_left",
+                    method = "GET",
                     token = token
                 )
 
@@ -581,6 +572,8 @@ class Helpers {
                                 try {
                                     val json = JSONObject(body)
                                     val savesLeft = json.getInt("uploads_left")
+                                    val sharedPrefs = context.getSharedPreferences(TAG, MODE_PRIVATE)
+                                    sharedPrefs.edit { putInt("cached_saves_left", savesLeft) }
                                     callback(savesLeft)
                                 } catch (e: Exception) {
                                     Log.e(TAG, "JSON parsing error: ${e.localizedMessage}")
