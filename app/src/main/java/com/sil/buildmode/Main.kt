@@ -52,8 +52,36 @@ class Main : AppCompatActivity() {
         generalSharedPreferences = getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
 
         initUI()
+        initData()
         checkScreenshotServiceStatus()
         scheduleTokenRefreshWorker()
+    }
+    // endregion
+
+    // region Data Related
+    private fun initData() {
+        val savedQuery = generalSharedPreferences.getString("last_query", "") ?: ""
+        val savedResultsJson = generalSharedPreferences.getString("last_results_json", "") ?: ""
+
+        if (savedQuery.isNotEmpty() && savedResultsJson.isNotEmpty()) {
+            searchEditText.setText(savedQuery)
+            try {
+                val json = JSONObject(savedResultsJson)
+                val results = json.getJSONArray("results")
+                val resultList = List(results.length()) { i -> results.getJSONObject(i) }
+
+                if (resultList.isNotEmpty()) {
+                    resultAdapter.updateData(resultList)
+                    recyclerView.visibility = View.VISIBLE
+                    placeholder.visibility = View.GONE
+                } else {
+                    recyclerView.visibility = View.GONE
+                    placeholder.visibility = View.VISIBLE
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error restoring saved results: ${e.localizedMessage}")
+            }
+        }
     }
     // endregion
 
@@ -95,6 +123,14 @@ class Main : AppCompatActivity() {
                 Log.i(TAG, "Delayed search triggered for: $query")
 
                 Helpers.searchToServer(this, query) { response  ->
+                    response?.let {
+                        generalSharedPreferences.edit().apply {
+                            putString("last_query", query)
+                            putString("last_results_json", it)
+                            apply()
+                        }
+                    }
+
                     runOnUiThread {
                         if (response == null) {
                             Log.e(TAG, "Query returned null")
