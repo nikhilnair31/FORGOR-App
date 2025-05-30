@@ -2,30 +2,21 @@ package com.sil.buildmode
 
 import android.app.AlertDialog
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import android.view.View
-import android.webkit.MimeTypeMap
 import android.widget.ImageButton
-import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import com.sil.others.Helpers
 import androidx.core.net.toUri
 import androidx.core.view.WindowCompat
 import com.bumptech.glide.Glide
+import com.github.chrisbanes.photoview.PhotoView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import java.io.File
-import java.io.FileOutputStream
 
 class FullContent : AppCompatActivity() {
     // region Vars
@@ -36,9 +27,9 @@ class FullContent : AppCompatActivity() {
     private val USER_AGENT = BuildConfig.USER_AGENT
 
     private lateinit var textScrollView: View
-    private lateinit var imageView: ImageView
-    private lateinit var linkTextView: TextView
+    private lateinit var imageView: PhotoView
     private lateinit var textTextView: TextView
+    private lateinit var linkButton: ImageButton
     private lateinit var shareButton: ImageButton
     private lateinit var deleteButton: ImageButton
     // endregion
@@ -52,7 +43,7 @@ class FullContent : AppCompatActivity() {
 
         textScrollView = findViewById(R.id.textScrollView)
         imageView = findViewById(R.id.fullImageView)
-        linkTextView = findViewById(R.id.linkTextView)
+        linkButton = findViewById(R.id.linkButton)
         textTextView = findViewById(R.id.textText)
         shareButton = findViewById(R.id.shareButton)
         deleteButton = findViewById(R.id.deleteButton)
@@ -71,6 +62,7 @@ class FullContent : AppCompatActivity() {
             imageView.visibility = View.VISIBLE
             Glide.with(this)
                 .load(fileUrl)
+                .dontTransform()
                 .into(imageView)
         }
 
@@ -83,8 +75,8 @@ class FullContent : AppCompatActivity() {
 
         // Handle post URL
         if (postUrl.isNotBlank() && postUrl != "-") {
-            linkTextView.visibility = View.VISIBLE
-            linkTextView.setOnClickListener {
+            linkButton.visibility = View.VISIBLE
+            linkButton.setOnClickListener {
                 val browserIntent = Intent(Intent.ACTION_VIEW, postUrl.toUri())
                 startActivity(browserIntent)
             }

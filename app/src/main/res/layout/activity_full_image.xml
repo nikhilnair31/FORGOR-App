@@ -11,11 +11,12 @@
         android:id="@+id/fullImageView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:adjustViewBounds="true"
-        android:scaleType="fitCenter"
+
         android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@+id/constraintLayout"
+        android:layout_weight="1"
+        android:scaleType="fitCenter"
+
+        app:layout_constraintBottom_toTopOf="@+id/scrollView"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -25,8 +26,10 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:padding="32dp"
-        android:visibility="visible"
-        app:layout_constraintBottom_toTopOf="@+id/constraintLayout"
+
+        android:visibility="gone"
+
+        app:layout_constraintBottom_toTopOf="@+id/scrollView"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -39,8 +42,8 @@
             android:clickable="true"
             android:focusable="true"
             android:fontFamily="@font/venus_cormier"
-            android:textColor="@color/accent_1"
             android:lineSpacingExtra="8dp"
+            android:textColor="@color/accent_1"
             android:textSize="16sp"
 
             app:layout_constraintBottom_toTopOf="@+id/fullImageView"
@@ -50,93 +53,97 @@
             tools:text="be considered similar Improve color similarities\nAdd placeholder text when loading info\nCombine query types" />
     </ScrollView>
 
-    <ImageButton
-        android:id="@+id/shareButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp"
-        android:background="@color/accent_0"
-        android:fontFamily="@font/venus_cormier"
-        android:gravity="center_horizontal|center_vertical"
-
-        android:padding="6dp"
-        android:src="@android:drawable/ic_menu_share"
-        android:stateListAnimator="@null"
-        android:textSize="14sp"
-        app:layout_constraintBottom_toBottomOf="@+id/textScrollView"
-        app:layout_constraintEnd_toStartOf="@+id/deleteButton" />
-
-    <ImageButton
-        android:id="@+id/deleteButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp"
-
-        android:background="@color/accent_0"
-        android:fontFamily="@font/venus_cormier"
-        android:gravity="center_horizontal|center_vertical"
-        android:padding="6dp"
-        android:src="@android:drawable/ic_menu_delete"
-        android:stateListAnimator="@null"
-
-        android:textSize="14sp"
-        app:layout_constraintBottom_toTopOf="@+id/constraintLayout"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/constraintLayout"
+    <ScrollView
+        android:id="@+id/scrollView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:padding="16dp"
+
         android:background="@color/base_1"
         android:orientation="vertical"
-        android:padding="16dp"
+
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent">
 
-        <Button
-            android:id="@+id/linkTextView"
-            android:layout_width="match_parent"
+        <GridLayout
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
 
-            android:background="@color/accent_1"
-            android:fontFamily="@font/venus_cormier"
-            android:gravity="center_horizontal|center_vertical"
-            android:padding="24dp"
-            android:stateListAnimator="@null"
-            android:text="@string/viewPost"
+            android:gravity="center_horizontal"
+            android:layout_gravity="center_horizontal" >
 
-            android:textSize="14sp"
-            android:visibility="gone"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            <ImageButton
+                android:id="@+id/shareButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="24dp"
 
-        <Button
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="8dp"
+                android:background="@color/accent_1"
+                android:fontFamily="@font/venus_cormier"
+                android:gravity="center_horizontal|center_vertical"
+                android:contentDescription=""
+                android:src="@android:drawable/ic_menu_share"
+                android:stateListAnimator="@null"
+                android:textSize="14sp"
 
-            android:layout_marginEnd="16dp"
-            android:layout_marginBottom="16dp"
-            android:background="@color/accent_1"
-            android:fontFamily="@font/venus_cormier"
-            android:gravity="center_horizontal|center_vertical"
-            android:padding="24dp"
+                app:layout_constraintBottom_toTopOf="@+id/linkButton"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
-            android:stateListAnimator="@null"
-            android:text="SHOW SIMILAR"
-            android:textSize="14sp"
-            android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.0"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/linkTextView" />
-    </androidx.constraintlayout.widget.ConstraintLayout>
+            <ImageButton
+                android:id="@+id/deleteButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+
+                android:background="@color/accent_1"
+                android:contentDescription=""
+                android:fontFamily="@font/venus_cormier"
+                android:padding="24dp"
+                android:src="@android:drawable/ic_menu_delete"
+                android:stateListAnimator="@null"
+                android:textSize="14sp"
+
+                app:layout_constraintBottom_toTopOf="@+id/linkButton" />
+
+            <ImageButton
+                android:id="@+id/linkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+
+                android:background="@color/accent_1"
+                android:fontFamily="@font/venus_cormier"
+                android:padding="24dp"
+                android:contentDescription=""
+                android:src="@android:drawable/ic_menu_view"
+                android:stateListAnimator="@null"
+                android:textSize="14sp"
+
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <ImageButton
+                android:id="@+id/similarButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+
+                android:background="@color/accent_1"
+                android:fontFamily="@font/venus_cormier"
+                android:padding="24dp"
+                android:contentDescription=""
+                android:src="@android:drawable/ic_menu_search"
+                android:stateListAnimator="@null"
+                android:textSize="14sp"
+
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/linkButton" />
+
+        </GridLayout>
+    </ScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>
