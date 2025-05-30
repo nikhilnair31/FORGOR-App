@@ -45,13 +45,13 @@ class Share : AppCompatActivity() {
             type == "text/plain" -> {
                 if (action == Intent.ACTION_SEND) {
                     val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
-                    handleSendText(sharedText)
-                }
-            }
-            type == "text/url" -> {
-                if (action == Intent.ACTION_SEND) {
-                    val sharedUrl = intent.getStringExtra(Intent.EXTRA_TEXT)
-                    handleSendUrl(sharedUrl)
+                    if (sharedText != null) {
+                        if (android.util.Patterns.WEB_URL.matcher(sharedText).matches()) {
+                            handleSendUrl(sharedText)
+                        } else {
+                            handleSendText(sharedText)
+                        }
+                    }
                 }
             }
             type == "application/pdf" -> {
@@ -66,6 +66,8 @@ class Share : AppCompatActivity() {
     }
 
     private fun handleSendImage(imageUri: Uri?) {
+        Log.d(TAG, "handleSendImage | imageUri: $imageUri")
+
         imageUri?.let {
             var realPath = Helpers.getRealPathFromUri(this, it)
             if (realPath == null) {
@@ -97,18 +99,19 @@ class Share : AppCompatActivity() {
         }
     }
     private fun handleSendText(text: String?) {
+        Log.d(TAG, "handleSendText | text: $text")
         text?.let {
-            Log.d(TAG, "handleSendText | received text: $it")
             Helpers.uploadPostTextToServer(this, it)
         }
     }
     private fun handleSendUrl(url: String?) {
+        Log.d(TAG, "handleSendUrl | url: $url")
         url?.let {
-            Log.d(TAG, "handleSendUrl | received url: $it")
             Helpers.uploadPostUrlToServer(this, it)
         }
     }
     private fun handleSendPdf(pdfUri: Uri?) {
+        Log.d(TAG, "handleSendPdf | pdfUri: $pdfUri")
         pdfUri?.let {
             var realPath = Helpers.getRealPathFromUri(this, it)
             if (realPath == null) {
