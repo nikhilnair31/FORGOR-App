@@ -12,11 +12,13 @@ import android.widget.TextView
 import androidx.core.content.FileProvider
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.net.toUri
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.model.GlideUrl
 import com.bumptech.glide.request.RequestOptions
+import com.sil.adapter.ResultDiffCallback
 import com.sil.others.Helpers
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -43,9 +45,12 @@ RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
         return dataList
     }
     fun updateData(newData: List<JSONObject>) {
+        val diffCallback = ResultDiffCallback(dataList, newData)
+        val diffResult = DiffUtil.calculateDiff(diffCallback)
+
         dataList.clear()
         dataList.addAll(newData)
-        notifyDataSetChanged()
+        diffResult.dispatchUpdatesTo(this)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ResultViewHolder {

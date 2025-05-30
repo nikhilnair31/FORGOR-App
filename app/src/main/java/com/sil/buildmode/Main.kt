@@ -14,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.widget.doAfterTextChanged
+import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -138,15 +139,18 @@ class Main : AppCompatActivity() {
         window.navigationBarColor = ContextCompat.getColor(this, R.color.accent_0)
         WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightNavigationBars = true
 
+        recyclerView = findViewById(R.id.imageRecyclerView)
         placeholder = findViewById(R.id.emptyPlaceholder)
-        placeholder.visibility = View.GONE
+        settingsButton = findViewById(R.id.settingsButton)
 
         resultAdapter = ResultAdapter(this, mutableListOf())
-        recyclerView = findViewById(R.id.imageRecyclerView)
+
         recyclerView.adapter = resultAdapter
+        recyclerView.itemAnimator = DefaultItemAnimator()
         recyclerView.layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
 
-        settingsButton = findViewById(R.id.settingsButton)
+        placeholder.visibility = View.GONE
+
         settingsButton.setOnClickListener {
             startActivity(Intent(this, Settings::class.java))
         }
