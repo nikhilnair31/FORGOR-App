@@ -48,6 +48,12 @@ class Share : AppCompatActivity() {
                     handleSendText(sharedText)
                 }
             }
+            type == "text/url" -> {
+                if (action == Intent.ACTION_SEND) {
+                    val sharedUrl = intent.getStringExtra(Intent.EXTRA_TEXT)
+                    handleSendUrl(sharedUrl)
+                }
+            }
             type == "application/pdf" -> {
                 if (action == Intent.ACTION_SEND) {
                     val pdfUri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
@@ -69,7 +75,7 @@ class Share : AppCompatActivity() {
 
             realPath?.let { path ->
                 val file = File(path)
-                Helpers.uploadImageFile(this, file)
+                Helpers.uploadImageFileToServer(this, file)
             }
         }
     }
@@ -86,14 +92,20 @@ class Share : AppCompatActivity() {
 
             realPath?.let { path ->
                 val file = File(path)
-                Helpers.uploadImageFile(this, file)
+                Helpers.uploadImageFileToServer(this, file)
             }
         }
     }
     private fun handleSendText(text: String?) {
         text?.let {
             Log.d(TAG, "handleSendText | received text: $it")
-            Helpers.uploadPostText(this, it)
+            Helpers.uploadPostTextToServer(this, it)
+        }
+    }
+    private fun handleSendUrl(url: String?) {
+        url?.let {
+            Log.d(TAG, "handleSendUrl | received url: $it")
+            Helpers.uploadPostUrlToServer(this, it)
         }
     }
     private fun handleSendPdf(pdfUri: Uri?) {

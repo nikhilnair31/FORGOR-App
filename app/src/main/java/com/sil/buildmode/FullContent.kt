@@ -66,7 +66,7 @@ class FullContent : AppCompatActivity() {
         if (fileName.endsWith(".pdf", ignoreCase = true)) {
             CoroutineScope(Dispatchers.IO).launch {
                 try {
-                    val localFile = Helpers.downloadPdfToCache(this@FullContent, fileUrl)
+                    val localFile = Helpers.getPdfToCache(this@FullContent, fileUrl)
 
                     withContext(Dispatchers.Main) {
                         pdfViewer.visibility = View.VISIBLE

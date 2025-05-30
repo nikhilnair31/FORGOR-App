@@ -89,7 +89,7 @@ class ScreenshotService : Service() {
                 if (Helpers.isImageFile(file.name)) {
                     Log.i(TAG, "New screenshot detected at ${file.absolutePath} with name: ${file.name}")
 
-                    Helpers.uploadImageFile(this@ScreenshotService, file)
+                    Helpers.uploadImageFileToServer(this@ScreenshotService, file)
                 }
             }
         }

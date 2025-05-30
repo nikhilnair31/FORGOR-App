@@ -73,9 +73,7 @@ class Main : AppCompatActivity() {
 
                 if (updatedList.isEmpty()) {
                     recyclerView.visibility = View.GONE
-                    placeholder.visibility = View.VISIBLE
                     recyclerView.fadeOut()
-                    placeholder.fadeIn()
                 }
             }
 
@@ -97,7 +95,6 @@ class Main : AppCompatActivity() {
 
                     resultAdapter.updateData(resultList)
                     recyclerView.fadeIn()
-                    placeholder.fadeOut()
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to parse similar results: ${e.localizedMessage}")
                 }
@@ -125,10 +122,8 @@ class Main : AppCompatActivity() {
                 if (resultList.isNotEmpty()) {
                     resultAdapter.updateData(resultList)
                     recyclerView.fadeIn()
-                    placeholder.fadeOut()
                 } else {
                     recyclerView.fadeOut()
-                    placeholder.fadeIn()
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error restoring saved results: ${e.localizedMessage}")
@@ -143,8 +138,8 @@ class Main : AppCompatActivity() {
         WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightNavigationBars = true
 
         recyclerView = findViewById(R.id.imageRecyclerView)
-        placeholder = findViewById(R.id.emptyPlaceholder)
         settingsButton = findViewById(R.id.settingsButton)
+        searchEditText = findViewById(R.id.searchEditText)
 
         resultAdapter = ResultAdapter(this, mutableListOf())
 
@@ -152,77 +147,74 @@ class Main : AppCompatActivity() {
         recyclerView.itemAnimator = DefaultItemAnimator()
         recyclerView.layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
 
-        placeholder.fadeOut()
-
         settingsButton.setOnClickListener {
             startActivity(Intent(this, Settings::class.java))
         }
 
-        searchEditText = findViewById(R.id.searchEditText)
         searchEditText.doAfterTextChanged { text ->
-            if (!searchTextWatcherEnabled) return@doAfterTextChanged
+            searchQueryUpdated(text.toString())
+        }
+    }
 
-            searchRunnable?.let { searchHandler.removeCallbacks(it) }
+    private fun searchQueryUpdated(text: String) {
+        if (!searchTextWatcherEnabled) return
 
-            searchRunnable = Runnable {
-                val query = text.toString().trim()
+        searchRunnable?.let { searchHandler.removeCallbacks(it) }
 
-                if (query.isEmpty()) {
-                    Log.i(TAG, "Empty search triggered")
+        searchRunnable = Runnable {
+            val query = text.toString().trim()
 
-                    resultAdapter.updateData(emptyList())
-                    recyclerView.fadeOut()
-                    placeholder.fadeIn()
+            if (query.isEmpty()) {
+                Log.i(TAG, "Empty search triggered")
 
-                    return@Runnable
+                resultAdapter.updateData(emptyList())
+                recyclerView.fadeOut()
+
+                return@Runnable
+            }
+
+            Log.i(TAG, "Delayed search triggered for: $query")
+
+            Helpers.searchToServer(this, query) { response  ->
+                response?.let {
+                    generalSharedPreferences.edit().apply {
+                        putString("last_query", query)
+                        putString("last_results_json", it)
+                        apply()
+                    }
                 }
 
-                Log.i(TAG, "Delayed search triggered for: $query")
+                runOnUiThread {
+                    if (response == null) {
+                        Log.e(TAG, "Query returned null")
 
-                Helpers.searchToServer(this, query) { response  ->
-                    response?.let {
-                        generalSharedPreferences.edit().apply {
-                            putString("last_query", query)
-                            putString("last_results_json", it)
-                            apply()
-                        }
+                        resultAdapter.updateData(emptyList())
+                        recyclerView.fadeOut()
+
+                        return@runOnUiThread
                     }
 
-                    runOnUiThread {
-                        if (response == null) {
-                            Log.e(TAG, "Query returned null")
+                    try {
+                        val json = JSONObject(response)
+                        val results = json.getJSONArray("results")
+                        val resultList = List(results.length()) { i -> results.getJSONObject(i) }
+                        Log.i(TAG, "Query returned ${results.length()} results")
 
+                        if (resultList.isEmpty()) {
                             resultAdapter.updateData(emptyList())
                             recyclerView.fadeOut()
-                            placeholder.fadeIn()
-
-                            return@runOnUiThread
+                        } else {
+                            resultAdapter.updateData(resultList)
+                            recyclerView.fadeIn()
                         }
-
-                        try {
-                            val json = JSONObject(response)
-                            val results = json.getJSONArray("results")
-                            val resultList = List(results.length()) { i -> results.getJSONObject(i) }
-                            Log.i(TAG, "Query returned ${results.length()} results")
-
-                            if (resultList.isEmpty()) {
-                                resultAdapter.updateData(emptyList())
-                                recyclerView.fadeOut()
-                                placeholder.fadeIn()
-                            } else {
-                                resultAdapter.updateData(resultList)
-                                placeholder.fadeOut()
-                                recyclerView.fadeIn()
-                            }
-                        } catch (e: Exception) {
-                            Log.e(TAG, "Error parsing response: ${e.localizedMessage}")
-                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error parsing response: ${e.localizedMessage}")
                     }
                 }
             }
-
-            searchHandler.postDelayed(searchRunnable!!, 500) // 1000 ms = 1 second
         }
+
+        searchHandler.postDelayed(searchRunnable!!, 500) // 1000 ms = 1 second
     }
 
     fun View.fadeIn(duration: Long = 200, delay: Long = 0) {

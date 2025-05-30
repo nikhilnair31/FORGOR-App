@@ -14,18 +14,9 @@ import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import androidx.core.content.edit
-import androidx.work.BackoffPolicy
-import androidx.work.Constraints
-import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequest
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
-import androidx.work.workDataOf
 import com.bumptech.glide.load.model.GlideUrl
 import com.bumptech.glide.load.model.LazyHeaders
 import com.sil.buildmode.BuildConfig
-import com.sil.buildmode.FullContent
-import com.sil.workers.UploadWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -145,90 +136,6 @@ class Helpers {
 
             withValidToken(context, { token -> sendRequest(token) })
         }
-        fun uploadImageFile(context: Context, imageFile: File) {
-            CoroutineScope(Dispatchers.IO).launch {
-                // Start upload process
-                scheduleImageUploadWork(
-                    context,
-                    "image",
-                    imageFile
-                )
-            }
-        }
-        fun scheduleImageUploadWork(context: Context, uploadType: String, file: File?) {
-            val constraints = Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.CONNECTED)
-                .build()
-
-            val inputData = workDataOf(
-                "uploadType" to uploadType,
-                "filePath" to file?.absolutePath
-            )
-
-            val uploadWorkRequest = OneTimeWorkRequestBuilder<UploadWorker>()
-                .setBackoffCriteria(
-                    BackoffPolicy.EXPONENTIAL,
-                    OneTimeWorkRequest.MIN_BACKOFF_MILLIS,
-                    TimeUnit.MILLISECONDS
-                )
-                .setConstraints(constraints)
-                .setInputData(inputData)
-                .build()
-
-            val appContext = context.applicationContext
-            WorkManager.getInstance(appContext).enqueue(uploadWorkRequest)
-        }
-
-        fun deleteFile(context: Context, fileName: String) {
-            Log.i(TAG, "Deleting file: $fileName")
-
-            fun sendRequest(token: String) {
-                val requestBody = MultipartBody.Builder()
-                    .setType(MultipartBody.FORM)
-                    .addFormDataPart("file_name", fileName)
-                    .build()
-
-                val request = buildAuthorizedRequest(
-                    "$SERVER_URL/api/delete/file",
-                    token = token,
-                    body = requestBody
-                )
-
-                httpClient.newCall(request).enqueue(object : Callback {
-                    override fun onFailure(call: Call, e: IOException) {
-                        Log.e(TAG, "File delete failed: ${e.localizedMessage}")
-                        showToast(context, "File delete failed!")
-                    }
-
-                    override fun onResponse(call: Call, response: Response) {
-                        if (response.code == 401) {
-                            // Token expired, attempt refresh
-                            refreshAccessToken(context) { success, newToken ->
-                                if (success && !newToken.isNullOrEmpty()) {
-                                    sendRequest(newToken) // Retry with new token
-                                } else {
-                                    showToast(context, "Session expired. Please log in again.")
-                                }
-                            }
-                            return
-                        }
-                        if (response.code == 403) {
-                            showToast(context, "Daily save limit reached")
-                            return
-                        }
-
-                        if (response.isSuccessful) {
-                            showToast(context, "File deleted successfully!")
-                        } else {
-                            Log.e(TAG, "Server error: ${response.code}")
-                            showToast(context, "File delete failed!")
-                        }
-                    }
-                })
-            }
-
-            withValidToken(context, { token -> sendRequest(token) })
-        }
 
         fun getImageURL(context: Context, imageUrl: String): GlideUrl? {
             // Log.i(TAG, "getImageURL | getting image URL...")
@@ -260,29 +167,6 @@ class Helpers {
             }
         }
 
-        fun getScreenshotsPath(): String? {
-            // For most devices, screenshots are in DCIM/Screenshots or Pictures/Screenshots
-            val dcimPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)
-            val picturesPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-
-            val possiblePaths = listOf(
-                File(picturesPath, "Screenshots"),
-                // Some devices might use the root of DCIM or Pictures
-                picturesPath
-            )
-
-            for (path in possiblePaths) {
-                if (path.exists() && path.isDirectory) {
-                    return path.absolutePath
-                }
-            }
-
-            // If we can't find a known screenshots directory, default to DCIM/Screenshots
-            val defaultPath = File(dcimPath, "Screenshots")
-            defaultPath.mkdirs()
-
-            return defaultPath.absolutePath
-        }
         fun isImageFile(fileName: String): Boolean {
             Log.i(TAG, "isImageFile | fileName: $fileName")
 
@@ -355,7 +239,7 @@ class Helpers {
             withValidToken(context, { token -> sendRequest(token) })
         }
 
-        fun downloadPdfToCache(context: Context, url: String): File {
+        fun getPdfToCache(context: Context, url: String): File {
             val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
             val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
             if (accessToken.isEmpty()) {
@@ -450,39 +334,6 @@ class Helpers {
 
             withValidToken(context, { token -> sendRequest(token) })
         }
-        fun uploadPostText(context: Context, postText: String) {
-            CoroutineScope(Dispatchers.IO).launch {
-                // Start upload process
-                schedulePostURLUploadWork(
-                    context,
-                    "text",
-                    postText
-                )
-            }
-        }
-        fun schedulePostURLUploadWork(context: Context, uploadType: String, postText: String) {
-            val constraints = Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.CONNECTED)
-                .build()
-
-            val inputData = workDataOf(
-                "uploadType" to uploadType,
-                "postText" to postText,
-            )
-
-            val uploadWorkRequest = OneTimeWorkRequestBuilder<UploadWorker>()
-                .setBackoffCriteria(
-                    BackoffPolicy.EXPONENTIAL,
-                    OneTimeWorkRequest.MIN_BACKOFF_MILLIS,
-                    TimeUnit.MILLISECONDS
-                )
-                .setConstraints(constraints)
-                .setInputData(inputData)
-                .build()
-
-            val appContext = context.applicationContext
-            WorkManager.getInstance(appContext).enqueue(uploadWorkRequest)
-        }
 
         fun getTxtToCache(context: Context, url: String): File? {
             try {
@@ -527,6 +378,63 @@ class Helpers {
 
         fun isTextFile(fileName: String): Boolean {
             return fileName.lowercase().endsWith(".txt")
+        }
+        // endregion
+
+        // region Url Related
+        fun uploadPostUrlToServer(context: Context, postUrl: String) {
+            Log.i(TAG, "Uploading text to server...")
+
+            fun sendRequest(token: String) {
+                val requestBody = MultipartBody.Builder()
+                    .setType(MultipartBody.FORM)
+                    .addFormDataPart("url", postUrl)
+                    .build()
+
+                val request = buildAuthorizedRequest(
+                    "$SERVER_URL/api/upload/url",
+                    token = token,
+                    body = requestBody
+                )
+
+                // ✅ Custom OkHttpClient with longer timeouts
+                val client = OkHttpClient.Builder()
+                    .readTimeout(20, TimeUnit.SECONDS)
+                    .build()
+
+                client.newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        Log.e(TAG, "Upload failed: ${e.localizedMessage}")
+                        showToast(context, "Save failed!")
+                    }
+
+                    override fun onResponse(call: Call, response: Response) {
+                        if (response.code == 401) {
+                            refreshAccessToken(context) { success, newToken ->
+                                if (success && newToken != null) sendRequest(newToken)
+                                else showToast(context, "Login expired")
+                            }
+                            return
+                        }
+                        if (response.code == 403) {
+                            showToast(context, "Daily save limit reached")
+                            return
+                        }
+
+                        if (response.isSuccessful) {
+                            showToast(context, "Saved!")
+                        } else {
+                            showToast(context, "Save failed!")
+                        }
+                    }
+                })
+            }
+
+            withValidToken(context, { token -> sendRequest(token) })
+        }
+
+        fun isUrlText(url: String): Boolean {
+            return url.startsWith("http://") || url.startsWith("https://")
         }
         // endregion
 
@@ -582,6 +490,57 @@ class Helpers {
                         } else {
                             showToast(context, "Could not get saves left")
                             callback(0)
+                        }
+                    }
+                })
+            }
+
+            withValidToken(context, { token -> sendRequest(token) })
+        }
+
+        fun deleteFile(context: Context, fileName: String) {
+            Log.i(TAG, "Deleting file: $fileName")
+
+            fun sendRequest(token: String) {
+                val requestBody = MultipartBody.Builder()
+                    .setType(MultipartBody.FORM)
+                    .addFormDataPart("file_name", fileName)
+                    .build()
+
+                val request = buildAuthorizedRequest(
+                    "$SERVER_URL/api/delete/file",
+                    token = token,
+                    body = requestBody
+                )
+
+                httpClient.newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        Log.e(TAG, "File delete failed: ${e.localizedMessage}")
+                        showToast(context, "File delete failed!")
+                    }
+
+                    override fun onResponse(call: Call, response: Response) {
+                        if (response.code == 401) {
+                            // Token expired, attempt refresh
+                            refreshAccessToken(context) { success, newToken ->
+                                if (success && !newToken.isNullOrEmpty()) {
+                                    sendRequest(newToken) // Retry with new token
+                                } else {
+                                    showToast(context, "Session expired. Please log in again.")
+                                }
+                            }
+                            return
+                        }
+                        if (response.code == 403) {
+                            showToast(context, "Daily save limit reached")
+                            return
+                        }
+
+                        if (response.isSuccessful) {
+                            showToast(context, "File deleted successfully!")
+                        } else {
+                            Log.e(TAG, "Server error: ${response.code}")
+                            showToast(context, "File delete failed!")
                         }
                     }
                 })
@@ -943,6 +902,22 @@ class Helpers {
         // endregion
 
         // region Content Related
+        fun queryContentResolver(context: Context, uri: Uri, selection: String?, selectionArgs: Array<String>?): String? {
+            val projection = arrayOf(MediaStore.Images.Media.DATA)
+            try {
+                context.contentResolver.query(uri, projection, selection, selectionArgs, null)
+                    .use { cursor ->
+                        if (cursor != null && cursor.moveToFirst()) {
+                            val columnIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
+                            return cursor.getString(columnIndex)
+                        }
+                    }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            return null
+        }
+
         fun downloadAndShareFile(context: Context, fileName: String, downloadUrl: String, postUrl: String) {
             Log.d(TAG, "Attempting to download from: $downloadUrl")
             CoroutineScope(Dispatchers.IO).launch {
@@ -1015,20 +990,29 @@ class Helpers {
                 }
             }
         }
-        private fun queryContentResolver(context: Context, uri: Uri, selection: String?, selectionArgs: Array<String>?): String? {
-            val projection = arrayOf(MediaStore.Images.Media.DATA)
-            try {
-                context.contentResolver.query(uri, projection, selection, selectionArgs, null)
-                    .use { cursor ->
-                        if (cursor != null && cursor.moveToFirst()) {
-                            val columnIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
-                            return cursor.getString(columnIndex)
-                        }
-                    }
-            } catch (e: Exception) {
-                e.printStackTrace()
+
+        fun getScreenshotsPath(): String? {
+            // For most devices, screenshots are in DCIM/Screenshots or Pictures/Screenshots
+            val dcimPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)
+            val picturesPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+
+            val possiblePaths = listOf(
+                File(picturesPath, "Screenshots"),
+                // Some devices might use the root of DCIM or Pictures
+                picturesPath
+            )
+
+            for (path in possiblePaths) {
+                if (path.exists() && path.isDirectory) {
+                    return path.absolutePath
+                }
             }
-            return null
+
+            // If we can't find a known screenshots directory, default to DCIM/Screenshots
+            val defaultPath = File(dcimPath, "Screenshots")
+            defaultPath.mkdirs()
+
+            return defaultPath.absolutePath
         }
         fun getRealPathFromUri(context: Context, uri: Uri): String? {
             var realPath: String? = null
@@ -1060,6 +1044,11 @@ class Helpers {
 
             return realPath
         }
+        fun getMimeType(fileName: String): String? {
+            val extension = fileName.substringAfterLast('.', "")
+            return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
+        }
+
         fun copyUriToTempFile(context: Context, uri: Uri): File? {
             var tempFile: File? = null
             try {
@@ -1081,10 +1070,6 @@ class Helpers {
                 e.printStackTrace()
             }
             return tempFile
-        }
-        fun getMimeType(fileName: String): String? {
-            val extension = fileName.substringAfterLast('.', "")
-            return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
         }
         // endregion
 
