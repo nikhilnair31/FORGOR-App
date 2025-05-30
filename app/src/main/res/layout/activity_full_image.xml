@@ -12,11 +12,11 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
 
-        android:visibility="gone"
         android:layout_weight="1"
         android:scaleType="fitCenter"
+        android:visibility="gone"
 
-        app:layout_constraintBottom_toTopOf="@+id/scrollView"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -29,7 +29,11 @@
 
         android:visibility="gone"
 
-        app:containerBackgroundColor="@android:color/transparent" />
+        app:containerBackgroundColor="@android:color/transparent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <ScrollView
         android:id="@+id/textScrollView"
@@ -39,7 +43,7 @@
 
         android:visibility="gone"
 
-        app:layout_constraintBottom_toTopOf="@+id/scrollView"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -63,97 +67,78 @@
             tools:text="be considered similar Improve color similarities\nAdd placeholder text when loading info\nCombine query types" />
     </ScrollView>
 
-    <ScrollView
-        android:id="@+id/scrollView"
-        android:layout_width="match_parent"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="16dp"
 
-        android:background="@color/base_1"
-        android:orientation="vertical"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:gravity="center_horizontal"
 
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent">
+        app:layout_constraintEnd_toEndOf="parent">
 
-        <GridLayout
+        <ImageButton
+            android:id="@+id/sharePostButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
 
-            android:gravity="center_horizontal"
-            android:layout_gravity="center_horizontal" >
+            android:background="@color/accent_1"
+            android:contentDescription="@string/sharePost"
+            android:fontFamily="@font/venus_cormier"
+            android:gravity="center_horizontal|center_vertical"
+            android:padding="16dp"
+            android:src="@android:drawable/ic_menu_share"
+            android:stateListAnimator="@null"
 
-            <ImageButton
-                android:id="@+id/shareButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:padding="24dp"
+            app:layout_constraintBottom_toTopOf="@+id/deletePostButton"
+            app:layout_constraintEnd_toEndOf="parent" />
 
-                android:background="@color/accent_1"
-                android:fontFamily="@font/venus_cormier"
-                android:gravity="center_horizontal|center_vertical"
-                android:contentDescription=""
-                android:src="@android:drawable/ic_menu_share"
-                android:stateListAnimator="@null"
-                android:textSize="14sp"
+        <ImageButton
+            android:id="@+id/deletePostButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
 
-                app:layout_constraintBottom_toTopOf="@+id/linkButton"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+            android:background="@color/accent_1"
+            android:contentDescription="@string/deletePost"
+            android:fontFamily="@font/venus_cormier"
+            android:padding="16dp"
+            android:src="@android:drawable/ic_menu_delete"
+            android:stateListAnimator="@null"
 
-            <ImageButton
-                android:id="@+id/deleteButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+            app:layout_constraintBottom_toTopOf="@+id/openPostButton"
+            app:layout_constraintEnd_toEndOf="parent" />
 
-                android:background="@color/accent_1"
-                android:contentDescription=""
-                android:fontFamily="@font/venus_cormier"
-                android:padding="24dp"
-                android:src="@android:drawable/ic_menu_delete"
-                android:stateListAnimator="@null"
-                android:textSize="14sp"
+        <ImageButton
+            android:id="@+id/openPostButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
 
-                app:layout_constraintBottom_toTopOf="@+id/linkButton" />
+            android:background="@color/accent_1"
+            android:contentDescription="@string/openPost"
+            android:fontFamily="@font/venus_cormier"
+            android:padding="16dp"
+            android:src="@android:drawable/ic_menu_view"
+            android:stateListAnimator="@null"
 
-            <ImageButton
-                android:id="@+id/linkButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+            app:layout_constraintBottom_toTopOf="@+id/similarPostButton"
+            app:layout_constraintEnd_toEndOf="parent" />
 
-                android:background="@color/accent_1"
-                android:fontFamily="@font/venus_cormier"
-                android:padding="24dp"
-                android:contentDescription=""
-                android:src="@android:drawable/ic_menu_view"
-                android:stateListAnimator="@null"
-                android:textSize="14sp"
+        <ImageButton
+            android:id="@+id/similarPostButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
 
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+            android:background="@color/accent_1"
+            android:contentDescription="@string/findSimilarPost"
+            android:fontFamily="@font/venus_cormier"
+            android:padding="16dp"
+            android:src="@android:drawable/ic_menu_search"
+            android:stateListAnimator="@null"
 
-            <ImageButton
-                android:id="@+id/similarButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
-                android:background="@color/accent_1"
-                android:fontFamily="@font/venus_cormier"
-                android:padding="24dp"
-                android:contentDescription=""
-                android:src="@android:drawable/ic_menu_search"
-                android:stateListAnimator="@null"
-                android:textSize="14sp"
-
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintHorizontal_bias="0.0"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/linkButton" />
-
-        </GridLayout>
-    </ScrollView>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

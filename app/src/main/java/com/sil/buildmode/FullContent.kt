@@ -8,10 +8,8 @@ import android.view.View
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import com.sil.others.Helpers
 import androidx.core.net.toUri
-import androidx.core.view.WindowCompat
 import com.bhuvaneshw.pdf.PdfViewer
 import com.bumptech.glide.Glide
 import com.github.chrisbanes.photoview.PhotoView
@@ -20,6 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 
 class FullContent : AppCompatActivity() {
     // region Vars
@@ -34,25 +33,24 @@ class FullContent : AppCompatActivity() {
     private lateinit var pdfViewer: PdfViewer
     private lateinit var textScrollView: View
     private lateinit var textTextView: TextView
-    private lateinit var linkButton: ImageButton
-    private lateinit var shareButton: ImageButton
-    private lateinit var deleteButton: ImageButton
+    private lateinit var similarPostButton: ImageButton
+    private lateinit var openPostButton: ImageButton
+    private lateinit var sharePostButton: ImageButton
+    private lateinit var deletePostButton: ImageButton
     // endregion
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_full_image)
 
-        window.navigationBarColor = ContextCompat.getColor(this, R.color.base_1)
-        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightNavigationBars = true
-
         pdfViewer = findViewById(R.id.pdf_viewer)
         imageView = findViewById(R.id.fullImageView)
         textScrollView = findViewById(R.id.textScrollView)
         textTextView = findViewById(R.id.textText)
-        linkButton = findViewById(R.id.linkButton)
-        shareButton = findViewById(R.id.shareButton)
-        deleteButton = findViewById(R.id.deleteButton)
+        similarPostButton = findViewById(R.id.similarPostButton)
+        openPostButton = findViewById(R.id.openPostButton)
+        sharePostButton = findViewById(R.id.sharePostButton)
+        deletePostButton = findViewById(R.id.deletePostButton)
 
         val fileName = intent.getStringExtra("fileName") ?: ""
         val postUrl = intent.getStringExtra("postUrl") ?: ""
@@ -109,22 +107,40 @@ class FullContent : AppCompatActivity() {
 
         // Handle post URL
         if (postUrl.isNotBlank() && postUrl != "-") {
-            linkButton.visibility = View.VISIBLE
-            linkButton.setOnClickListener {
+            openPostButton.visibility = View.VISIBLE
+            openPostButton.setOnClickListener {
                 val browserIntent = Intent(Intent.ACTION_VIEW, postUrl.toUri())
                 startActivity(browserIntent)
             }
         }
 
-        // Sharing
-        shareButton.setOnClickListener {
-            if (fileName.isNotBlank()) {
-                Helpers.downloadAndShareFile(this, fileName, fileUrl, postUrl)
+        // Similar
+        similarPostButton.setOnClickListener {
+            Helpers.getSimilarFromServer(this, fileName) { success, response ->
+                if (success && response != null) {
+                    val json = JSONObject(response)
+                    val resultsArray = json.getJSONArray("results")
+                    Log.i(TAG, "resultsArray: $resultsArray")
+
+                    val intent = Intent().apply {
+                        putExtra("similar_results_json", json.toString())
+                    }
+                    setResult(RESULT_OK, intent)
+                    finish()
+                } else {
+                    // Handle failure
+                    Log.e(TAG, "Failed to fetch similar results")
+                }
             }
         }
 
+        // Sharing
+        sharePostButton.setOnClickListener {
+            Helpers.downloadAndShareFile(this, fileName, fileUrl, postUrl)
+        }
+
         // Deletion
-        deleteButton.setOnClickListener {
+        deletePostButton.setOnClickListener {
             AlertDialog.Builder(this)
                 .setTitle("Delete File")
                 .setMessage("Are you sure you want to delete this file?")

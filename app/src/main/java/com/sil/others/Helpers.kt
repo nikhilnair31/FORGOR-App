@@ -887,6 +887,59 @@ class Helpers {
 
             withValidToken(context, { token -> sendRequest(token) }, onInvalid = { callback(null) })
         }
+
+        fun getSimilarFromServer(context: Context, fileName: String, callback: (success: Boolean, resultJson: String?) -> Unit) {
+            Log.i(TAG, "Getting similar content for file: $fileName")
+
+            val startTime = System.currentTimeMillis()
+            val requestUrl = "$SERVER_URL/api/get_similar/$fileName"
+
+            fun sendRequest(token: String) {
+                val request = buildAuthorizedRequest(
+                    url = requestUrl,
+                    method = "GET",
+                    token = token
+                )
+
+                httpClient.newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        Log.e(TAG, "Get similar failed: ${e.localizedMessage}")
+                        showToast(context, "Get similar failed!")
+                        callback(false, null)
+                    }
+
+                    override fun onResponse(call: Call, response: Response) {
+                        val roundtripTime = System.currentTimeMillis() - startTime
+                        val responseBody = response.body?.string()
+
+                        if (response.code == 401) {
+                            refreshAccessToken(context) { success, newToken ->
+                                if (success && !newToken.isNullOrEmpty()) sendRequest(newToken)
+                                else {
+                                    showToast(context, "Login expired")
+                                    callback(false, null)
+                                }
+                            }
+                            return
+                        }
+
+                        if (response.isSuccessful) {
+                            Log.i(TAG, "Get similar roundtrip time: ${roundtripTime}ms")
+                            Log.d(TAG, "Get similar response: $responseBody")
+                            callback(true, responseBody)
+                        } else {
+                            Log.e(TAG, "Get similar failed with code ${response.code}: $responseBody")
+                            showToast(context, "Get similar failed!")
+                            callback(false, null)
+                        }
+                    }
+                })
+            }
+
+            withValidToken(context, { token -> sendRequest(token) }, onInvalid = {
+                callback(false, null)
+            })
+        }
         // endregion
 
         // region Content Related

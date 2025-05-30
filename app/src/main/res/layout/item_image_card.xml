@@ -47,7 +47,7 @@
         app:tint="@color/accent_1"
         android:background="@color/accent_0"
         android:layout_gravity="top|end"
-        android:contentDescription="@string/viewPost"
+        android:contentDescription="@string/openPost"
         android:src="@drawable/sharp_link_24"
         android:visibility="visible" />
 </FrameLayout>

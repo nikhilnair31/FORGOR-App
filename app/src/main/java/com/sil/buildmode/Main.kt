@@ -34,9 +34,10 @@ class Main : AppCompatActivity() {
 
     private lateinit var generalSharedPreferences: SharedPreferences
 
-    lateinit var resultAdapter: ResultAdapter
     private var searchHandler = Handler(Looper.getMainLooper())
+    private var searchTextWatcherEnabled = true
     private var searchRunnable: Runnable? = null
+    lateinit var resultAdapter: ResultAdapter
 
     private lateinit var searchEditText: EditText
     private lateinit var settingsButton: ImageButton
@@ -61,6 +62,8 @@ class Main : AppCompatActivity() {
 
         if (requestCode == 101 && resultCode == RESULT_OK) {
             val deletedFileName = data?.getStringExtra("deletedFileName")
+            val similarResultsJson = data?.getStringExtra("similar_results_json")
+
             if (!deletedFileName.isNullOrEmpty()) {
                 val currentList = resultAdapter.getData()
                 val updatedList = currentList.filter { it.optString("file_name") != deletedFileName }
@@ -69,6 +72,24 @@ class Main : AppCompatActivity() {
                 if (updatedList.isEmpty()) {
                     recyclerView.visibility = View.GONE
                     placeholder.visibility = View.VISIBLE
+                }
+            }
+
+            if (!similarResultsJson.isNullOrEmpty()) {
+                try {
+                    val json = JSONObject(similarResultsJson)
+                    val results = json.getJSONArray("results")
+                    val resultList = List(results.length()) { i -> results.getJSONObject(i) }
+
+                    searchTextWatcherEnabled = false
+                    searchEditText.setText("")
+                    searchTextWatcherEnabled = true
+
+                    resultAdapter.updateData(resultList)
+                    recyclerView.visibility = View.VISIBLE
+                    placeholder.visibility = View.GONE
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to parse similar results: ${e.localizedMessage}")
                 }
             }
         }
@@ -122,6 +143,8 @@ class Main : AppCompatActivity() {
 
         searchEditText = findViewById(R.id.searchEditText)
         searchEditText.doAfterTextChanged { text ->
+            if (!searchTextWatcherEnabled) return@doAfterTextChanged
+
             searchRunnable?.let { searchHandler.removeCallbacks(it) }
 
             searchRunnable = Runnable {

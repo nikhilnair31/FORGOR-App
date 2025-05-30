@@ -24,20 +24,19 @@
             android:orientation="vertical">
 
             <TextView
+                android:id="@+id/titleTextView"
                 android:layout_width="match_parent"
+
                 android:layout_height="0dp"
-
                 android:contentDescription="@string/appName"
-
                 android:fontFamily="@font/venus_cormier"
                 android:gravity="center_horizontal|center_vertical"
                 android:text="@string/appName"
                 android:textColor="@color/accent_0"
                 android:textSize="80sp"
+
                 app:layout_constraintBottom_toTopOf="@+id/imageRecyclerView"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintHorizontal_bias="0.0"
-                app:layout_constraintStart_toStartOf="parent" />
+                app:layout_constraintEnd_toEndOf="parent" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/imageRecyclerView"
@@ -46,11 +45,10 @@
                 android:layout_height="wrap_content"
 
                 android:contentDescription="@string/searchImagesDescription"
-
-                android:visibility="gone"
-                app:layout_constraintBottom_toTopOf="@+id/emptyPlaceholder"
+                android:visibility="invisible"
+                app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintHorizontal_bias="1.0"
+                app:layout_constraintHorizontal_bias="0.0"
                 app:layout_constraintStart_toStartOf="parent" />
 
             <TextView
@@ -61,7 +59,7 @@
                 android:fontFamily="@font/venus_cormier"
                 android:gravity="center_horizontal|center_vertical"
                 android:padding="32dp"
-                android:text="No matching results found"
+                android:text="@string/noMoreResultsFound"
                 android:textColor="@color/accent_1"
                 android:textSize="16sp"
 

@@ -107,7 +107,12 @@ RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
                 putExtra("fileName", fileName)
                 putExtra("postUrl", postUrl)
             }
-            context.startActivity(intent)
+
+            if (context is Main) {
+                context.startActivityForResult(intent, 101)
+            } else {
+                context.startActivity(intent) // fallback, just in case
+            }
         }
     }
 
