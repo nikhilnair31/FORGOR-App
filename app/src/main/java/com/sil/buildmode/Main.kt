@@ -198,13 +198,6 @@ class Main : AppCompatActivity() {
             refreshRequest
         )
     }
-    private fun testTokenRefreshWorker() {
-        val testWork = OneTimeWorkRequestBuilder<TokenRefreshWorker>()
-            .setInitialDelay(10, TimeUnit.SECONDS) // short delay for testing
-            .build()
-
-        WorkManager.getInstance(this).enqueue(testWork)
-    }
     // endregion
 
     // region Service Related

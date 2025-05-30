@@ -56,14 +56,11 @@ RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
 
     override fun onBindViewHolder(holder: ResultViewHolder, position: Int) {
         val item = dataList[position]
-        // Log.i(TAG, "item: $item")
 
-        val timestampText = item.optString("timestamp_str", "")
-        val postUrl = item.optString("post_url", "").trim()
-        val tagsText = item.optString("tags_text", "")
         val fileName = item.optString("file_name", "")
-        val fileUrl = if (fileName.startsWith("http")) fileName else "$SERVER_URL/api/get_file/$fileName"
-        // Log.i(TAG, "fileUrl: $fileUrl")
+        val thumbnailName = item.optString("thumbnail_name", "")
+        val postUrl = item.optString("post_url", "")
+        val thumbnailUrl = "$SERVER_URL/api/get_thumbnail/$thumbnailName"
 
         // Handle link icon
         holder.linkIcon.visibility = if (postUrl.isBlank() || postUrl == "-") View.GONE else View.VISIBLE
@@ -72,156 +69,47 @@ RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
             context.startActivity(intent)
         }
 
-        // Handle PDFs
-        if (Helpers.isPdfFile(fileName)) {
-            // Show a generic PDF icon
-            holder.imageView.setImageResource(android.R.drawable.ic_popup_disk_full) // Add your own `ic_pdf` icon to res/drawable
-
-            holder.itemView.setOnClickListener {
-                CoroutineScope(Dispatchers.IO).launch {
-                    try {
-                        val localFile = Helpers.downloadPdfToCache(context, fileUrl)  // ✅ Use raw imageUrl, not GlideUrl.toString()
-                        val pdfUri = FileProvider.getUriForFile(
-                            context,
-                            "${context.packageName}.provider",
-                            localFile
-                        )
-
-                        val viewIntent = Intent(Intent.ACTION_VIEW)
-                        viewIntent.setDataAndType(pdfUri, "application/pdf")
-                        viewIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        context.startActivity(viewIntent)
-                    } catch (e: Exception) {
-                        withContext(Dispatchers.Main) {
-                            Helpers.showToast(context, "Failed to open PDF")
-                            Log.e(TAG, "Failed to open PDF", e)
-                        }
-                    }
-                }
-            }
-        }
-
-        // Handle text files
-        else if (Helpers.isTextFile(fileName)) {
-            holder.textText.visibility = View.VISIBLE
-            holder.textText.text = "${R.string.loadingContent}"
-
-            // Default click opens placeholder intent so it’s not unresponsive
-            holder.itemView.setOnClickListener {
-                Helpers.showToast(context, "Loading text... please wait.")
-            }
-
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    val localFile = Helpers.getTxtToCache(context, fileUrl)
-                        ?: throw IOException("File download returned null")
-
-                    val text = localFile.readText().trim()
-
-                    withContext(Dispatchers.Main) {
-                        holder.textText.text = text
-                        holder.itemView.setOnClickListener {
-                            openFileIntent(context, fileName, fileUrl, postUrl, textContent = text)
-                        }
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to load TXT", e)
-                    withContext(Dispatchers.Main) {
-                        holder.textText.text = "${R.string.failedLoadingContent}"
-                        holder.itemView.setOnClickListener {
-                            Helpers.showToast(context, "Failed to open text file.")
-                        }
-                    }
-                }
-            }
-        }
-
         // Handle image files
-        else {
-            val blankDrawable = R.color.accent_0.toDrawable()
-            val glideUrl = Helpers.getImageURL(context, fileUrl)
+        val blankDrawable = R.color.accent_0.toDrawable()
+        val glideUrl = Helpers.getImageURL(context, thumbnailUrl)
 
-            if (glideUrl == null) {
-                holder.imageView.setImageDrawable(blankDrawable)
-                return
-            }
-
-            Glide.with(context)
-                .load(glideUrl)
-                .apply(
-                    RequestOptions()
-                        .diskCacheStrategy(DiskCacheStrategy.ALL)
-                        .placeholder(R.color.accent_0.toDrawable())
-                        .error(R.color.accent_0.toDrawable())
-                        .fitCenter()  // or centerCrop() if you want more even alignment
-                )
-                .into(holder.imageView)
-
-            // Show link icon if postUrl is valid
-            if (postUrl.isNotBlank() && postUrl != "-") {
-                holder.linkIcon.visibility = View.VISIBLE
-                holder.linkIcon.setOnClickListener {
-                    context.startActivity(Intent(Intent.ACTION_VIEW, postUrl.toUri()))
-                }
-            } else {
-                holder.linkIcon.visibility = View.GONE
-            }
-
-            holder.itemView.setOnClickListener {
-                openFileIntent(context, fileName, fileUrl, postUrl, textContent = "")
-            }
+        if (glideUrl == null) {
+            holder.imageView.setImageDrawable(blankDrawable)
+            return
         }
-    }
 
-    override fun getItemCount(): Int = dataList.size
-
-    private fun loadImageWithRetry(imageView: ImageView, glideUrl: GlideUrl, attempt: Int, maxRetries: Int, baseDelayMillis: Long = 300L) {
         Glide.with(context)
             .load(glideUrl)
             .apply(
                 RequestOptions()
-                    .diskCacheStrategy(DiskCacheStrategy.ALL) // ✅ cache both original and transformed
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .placeholder(R.color.accent_0.toDrawable())
                     .error(R.color.accent_0.toDrawable())
-                    .dontTransform()
+                    .fitCenter()  // or centerCrop() if you want more even alignment
             )
-            .into(object : com.bumptech.glide.request.target.CustomTarget<Drawable>() {
-                override fun onLoadCleared(placeholder: Drawable?) {
-                    imageView.setImageDrawable(placeholder)
-                }
+            .into(holder.imageView)
 
-                override fun onResourceReady(
-                    resource: Drawable,
-                    transition: com.bumptech.glide.request.transition.Transition<in Drawable>?
-                ) {
-                    imageView.setImageDrawable(resource)
-                }
-
-                override fun onLoadFailed(errorDrawable: Drawable?) {
-                    Log.w(TAG, "onLoadFailed for $glideUrl (attempt $attempt)")
-
-                    if (attempt < maxRetries) {
-                        val delay = baseDelayMillis * (1 shl attempt)
-
-                        imageView.postDelayed({
-                            Log.i(TAG, "Retrying $glideUrl (attempt ${attempt + 1}) after ${delay}ms")
-                            loadImageWithRetry(imageView, glideUrl, attempt + 1, maxRetries, baseDelayMillis)
-                        }, delay)
-                    } else {
-                        Log.e(TAG, "Image load failed after $maxRetries attempts: $glideUrl")
-                        imageView.setImageDrawable(errorDrawable)
-                    }
-                }
-            })
-    }
-
-    private fun openFileIntent(context: Context, fileName: String, fileUrl: String, postUrl: String, textContent: String? = null) {
-        val intent = Intent(context, FullContent::class.java).apply {
-            putExtra("fileName", fileName)
-            putExtra("fileUrl", fileUrl)
-            putExtra("postUrl", postUrl)
-            textContent?.let { putExtra("textContent", it) }
+        // Show link icon if postUrl is valid
+        if (postUrl.isNotBlank() && postUrl != "-") {
+            holder.linkIcon.visibility = View.VISIBLE
+            holder.linkIcon.setOnClickListener {
+                context.startActivity(Intent(Intent.ACTION_VIEW, postUrl.toUri()))
+            }
+        } else {
+            holder.linkIcon.visibility = View.GONE
         }
-        context.startActivity(intent)
+
+        holder.itemView.setOnClickListener {
+            Log.i(TAG, "Item clicked: $item")
+            Log.i(TAG, "fileName: $fileName postUrl: $postUrl")
+
+            val intent = Intent(context, FullContent::class.java).apply {
+                putExtra("fileName", fileName)
+                putExtra("postUrl", postUrl)
+            }
+            context.startActivity(intent)
+        }
     }
+
+    override fun getItemCount(): Int = dataList.size
 }

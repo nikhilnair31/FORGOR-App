@@ -3,6 +3,7 @@ package com.sil.buildmode
 import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.ImageButton
 import android.widget.TextView
@@ -25,6 +26,7 @@ class FullContent : AppCompatActivity() {
 
     private val APP_KEY = BuildConfig.APP_KEY
     private val USER_AGENT = BuildConfig.USER_AGENT
+    private val SERVER_URL = BuildConfig.SERVER_URL
 
     private lateinit var textScrollView: View
     private lateinit var imageView: PhotoView
@@ -49,21 +51,26 @@ class FullContent : AppCompatActivity() {
         deleteButton = findViewById(R.id.deleteButton)
 
         val fileName = intent.getStringExtra("fileName") ?: ""
-        val fileUrl = intent.getStringExtra("fileUrl") ?: ""
         val postUrl = intent.getStringExtra("postUrl") ?: ""
-        val textContent = intent.getStringExtra("textContent")
+        Log.i(TAG, "fileName: $fileName postUrl: $postUrl")
 
-        initRelated(fileName, fileUrl, postUrl, textContent)
+        val fileUrl = "$SERVER_URL/api/get_file/$fileName"
+
+        initRelated(fileName, fileUrl, postUrl, "")
     }
 
     fun initRelated(fileName: String, fileUrl: String, postUrl: String, textContent: String?) {
         // Handle image content
+        Log.i(TAG, "initRelated fileName: $fileName fileUrl: $fileUrl")
         if (fileName.isNotBlank()) {
-            imageView.visibility = View.VISIBLE
-            Glide.with(this)
-                .load(fileUrl)
-                .dontTransform()
-                .into(imageView)
+            val glideUrl = Helpers.getImageURL(this, fileUrl)
+            if (glideUrl != null) {
+                imageView.visibility = View.VISIBLE
+                Glide.with(this)
+                    .load(glideUrl)
+                    .dontTransform()
+                    .into(imageView)
+            }
         }
 
         // Handle text content

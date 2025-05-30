@@ -234,7 +234,7 @@ class Helpers {
             // Log.i(TAG, "getImageURL | getting image URL...")
 
             try {
-                val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
+                val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
                 val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
                 if (accessToken.isEmpty()) {
                     Log.e(TAG, "Access token missing")
@@ -242,13 +242,10 @@ class Helpers {
                     return null
                 }
 
-                val timeZoneId = TimeZone.getDefault().id
-
                 val glideUrl = GlideUrl(imageUrl, LazyHeaders.Builder()
                     .addHeader("Authorization", "Bearer $accessToken")
                     .addHeader("User-Agent", USER_AGENT)
                     .addHeader("X-App-Key", APP_KEY)
-                    .addHeader("X-Timezone", timeZoneId)
                     .build())
 
                 return glideUrl
