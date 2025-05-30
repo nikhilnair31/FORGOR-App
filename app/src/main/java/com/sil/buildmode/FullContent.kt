@@ -12,12 +12,14 @@ import androidx.core.content.ContextCompat
 import com.sil.others.Helpers
 import androidx.core.net.toUri
 import androidx.core.view.WindowCompat
+import com.bhuvaneshw.pdf.PdfViewer
 import com.bumptech.glide.Glide
 import com.github.chrisbanes.photoview.PhotoView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class FullContent : AppCompatActivity() {
     // region Vars
@@ -28,8 +30,9 @@ class FullContent : AppCompatActivity() {
     private val USER_AGENT = BuildConfig.USER_AGENT
     private val SERVER_URL = BuildConfig.SERVER_URL
 
-    private lateinit var textScrollView: View
     private lateinit var imageView: PhotoView
+    private lateinit var pdfViewer: PdfViewer
+    private lateinit var textScrollView: View
     private lateinit var textTextView: TextView
     private lateinit var linkButton: ImageButton
     private lateinit var shareButton: ImageButton
@@ -43,10 +46,11 @@ class FullContent : AppCompatActivity() {
         window.navigationBarColor = ContextCompat.getColor(this, R.color.base_1)
         WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightNavigationBars = true
 
-        textScrollView = findViewById(R.id.textScrollView)
+        pdfViewer = findViewById(R.id.pdf_viewer)
         imageView = findViewById(R.id.fullImageView)
-        linkButton = findViewById(R.id.linkButton)
+        textScrollView = findViewById(R.id.textScrollView)
         textTextView = findViewById(R.id.textText)
+        linkButton = findViewById(R.id.linkButton)
         shareButton = findViewById(R.id.shareButton)
         deleteButton = findViewById(R.id.deleteButton)
 
@@ -60,9 +64,32 @@ class FullContent : AppCompatActivity() {
     }
 
     fun initRelated(fileName: String, fileUrl: String, postUrl: String, textContent: String?) {
-        // Handle image content
-        Log.i(TAG, "initRelated fileName: $fileName fileUrl: $fileUrl")
-        if (fileName.isNotBlank()) {
+        // PDF Handling
+        if (fileName.endsWith(".pdf", ignoreCase = true)) {
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val localFile = Helpers.downloadPdfToCache(this@FullContent, fileUrl)
+
+                    withContext(Dispatchers.Main) {
+                        pdfViewer.visibility = View.VISIBLE
+
+                        pdfViewer.onReady {
+                            // ✅ Load local file only after viewer is initialized
+                            try {
+                                pdfViewer.load(localFile.absolutePath)
+                            } catch (e: Exception) {
+                                Log.e(TAG, "PDF load failed inside onReady", e)
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to load PDF", e)
+                }
+            }
+        }
+
+        // Image Handling
+        else if (fileName.isNotBlank()) {
             val glideUrl = Helpers.getImageURL(this, fileUrl)
             if (glideUrl != null) {
                 imageView.visibility = View.VISIBLE
@@ -73,8 +100,8 @@ class FullContent : AppCompatActivity() {
             }
         }
 
-        // Handle text content
-        if (!textContent.isNullOrBlank()) {
+        // Text Handling
+        else if (!textContent.isNullOrBlank()) {
             imageView.visibility = View.GONE
             textScrollView.visibility = View.VISIBLE
             textTextView.text = textContent
@@ -89,14 +116,14 @@ class FullContent : AppCompatActivity() {
             }
         }
 
-        // Handle sharing
+        // Sharing
         shareButton.setOnClickListener {
             if (fileName.isNotBlank()) {
                 Helpers.downloadAndShareFile(this, fileName, fileUrl, postUrl)
             }
         }
 
-        // Handle delete
+        // Deletion
         deleteButton.setOnClickListener {
             AlertDialog.Builder(this)
                 .setTitle("Delete File")
