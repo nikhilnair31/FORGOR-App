@@ -26,6 +26,7 @@ import com.sil.services.ScreenshotService
 import com.sil.workers.TokenRefreshWorker
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
+import androidx.core.view.isVisible
 
 class Main : AppCompatActivity() {
     // region Vars
@@ -73,6 +74,8 @@ class Main : AppCompatActivity() {
                 if (updatedList.isEmpty()) {
                     recyclerView.visibility = View.GONE
                     placeholder.visibility = View.VISIBLE
+                    recyclerView.fadeOut()
+                    placeholder.fadeIn()
                 }
             }
 
@@ -93,8 +96,8 @@ class Main : AppCompatActivity() {
                     }
 
                     resultAdapter.updateData(resultList)
-                    recyclerView.visibility = View.VISIBLE
-                    placeholder.visibility = View.GONE
+                    recyclerView.fadeIn()
+                    placeholder.fadeOut()
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to parse similar results: ${e.localizedMessage}")
                 }
@@ -121,11 +124,11 @@ class Main : AppCompatActivity() {
 
                 if (resultList.isNotEmpty()) {
                     resultAdapter.updateData(resultList)
-                    recyclerView.visibility = View.VISIBLE
-                    placeholder.visibility = View.GONE
+                    recyclerView.fadeIn()
+                    placeholder.fadeOut()
                 } else {
-                    recyclerView.visibility = View.GONE
-                    placeholder.visibility = View.VISIBLE
+                    recyclerView.fadeOut()
+                    placeholder.fadeIn()
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error restoring saved results: ${e.localizedMessage}")
@@ -149,7 +152,7 @@ class Main : AppCompatActivity() {
         recyclerView.itemAnimator = DefaultItemAnimator()
         recyclerView.layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
 
-        placeholder.visibility = View.GONE
+        placeholder.fadeOut()
 
         settingsButton.setOnClickListener {
             startActivity(Intent(this, Settings::class.java))
@@ -168,8 +171,8 @@ class Main : AppCompatActivity() {
                     Log.i(TAG, "Empty search triggered")
 
                     resultAdapter.updateData(emptyList())
-                    recyclerView.visibility = View.GONE
-                    placeholder.visibility = View.GONE
+                    recyclerView.fadeOut()
+                    placeholder.fadeIn()
 
                     return@Runnable
                 }
@@ -190,8 +193,8 @@ class Main : AppCompatActivity() {
                             Log.e(TAG, "Query returned null")
 
                             resultAdapter.updateData(emptyList())
-                            recyclerView.visibility = View.GONE
-                            placeholder.visibility = View.VISIBLE
+                            recyclerView.fadeOut()
+                            placeholder.fadeIn()
 
                             return@runOnUiThread
                         }
@@ -200,17 +203,16 @@ class Main : AppCompatActivity() {
                             val json = JSONObject(response)
                             val results = json.getJSONArray("results")
                             val resultList = List(results.length()) { i -> results.getJSONObject(i) }
-
                             Log.i(TAG, "Query returned ${results.length()} results")
 
                             if (resultList.isEmpty()) {
                                 resultAdapter.updateData(emptyList())
-                                recyclerView.visibility = View.GONE
-                                placeholder.visibility = View.VISIBLE
+                                recyclerView.fadeOut()
+                                placeholder.fadeIn()
                             } else {
                                 resultAdapter.updateData(resultList)
-                                recyclerView.visibility = View.VISIBLE
-                                placeholder.visibility = View.GONE
+                                placeholder.fadeOut()
+                                recyclerView.fadeIn()
                             }
                         } catch (e: Exception) {
                             Log.e(TAG, "Error parsing response: ${e.localizedMessage}")
@@ -220,6 +222,29 @@ class Main : AppCompatActivity() {
             }
 
             searchHandler.postDelayed(searchRunnable!!, 500) // 1000 ms = 1 second
+        }
+    }
+
+    fun View.fadeIn(duration: Long = 200, delay: Long = 0) {
+        if (!isVisible || alpha < 1f) {
+            alpha = 0f
+            visibility = View.VISIBLE
+            animate().alpha(1f)
+                .setStartDelay(delay)
+                .setDuration(duration)
+                .start()
+        }
+    }
+    fun View.fadeOut(duration: Long = 200, delay: Long = 0, endAction: (() -> Unit)? = null) {
+        if (isVisible && alpha > 0f) {
+            animate().alpha(0f)
+                .setStartDelay(delay)
+                .setDuration(duration)
+                .withEndAction {
+                    visibility = View.GONE
+                    endAction?.invoke()
+                }
+                .start()
         }
     }
     // endregion
