@@ -85,6 +85,12 @@ class Main : AppCompatActivity() {
                     searchEditText.setText("")
                     searchTextWatcherEnabled = true
 
+                    generalSharedPreferences.edit().apply {
+                        putString("last_query", "")
+                        putString("last_results_json", similarResultsJson)
+                        apply()
+                    }
+
                     resultAdapter.updateData(resultList)
                     recyclerView.visibility = View.VISIBLE
                     placeholder.visibility = View.GONE
@@ -99,10 +105,14 @@ class Main : AppCompatActivity() {
     // region Data Related
     private fun initData() {
         val savedQuery = generalSharedPreferences.getString("last_query", "") ?: ""
-        val savedResultsJson = generalSharedPreferences.getString("last_results_json", "") ?: ""
-
-        if (savedQuery.isNotEmpty() && savedResultsJson.isNotEmpty()) {
+        if (savedQuery.isNotEmpty()) {
+            searchTextWatcherEnabled = false
             searchEditText.setText(savedQuery)
+            searchTextWatcherEnabled = true
+        }
+
+        val savedResultsJson = generalSharedPreferences.getString("last_results_json", "") ?: ""
+        if (savedResultsJson.isNotEmpty()) {
             try {
                 val json = JSONObject(savedResultsJson)
                 val results = json.getJSONArray("results")
