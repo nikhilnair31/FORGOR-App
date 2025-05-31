@@ -214,7 +214,7 @@ class Main : AppCompatActivity() {
             }
         }
 
-        searchHandler.postDelayed(searchRunnable!!, 500) // 1000 ms = 1 second
+        searchHandler.postDelayed(searchRunnable!!, 300) // 1000 ms = 1 second
     }
 
     fun View.fadeIn(duration: Long = 200, delay: Long = 0) {

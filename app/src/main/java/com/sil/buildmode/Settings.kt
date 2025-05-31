@@ -148,6 +148,9 @@ class Settings : AppCompatActivity() {
         generalSharedPreferences.edit(commit = true) {
             remove("username")
             .remove("access_token")
+            .remove("refresh_token")
+            .remove("last_query")
+            .remove("last_results_json")
             .remove("cached_saves_left")
             .putBoolean(KEY_SCREENSHOT_ENABLED, false)
         }  // ← block until written
