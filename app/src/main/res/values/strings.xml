@@ -11,11 +11,13 @@
     <string name="googleSignInText">GOOGLE SIGN IN</string>
 
     <string name="loginUsernameHint">USERNAME</string>
+    <string name="loginEmailHint">EMAIL</string>
     <string name="loginPasswordHint">PASSWORD</string>
     <string name="loginText">LOG IN</string>
     <string name="loginSuccessText">LOGGED IN!</string>
 
     <string name="signupUsernameHint">PICK A USERNAME</string>
+    <string name="signupEmailHint">USE AN EMAIL</string>
     <string name="signupPasswordHint">PICK A PASSWORD</string>
     <string name="signupSuccessText">SIGNED UP!</string>
 

@@ -20,6 +20,7 @@ class SignUp : AppCompatActivity() {
     private lateinit var generalSharedPreferences: SharedPreferences
 
     private lateinit var usernameEditText: EditText
+    private lateinit var emailEditText: EditText
     private lateinit var passwordEditText: EditText
     private lateinit var signupButton: Button
     // endregion
@@ -39,15 +40,21 @@ class SignUp : AppCompatActivity() {
     private fun uiInitRelated() {
         val minPasswordLength = resources.getInteger(R.integer.minPasswordLength)
         usernameEditText = findViewById(R.id.usernameEditText)
+        emailEditText = findViewById(R.id.emailEditText)
         passwordEditText = findViewById(R.id.passwordEditText)
         signupButton = findViewById(R.id.buttonSignup)
 
         val textWatcher = object : android.text.TextWatcher {
             override fun afterTextChanged(s: android.text.Editable?) {
                 val username = usernameEditText.text.toString()
+                val email = emailEditText.text.toString()
                 val password = passwordEditText.text.toString()
 
-                signupButton.isEnabled = username.isNotEmpty() && password.length >= minPasswordLength
+                signupButton.isEnabled =
+                    username.isNotEmpty()
+                    && email.isNotEmpty()
+                    && password.isNotEmpty()
+                    && password.length >= minPasswordLength
             }
 
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -73,10 +80,11 @@ class SignUp : AppCompatActivity() {
         Log.i(TAG, "Signing up user...")
 
         val userNameText = usernameEditText.text.toString()
+        val emailText = emailEditText.text.toString()
         val passwordText = passwordEditText.text.toString()
         val timeZoneId = TimeZone.getDefault().id
 
-        Helpers.authRegisterToServer(this, userNameText, passwordText, timeZoneId) { registerSuccess ->
+        Helpers.authRegisterToServer(this, userNameText, emailText, passwordText, timeZoneId) { registerSuccess ->
             runOnUiThread {
                 if (registerSuccess) {
                     Log.i(TAG, "Sign up success!")
@@ -85,6 +93,7 @@ class SignUp : AppCompatActivity() {
 
                     generalSharedPreferences.edit {
                         putString("username", userNameText)
+                        putString("email", emailText)
                     }
 
                     val intent = Intent(this, Features::class.java)

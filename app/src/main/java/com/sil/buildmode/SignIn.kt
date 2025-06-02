@@ -20,6 +20,7 @@ class SignIn : AppCompatActivity() {
     private lateinit var generalSharedPreferences: SharedPreferences
 
     private lateinit var usernameEditText: EditText
+    private lateinit var emailEditText: EditText
     private lateinit var passwordEditText: EditText
     private lateinit var loginButton: Button
     // endregion
@@ -39,15 +40,21 @@ class SignIn : AppCompatActivity() {
     private fun uiInitRelated() {
         val minPasswordLength = resources.getInteger(R.integer.minPasswordLength)
         usernameEditText = findViewById(R.id.usernameEditText)
+        emailEditText = findViewById(R.id.emailEditText)
         passwordEditText = findViewById(R.id.passwordEditText)
         loginButton = findViewById(R.id.buttonSignup)
 
         val textWatcher = object : android.text.TextWatcher {
             override fun afterTextChanged(s: android.text.Editable?) {
                 val username = usernameEditText.text.toString()
+                val email = emailEditText.text.toString()
                 val password = passwordEditText.text.toString()
 
-                loginButton.isEnabled = username.isNotEmpty() && password.length >= minPasswordLength
+                loginButton.isEnabled =
+                    username.isNotEmpty()
+                    && email.isNotEmpty()
+                    && password.isNotEmpty()
+                    && password.length >= minPasswordLength
             }
 
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -73,9 +80,10 @@ class SignIn : AppCompatActivity() {
         Log.i(TAG, "Logging in user...")
 
         val userNameText = usernameEditText.text.toString()
+        val emailText = emailEditText.text.toString()
         val passwordText = passwordEditText.text.toString()
 
-        Helpers.authLoginToServer(this, userNameText, passwordText) { success ->
+        Helpers.authLoginToServer(this, userNameText, emailText, passwordText) { success ->
             runOnUiThread {
                 if (success) {
                     Log.i(TAG, "Login success!")
@@ -84,6 +92,7 @@ class SignIn : AppCompatActivity() {
 
                     generalSharedPreferences.edit {
                         putString("username", userNameText)
+                        putString("email", emailText)
                     }
 
                     val intent = Intent(this, Features::class.java)

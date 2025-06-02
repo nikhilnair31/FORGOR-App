@@ -609,12 +609,13 @@ class Helpers {
             })
         }
 
-        fun authRegisterToServer(context: Context, username: String, password: String, timeZoneId: String, callback: (success: Boolean) -> Unit) {
-            Log.i(TAG, "Trying to register with $username and $password at $timeZoneId")
+        fun authRegisterToServer(context: Context, username: String, email: String, password: String, timeZoneId: String, callback: (success: Boolean) -> Unit) {
+            Log.i(TAG, "Trying to register with $username and $email and $password at $timeZoneId")
 
             val jsonBody = """
             {
                 "username": "$username",
+                "email": "$email",
                 "password": "$password",
                 "timezone": "$timeZoneId"
             }
@@ -639,7 +640,7 @@ class Helpers {
                         Log.i(TAG, "Register successful: $responseBody")
 
                         // Now attempt login and forward that result
-                        authLoginToServer(context, username, password) { loginSuccess ->
+                        authLoginToServer(context, username, email, password) { loginSuccess ->
                             Log.i(TAG, "Login success")
                             callback(loginSuccess)
                         }
@@ -651,12 +652,13 @@ class Helpers {
                 }
             })
         }
-        fun authLoginToServer(context: Context, username: String, password: String, callback: (success: Boolean) -> Unit) {
+        fun authLoginToServer(context: Context, username: String, email: String, password: String, callback: (success: Boolean) -> Unit) {
             Log.i(TAG, "Trying to login...")
 
             val jsonBody = """
             {
                 "username": "$username",
+                "email": "$email",
                 "password": "$password"
             }
             """.trimIndent()
@@ -777,6 +779,8 @@ class Helpers {
 
             val prefs = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
             prefs.edit {
+                remove("username")
+                remove("email")
                 remove("access_token")
                 remove("refresh_token")
             }

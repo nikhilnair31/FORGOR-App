@@ -38,7 +38,6 @@ RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
     class ResultViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val imageView: ImageView = view.findViewById(R.id.imageView)
         val linkIcon: ImageView = view.findViewById(R.id.linkIcon)
-        val textText: TextView = view.findViewById(R.id.textText)
     }
 
     fun getData(): MutableList<JSONObject> {

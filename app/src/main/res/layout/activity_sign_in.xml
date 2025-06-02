@@ -38,8 +38,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
-        <!-- Username Related-->
-
         <EditText
             android:id="@+id/usernameEditText"
             android:layout_width="match_parent"
@@ -50,7 +48,7 @@
             android:fontFamily="@font/venus_cormier"
             android:gravity="center"
             android:hint="@string/loginUsernameHint"
-            android:inputType="text"
+            android:inputType="textPersonName"
             android:textColor="@android:color/white"
             android:textColorHint="@android:color/darker_gray"
             android:textCursorDrawable="@drawable/cursor_color"
@@ -60,7 +58,27 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/usernameTextView" />
 
-        <!-- Permission Related-->
+        <EditText
+            android:id="@+id/emailEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:padding="24dp"
+
+            android:background="@color/base_1"
+            android:fontFamily="@font/venus_cormier"
+            android:gravity="center"
+            android:hint="@string/loginEmailHint"
+            android:inputType="textEmailAddress"
+            android:textColor="@android:color/white"
+            android:textColorHint="@android:color/darker_gray"
+            android:textCursorDrawable="@drawable/cursor_color"
+            android:textSize="14sp"
+
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/usernameTextView" />
+
         <EditText
             android:id="@+id/passwordEditText"
             android:layout_width="match_parent"
@@ -81,7 +99,7 @@
 
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/usernameTextView" />
+            app:layout_constraintTop_toBottomOf="@id/emailEditText" />
 
         <Button
             android:id="@+id/buttonSignup"
