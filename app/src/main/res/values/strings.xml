@@ -3,23 +3,23 @@
 
     <string name="shortcut_label_save_image">Save to FORGOR</string>
 
-    <string name="appLogoDescription">app logo</string>
-
-    <string name="signInText">SIGN IN</string>
-    <string name="signUpText">SIGN UP</string>
-    <string name="otherSignInText">OTHER SIGN IN</string>
-    <string name="googleSignInText">GOOGLE SIGN IN</string>
-
-    <string name="loginUsernameHint">USERNAME</string>
-    <string name="loginEmailHint">EMAIL</string>
-    <string name="loginPasswordHint">PASSWORD</string>
-    <string name="loginText">LOG IN</string>
-    <string name="loginSuccessText">LOGGED IN!</string>
-
-    <string name="signupUsernameHint">PICK A USERNAME</string>
-    <string name="signupEmailHint">USE AN EMAIL</string>
-    <string name="signupPasswordHint">PICK A PASSWORD</string>
-    <string name="signupSuccessText">SIGNED UP!</string>
+    <string name="signUp">SIGN UP</string>
+    <string name="logIn">LOG IN</string>
+    <string name="loginSuccess">LOGGED IN!</string>
+    <string name="signIn">SIGN IN</string>
+    <string name="otherSignIn">OTHER SIGN IN</string>
+    <string name="googleSignIn">GOOGLE SIGN IN</string>
+    <string name="user">USER</string>
+    <string name="username">USERNAME</string>
+    <string name="usernameHint">PICK A USERNAME</string>
+    <string name="editUsername">EDIT USERNAME</string>
+    <string name="email">EMAIL</string>
+    <string name="emailHint">USE AN EMAIL</string>
+    <string name="editEmail">EDIT EMAIL</string>
+    <string name="password">PASSWORD</string>
+    <string name="passwordHint">PICK A PASSWORD</string>
+    <string name="signupSuccess">SIGNED UP!</string>
+    <string name="settingsUserLogout">LOGOUT</string>
 
     <string name="featuresText">FEATURES</string>
     <string name="screenshotToggleOnText">MONITORING ALL SCREENSHOTS</string>
@@ -39,10 +39,6 @@
     <string name="findSimilarPost">FIND SIMILAR POST</string>
 
     <string name="settingsText">SETTINGS</string>
-    <string name="settingsUsernameText">USER</string>
-    <string name="settingsAuthHintText">...</string>
-    <string name="settingsEditUsername">EDIT USERNAME</string>
-    <string name="settingsUserLogout">LOGOUT</string>
     <string name="saveText">SAVING</string>
     <string name="savesLeftText">SAVES LEFT TODAY: %1$d</string>
 

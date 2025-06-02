@@ -88,7 +88,7 @@ class SignIn : AppCompatActivity() {
                 if (success) {
                     Log.i(TAG, "Login success!")
 
-                    highlightButtonEffects(loginButton, getString(R.string.loginSuccessText))
+                    highlightButtonEffects(loginButton, getString(R.string.loginSuccess))
 
                     generalSharedPreferences.edit {
                         putString("username", userNameText)

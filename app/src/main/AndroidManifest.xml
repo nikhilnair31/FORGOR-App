@@ -61,6 +61,10 @@
             android:windowSoftInputMode="adjustResize"
             android:exported="false" />
         <activity
+            android:name=".User"
+            android:windowSoftInputMode="adjustResize"
+            android:exported="false" />
+        <activity
             android:name=".Share"
             android:exported="true"
             android:theme="@style/Theme.TransparentActivity"

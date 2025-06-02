@@ -6,19 +6,15 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.PowerManager
-import android.text.Editable
 import android.util.Log
 import android.view.HapticFeedbackConstants
 import android.widget.Button
-import android.widget.EditText
 import android.widget.TextView
 import android.widget.ToggleButton
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.ThemedSpinnerAdapter
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
-import androidx.core.net.toUri
 import com.sil.others.Helpers
 import com.sil.others.Helpers.Companion.showToast
 import com.sil.services.ScreenshotService
@@ -36,10 +32,8 @@ class Settings : AppCompatActivity() {
 
     private var pendingToggle: (() -> Unit)? = null
 
-    private lateinit var usernameText: EditText
+    private lateinit var userButton: Button
     private lateinit var savesLeftText: TextView
-    private lateinit var editUsernameButton: Button
-    private lateinit var userLogoutButton: Button
     private lateinit var screenshotToggleButton: ToggleButton
     // endregion
 
@@ -53,22 +47,13 @@ class Settings : AppCompatActivity() {
         initRelated()
     }
     private fun initRelated() {
-        usernameText = findViewById(R.id.usernameEditText)
-        editUsernameButton = findViewById(R.id.editUsername)
-        userLogoutButton = findViewById(R.id.userLogout)
+        userButton = findViewById(R.id.userActivity)
         savesLeftText = findViewById(R.id.savesLeftText)
         screenshotToggleButton = findViewById(R.id.screenshotToggleButton)
 
-        val username = generalSharedPreferences.getString("username", "")
-        usernameText.setText(username)
-        editUsernameButton.isEnabled = false  // Disable by default
-        usernameText.addTextChangedListener(object : android.text.TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                editUsernameButton.isEnabled = s.toString() != username
-            }
-            override fun afterTextChanged(s: Editable?) {}
-        })
+        userButton.setOnClickListener {
+            startActivity(Intent(this, User::class.java))
+        }
 
         val cachedSavesLeft = generalSharedPreferences.getInt("cached_saves_left", -1)
         if (cachedSavesLeft != -1) {
@@ -104,12 +89,6 @@ class Settings : AppCompatActivity() {
                 updateToggle(screenshotToggleButton, false)
             }
         }
-        editUsernameButton.setOnClickListener {
-            editUsernameRelated()
-        }
-        userLogoutButton.setOnClickListener {
-            userLogoutRelated()
-        }
     }
     // endregion
 
@@ -118,51 +97,6 @@ class Settings : AppCompatActivity() {
         startForegroundService(serviceIntent)
         generalSharedPreferences.edit { putBoolean(KEY_SCREENSHOT_ENABLED, true) }
         updateToggle(screenshotToggleButton, true)
-        // showToast(this, "Screenshot monitoring started")
-    }
-    // endregion
-
-    // region Auth Related
-    private fun editUsernameRelated() {
-        Log.i(TAG, "editUsernameRelated")
-
-        val newUsername = usernameText.text.toString()
-        Helpers.authEditUsernameToServer(this, newUsername) { success ->
-            runOnUiThread {
-                if (success) {
-                    Log.i(TAG, "Edit username success")
-                    showToast(this, "Edit username successful!")
-                    generalSharedPreferences.edit {
-                        putString("username", newUsername)
-                    }
-                } else {
-                    Log.i(TAG, "Edit username failed!")
-                    showToast(this, "Edit username failed!")
-                }
-            }
-        }
-    }
-    private fun userLogoutRelated() {
-        Log.i(TAG, "userLogoutRelated")
-
-        generalSharedPreferences.edit(commit = true) {
-            remove("username")
-            .remove("access_token")
-            .remove("refresh_token")
-            .remove("last_query")
-            .remove("last_results_json")
-            .remove("cached_saves_left")
-            .putBoolean(KEY_SCREENSHOT_ENABLED, false)
-        }  // ← block until written
-
-        val serviceIntent = Intent(this@Settings, ScreenshotService::class.java)
-        stopService(serviceIntent)
-
-        val intent = Intent(this, Welcome::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
-        startActivity(intent)
-        finish()
     }
     // endregion
 

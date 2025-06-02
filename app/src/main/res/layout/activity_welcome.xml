@@ -33,7 +33,7 @@
             android:enabled="true"
             android:fontFamily="@font/venus_cormier"
             android:stateListAnimator="@null"
-            android:text="@string/signInText"
+            android:text="@string/signIn"
             android:textSize="14sp"
             app:cornerRadius="@dimen/softCorners"
 
@@ -54,7 +54,7 @@
             android:textColor="@color/accent_1"
             android:enabled="true"
             android:textSize="14sp"
-            android:text="@string/signUpText"
+            android:text="@string/signUp"
             android:fontFamily="@font/venus_cormier"
             app:cornerRadius="@dimen/softCorners"
 
@@ -70,7 +70,7 @@
         android:layout_width="256dp"
         android:layout_height="256dp"
 
-        android:contentDescription="@string/appLogoDescription"
+        android:contentDescription="@string/appName"
         android:src="@mipmap/launcher_foreground"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />

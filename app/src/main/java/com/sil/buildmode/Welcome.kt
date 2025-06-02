@@ -32,27 +32,18 @@ class Welcome : AppCompatActivity() {
     private fun generalInitRelated() {
         val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
         if (accessToken.isNotEmpty()) {
-            launchNextActivity(Main::class.java)
+            startActivity(Intent(this, Main::class.java))
         }
     }
-
-    private fun launchNextActivity(activityClass: Class<*>) {
-        val intent = Intent(this, activityClass)
-        startActivity(intent)
-        finish()
-    }
-    // endregion
-
-    // region UI Related
     private fun uiInitRelated() {
         signInButton = findViewById(R.id.signInButton)
         signUpButton = findViewById(R.id.signUpButton)
 
         signInButton.setOnClickListener {
-            launchNextActivity(SignIn::class.java)
+            startActivity(Intent(this, SignIn::class.java))
         }
         signUpButton.setOnClickListener {
-            launchNextActivity(SignUp::class.java)
+            startActivity(Intent(this, SignUp::class.java))
         }
     }
     // endregion

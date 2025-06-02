@@ -89,7 +89,7 @@ class SignUp : AppCompatActivity() {
                 if (registerSuccess) {
                     Log.i(TAG, "Sign up success!")
 
-                    highlightButtonEffects(signupButton, getString(R.string.signupSuccessText))
+                    highlightButtonEffects(signupButton, getString(R.string.signupSuccess))
 
                     generalSharedPreferences.edit {
                         putString("username", userNameText)
