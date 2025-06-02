@@ -55,28 +55,34 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <EditText
-            android:id="@+id/usernameEditText"
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/usernameLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:autofillHints="username"
 
-            android:background="@color/base_0"
-            android:editable="false"
-            android:fontFamily="@font/venus_cormier"
-            android:gravity="center"
             android:hint="@string/username"
-            android:inputType="text"
-            android:padding="24dp"
-            android:textAllCaps="false"
-            android:textColor="#CACACA"
-            android:textColorHint="#CACACA"
-            android:textSize="14sp"
+            app:endIconMode="clear_text">
 
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/usernameTextView" />
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/usernameEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:padding="24dp"
+
+                android:background="@color/base_0"
+                android:editable="false"
+                android:fontFamily="@font/venus_cormier"
+                android:gravity="center"
+                android:inputType="textPersonName"
+                android:textColor="@android:color/white"
+                android:textSize="14sp"
+
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/usernameTextView" />
+
+        </com.google.android.material.textfield.TextInputLayout>
 
         <Button
             android:id="@+id/editUsername"
@@ -112,28 +118,35 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <EditText
-            android:id="@+id/emailEditText"
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/emailLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:autofillHints="username"
 
-            android:background="@color/base_0"
-            android:editable="false"
-            android:fontFamily="@font/venus_cormier"
-            android:gravity="center"
             android:hint="@string/email"
-            android:inputType="textEmailAddress"
-            android:padding="24dp"
-            android:textAllCaps="false"
-            android:textColor="#CACACA"
-            android:textColorHint="#CACACA"
-            android:textSize="14sp"
+            app:endIconMode="clear_text">
 
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/usernameTextView" />
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/emailEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:padding="24dp"
+
+                android:background="@color/base_0"
+                android:editable="false"
+                android:fontFamily="@font/venus_cormier"
+                android:gravity="center"
+                android:inputType="textEmailAddress"
+                android:textAllCaps="false"
+                android:textColor="@android:color/white"
+                android:textSize="14sp"
+
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/usernameTextView" />
+
+        </com.google.android.material.textfield.TextInputLayout>
 
         <Button
             android:id="@+id/editEmail"
@@ -157,13 +170,16 @@
             android:id="@+id/userLogout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:enabled="true"
-
-            android:fontFamily="@font/venus_cormier"
+            android:layout_marginTop="8dp"
             android:padding="24dp"
+
+            android:enabled="true"
+            android:textSize="14sp"
+            android:backgroundTint="@color/accent_0"
+            android:textColor="@color/accent_1"
+            android:fontFamily="@font/venus_cormier"
             android:stateListAnimator="@null"
             android:text="@string/settingsUserLogout"
-            android:textSize="14sp"
             app:cornerRadius="@dimen/softCorners"
 
             app:layout_constraintEnd_toEndOf="parent"

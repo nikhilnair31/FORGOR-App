@@ -98,6 +98,7 @@ class User : AppCompatActivity() {
                 if (success) {
                     Log.i(TAG, "Edit username success")
                     showToast(this, "Edit username successful!")
+                    editUsernameButton.isEnabled = false
                     generalSharedPreferences.edit {
                         putString("username", newUsername)
                     }
@@ -117,6 +118,7 @@ class User : AppCompatActivity() {
                 if (success) {
                     Log.i(TAG, "Edit email success")
                     showToast(this, "Edit email successful!")
+                    editEmailButton.isEnabled = false
                     generalSharedPreferences.edit {
                         putString("email", newEmail)
                     }

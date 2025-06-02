@@ -26,12 +26,14 @@
         android:id="@+id/linkIcon"
         android:layout_width="32dp"
         android:layout_height="32dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
         android:padding="8dp"
 
-        app:tint="@color/accent_1"
-        android:background="@color/accent_0"
+        android:scaleType="center"
         android:layout_gravity="top|end"
         android:contentDescription="@string/openPost"
+        android:rotation = "-45"
         android:src="@drawable/sharp_link_24"
         android:visibility="visible" />
 </FrameLayout>

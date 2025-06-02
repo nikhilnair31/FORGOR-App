@@ -11,12 +11,12 @@
         android:id="@+id/fullImageView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-
         android:layout_marginBottom="8dp"
         android:layout_weight="1"
 
         android:scaleType="fitCenter"
         android:visibility="gone"
+
         app:layout_constraintBottom_toTopOf="@+id/constraintLayout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -26,11 +26,12 @@
         android:id="@+id/pdf_viewer"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-
         android:layout_marginBottom="8dp"
         android:padding="8dp"
+
         android:visibility="gone"
         app:containerBackgroundColor="@android:color/transparent"
+
         app:layout_constraintBottom_toTopOf="@+id/constraintLayout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -93,7 +94,7 @@
             <ImageButton
                 android:id="@+id/sharePostButton"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
 
                 android:layout_marginEnd="8dp"
                 android:layout_weight="1"
@@ -103,7 +104,7 @@
 
                 android:gravity="center_horizontal|center_vertical"
                 android:padding="16dp"
-                android:src="@android:drawable/ic_menu_share"
+                android:src="@drawable/share"
                 android:stateListAnimator="@null"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@+id/deletePostButton" />
@@ -111,7 +112,7 @@
             <ImageButton
                 android:id="@+id/deletePostButton"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
 
                 android:layout_marginEnd="8dp"
                 android:layout_weight="1"
@@ -120,7 +121,7 @@
 
                 android:fontFamily="@font/venus_cormier"
                 android:padding="16dp"
-                android:src="@android:drawable/ic_menu_delete"
+                android:src="@drawable/trash"
                 android:stateListAnimator="@null"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@+id/openPostButton" />
@@ -128,7 +129,7 @@
             <ImageButton
                 android:id="@+id/openPostButton"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
 
                 android:layout_marginEnd="8dp"
                 android:layout_weight="1"
@@ -137,7 +138,7 @@
 
                 android:fontFamily="@font/venus_cormier"
                 android:padding="16dp"
-                android:src="@android:drawable/ic_menu_view"
+                android:src="@drawable/arrow_up"
                 android:stateListAnimator="@null"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@+id/similarPostButton" />
@@ -145,14 +146,14 @@
             <ImageButton
                 android:id="@+id/similarPostButton"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
 
                 android:background="@color/base_1"
                 android:contentDescription="@string/findSimilarPost"
                 android:fontFamily="@font/venus_cormier"
                 android:padding="16dp"
-                android:src="@android:drawable/ic_menu_search"
+                android:src="@drawable/baseline_auto_awesome_24"
 
                 android:stateListAnimator="@null"
                 app:layout_constraintBottom_toBottomOf="parent"

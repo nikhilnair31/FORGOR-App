@@ -1,0 +1,9 @@
+<!-- res/drawable/outline_link_icon.xml -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@android:color/transparent" />
+    <stroke
+        android:width="2dp"
+        android:color="@color/accent_0" />
+    <corners android:radius="6dp" /> <!-- Optional rounded corners -->
+</shape>
