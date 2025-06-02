@@ -106,7 +106,6 @@ RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
 
         holder.itemView.setOnClickListener {
             Log.i(TAG, "Item clicked: $item")
-            Log.i(TAG, "fileName: $fileName postUrl: $postUrl")
 
             val intent = Intent(context, FullContent::class.java).apply {
                 putExtra("fileName", fileName)

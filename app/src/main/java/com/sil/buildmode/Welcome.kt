@@ -16,7 +16,6 @@ class Welcome : AppCompatActivity() {
 
     private lateinit var signInButton: Button
     private lateinit var signUpButton: Button
-    private lateinit var googleSignInButton: Button
     // endregion
 
     // region Common
@@ -32,7 +31,7 @@ class Welcome : AppCompatActivity() {
 
     private fun generalInitRelated() {
         val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
-        if (!accessToken.isEmpty()) {
+        if (accessToken.isNotEmpty()) {
             launchNextActivity(Main::class.java)
         }
     }
@@ -48,16 +47,12 @@ class Welcome : AppCompatActivity() {
     private fun uiInitRelated() {
         signInButton = findViewById(R.id.signInButton)
         signUpButton = findViewById(R.id.signUpButton)
-        googleSignInButton = findViewById(R.id.googleSignInButton)
 
         signInButton.setOnClickListener {
             launchNextActivity(SignIn::class.java)
         }
         signUpButton.setOnClickListener {
             launchNextActivity(SignUp::class.java)
-        }
-        googleSignInButton.setOnClickListener {
-            // launchNextActivity(Setup::class.java)
         }
     }
     // endregion

@@ -57,15 +57,29 @@ class FullContent : AppCompatActivity() {
         Log.i(TAG, "fileName: $fileName postUrl: $postUrl")
 
         val fileUrl = "$SERVER_URL/api/get_file/$fileName"
+        Log.i(TAG, "fileUrl: $fileUrl")
 
-        initRelated(fileName, fileUrl, postUrl, "")
+        initRelated(fileName, fileUrl, postUrl)
     }
 
-    fun initRelated(fileName: String, fileUrl: String, postUrl: String, textContent: String?) {
+    private fun initRelated(fileName: String, fileUrl: String, postUrl: String) {
+        // Image Handling
+        if (Helpers.isImageFile(fileUrl)) {
+            val glideUrl = Helpers.getImageURL(this, fileUrl)
+            if (glideUrl != null) {
+                imageView.visibility = View.VISIBLE
+                Glide.with(this)
+                    .load(glideUrl)
+                    .dontTransform()
+                    .into(imageView)
+            }
+        }
+
         // PDF Handling
-        if (fileName.endsWith(".pdf", ignoreCase = true)) {
+        else if (Helpers.isPdfFile(fileUrl)) {
             CoroutineScope(Dispatchers.IO).launch {
                 try {
+                    Log.i(TAG, "initRelated isPdfFile fileUrl: $fileUrl")
                     val localFile = Helpers.getPdfToCache(this@FullContent, fileUrl)
 
                     withContext(Dispatchers.Main) {
@@ -86,23 +100,25 @@ class FullContent : AppCompatActivity() {
             }
         }
 
-        // Image Handling
-        else if (fileName.isNotBlank()) {
-            val glideUrl = Helpers.getImageURL(this, fileUrl)
-            if (glideUrl != null) {
-                imageView.visibility = View.VISIBLE
-                Glide.with(this)
-                    .load(glideUrl)
-                    .dontTransform()
-                    .into(imageView)
-            }
-        }
-
         // Text Handling
-        else if (!textContent.isNullOrBlank()) {
-            imageView.visibility = View.GONE
-            textScrollView.visibility = View.VISIBLE
-            textTextView.text = textContent
+        else if (Helpers.isTextFile(fileUrl)) {
+            Log.i(TAG, "initRelated isTextFile fileUrl: $fileUrl")
+
+            CoroutineScope(Dispatchers.IO).launch {
+                val localFile = Helpers.getTxtToCache(this@FullContent, fileUrl)
+
+                if (localFile != null && localFile.exists()) {
+                    val textContent = localFile.readText()
+
+                    withContext(Dispatchers.Main) {
+                        imageView.visibility = View.GONE
+                        textScrollView.visibility = View.VISIBLE
+                        textTextView.text = textContent
+                    }
+                } else {
+                    Log.e(TAG, "Failed to download or read text file.")
+                }
+            }
         }
 
         // Handle post URL

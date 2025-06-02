@@ -168,8 +168,6 @@ class Helpers {
         }
 
         fun isImageFile(fileName: String): Boolean {
-            Log.i(TAG, "isImageFile | fileName: $fileName")
-
             val lowerCaseName = fileName.lowercase()
             return lowerCaseName.endsWith(".jpg") ||
                     lowerCaseName.endsWith(".jpeg") ||
@@ -240,25 +238,23 @@ class Helpers {
         }
 
         fun getPdfToCache(context: Context, url: String): File {
-            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
-            val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
-            if (accessToken.isEmpty()) {
-                Log.e(TAG, "Access token missing")
-                showToast(context, "Not logged in")
-                return File("")
-            }
-
-            val timeZoneId = TimeZone.getDefault().id
-
-            val request = Request.Builder()
-                .url(url)
-                .addHeader("Authorization", "Bearer $accessToken")
-                .addHeader("User-Agent", USER_AGENT)
-                .addHeader("X-App-Key", APP_KEY)
-                .addHeader("X-Timezone", timeZoneId)
-                .build()
-
             try {
+                val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
+                val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
+                if (accessToken.isEmpty()) {
+                    Log.e(TAG, "Access token missing")
+                    showToast(context, "Not logged in")
+                    return File("")
+                }
+
+                Log.i(TAG, "getPdfToCache | url: $url")
+                val request = Request.Builder()
+                    .url(url)
+                    .addHeader("Authorization", "Bearer $accessToken")
+                    .addHeader("User-Agent", USER_AGENT)
+                    .addHeader("X-App-Key", APP_KEY)
+                    .build()
+
                 val response = httpClient.newCall(request).execute()
                 if (!response.isSuccessful) {
                     Log.e(TAG, "Failed to download PDF (code ${response.code})")
@@ -273,7 +269,11 @@ class Helpers {
                 return file
             }
             catch (e: Exception) {
-                Log.e(TAG, "Error in PDF download: ${e.localizedMessage}")
+                when (e) {
+                    is FileNotFoundException -> Log.e(TAG, "PDF not found: ${e.message}")
+                    else -> Log.e(TAG, "Error in PDF download: ${e.localizedMessage}")
+                }
+                e.printStackTrace()
                 throw e
             }
         }
@@ -337,7 +337,7 @@ class Helpers {
 
         fun getTxtToCache(context: Context, url: String): File? {
             try {
-                val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
+                val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
                 val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
                 if (accessToken.isEmpty()) {
                     Log.e(TAG, "Access token missing")
@@ -345,19 +345,19 @@ class Helpers {
                     return null
                 }
 
-                val timeZoneId = TimeZone.getDefault().id
-
+                Log.i(TAG, "getTxtToCache | url: $url")
                 val request = Request.Builder()
                     .url(url)
                     .addHeader("Authorization", "Bearer $accessToken")
                     .addHeader("User-Agent", USER_AGENT)
                     .addHeader("X-App-Key", APP_KEY)
-                    .addHeader("X-Timezone", timeZoneId)
                     .build()
 
-                val client = httpClient
-                val response = client.newCall(request).execute()
-                if (!response.isSuccessful) throw IOException("Failed to download txt (code ${response.code})")
+                val response = httpClient.newCall(request).execute()
+                if (!response.isSuccessful) {
+                    Log.e(TAG, "Failed to download txt (code ${response.code})")
+                    throw IOException("Failed to download txt (code ${response.code})")
+                }
 
                 val file = File(context.cacheDir, "shared_${System.currentTimeMillis()}.txt")
                 val sink = file.sink().buffer()
