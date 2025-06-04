@@ -90,6 +90,29 @@ class Helpers {
                 return
             }
 
+            val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+            val networkInfo = connectivityManager.activeNetworkInfo
+            if (networkInfo == null || !networkInfo.isConnected) {
+                Log.i(TAG, "No internet connection. Deferring upload with WorkManager.")
+
+                val uploadWork = androidx.work.OneTimeWorkRequestBuilder<com.sil.workers.UploadWorker>()
+                    .setInputData(
+                        androidx.work.workDataOf(
+                            "uploadType" to "image",
+                            "filePath" to imageFile.absolutePath
+                        )
+                    )
+                    .setConstraints(
+                        androidx.work.Constraints.Builder()
+                            .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
+                            .build()
+                    )
+                    .build()
+
+                androidx.work.WorkManager.getInstance(context).enqueue(uploadWork)
+                return
+            }
+
             fun sendRequest(token: String) {
                 val requestBody = MultipartBody.Builder().setType(MultipartBody.FORM)
                     .addFormDataPart("image", imageFile.name, imageFile.asRequestBody("image/png".toMediaTypeOrNull()))
@@ -182,6 +205,29 @@ class Helpers {
 
             if (pdfFile == null || !pdfFile.exists() || !pdfFile.canRead() || pdfFile.length() <= 0) {
                 Log.e(TAG, "Pdf file does not exist or is unreadable.")
+                return
+            }
+
+            val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+            val networkInfo = connectivityManager.activeNetworkInfo
+            if (networkInfo == null || !networkInfo.isConnected) {
+                Log.i(TAG, "No internet connection. Deferring upload with WorkManager.")
+
+                val uploadWork = androidx.work.OneTimeWorkRequestBuilder<com.sil.workers.UploadWorker>()
+                    .setInputData(
+                        androidx.work.workDataOf(
+                            "uploadType" to "pdf",
+                            "filePath" to pdfFile.absolutePath
+                        )
+                    )
+                    .setConstraints(
+                        androidx.work.Constraints.Builder()
+                            .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
+                            .build()
+                    )
+                    .build()
+
+                androidx.work.WorkManager.getInstance(context).enqueue(uploadWork)
                 return
             }
 
@@ -287,6 +333,29 @@ class Helpers {
         fun uploadPostTextToServer(context: Context, postText: String) {
             Log.i(TAG, "Uploading text to server...")
 
+            val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+            val networkInfo = connectivityManager.activeNetworkInfo
+            if (networkInfo == null || !networkInfo.isConnected) {
+                Log.i(TAG, "No internet connection. Deferring upload with WorkManager.")
+
+                val uploadWork = androidx.work.OneTimeWorkRequestBuilder<com.sil.workers.UploadWorker>()
+                    .setInputData(
+                        androidx.work.workDataOf(
+                            "uploadType" to "text",
+                            "fileContent" to postText
+                        )
+                    )
+                    .setConstraints(
+                        androidx.work.Constraints.Builder()
+                            .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
+                            .build()
+                    )
+                    .build()
+
+                androidx.work.WorkManager.getInstance(context).enqueue(uploadWork)
+                return
+            }
+
             fun sendRequest(token: String) {
                 val requestBody = MultipartBody.Builder()
                     .setType(MultipartBody.FORM)
@@ -384,6 +453,29 @@ class Helpers {
         // region Url Related
         fun uploadPostUrlToServer(context: Context, postUrl: String) {
             Log.i(TAG, "Uploading text to server...")
+
+            val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+            val networkInfo = connectivityManager.activeNetworkInfo
+            if (networkInfo == null || !networkInfo.isConnected) {
+                Log.i(TAG, "No internet connection. Deferring upload with WorkManager.")
+
+                val uploadWork = androidx.work.OneTimeWorkRequestBuilder<com.sil.workers.UploadWorker>()
+                    .setInputData(
+                        androidx.work.workDataOf(
+                            "uploadType" to "url",
+                            "fileContent" to postUrl
+                        )
+                    )
+                    .setConstraints(
+                        androidx.work.Constraints.Builder()
+                            .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
+                            .build()
+                    )
+                    .build()
+
+                androidx.work.WorkManager.getInstance(context).enqueue(uploadWork)
+                return
+            }
 
             fun sendRequest(token: String) {
                 val requestBody = MultipartBody.Builder()
