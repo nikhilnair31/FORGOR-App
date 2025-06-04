@@ -11,8 +11,8 @@ android {
         applicationId "com.sil.buildmode"
         minSdk 33
         targetSdk 34
-        versionCode 8
-        versionName "0.0.8"
+        versionCode 9
+        versionName "0.0.9"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -44,6 +44,12 @@ android {
     }
 }
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
 dependencies {
     implementation 'androidx.core:core-ktx:1.7.0'
     implementation 'androidx.appcompat:appcompat:1.5.1'
@@ -55,9 +61,4 @@ dependencies {
     implementation 'com.github.chrisbanes:PhotoView:2.3.0'
     implementation("com.github.bhuvaneshw.pdfviewer:compose:1.1.0-beta08")
     implementation 'com.google.android.material:material:1.11.0'
-}
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
 }

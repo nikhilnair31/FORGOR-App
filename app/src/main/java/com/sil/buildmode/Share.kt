@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.sil.others.Helpers
-import com.sil.services.ScreenshotService
 import java.io.File
 
 
