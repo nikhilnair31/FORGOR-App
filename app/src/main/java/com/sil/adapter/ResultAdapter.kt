@@ -16,12 +16,14 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.load.model.GlideUrl
 import com.bumptech.glide.request.RequestOptions
 import com.sil.adapter.ResultDiffCallback
 import com.sil.others.Helpers
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -82,16 +84,7 @@ RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
             return
         }
 
-        Glide.with(context)
-            .load(glideUrl)
-            .apply(
-                RequestOptions()
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .placeholder(R.color.accent_0.toDrawable())
-                    .error(R.color.accent_0.toDrawable())
-                    .fitCenter()  // or centerCrop() if you want more even alignment
-            )
-            .into(holder.imageView)
+        loadThumbnailWithRetry(glideUrl, holder)
 
         // Show link icon if postUrl is valid
         if (postUrl.isNotBlank() && postUrl != "-") {
@@ -120,4 +113,39 @@ RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
     }
 
     override fun getItemCount(): Int = dataList.size
+
+    private fun loadThumbnailWithRetry(glideUrl: GlideUrl, holder: ResultViewHolder, retries: Int = 2) {
+        Glide.with(context)
+            .load(glideUrl)
+            .apply(
+                RequestOptions()
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .placeholder(R.color.accent_0.toDrawable())
+                    .error(R.color.accent_0.toDrawable())
+                    .fitCenter()
+            )
+            .listener(object : com.bumptech.glide.request.RequestListener<Drawable> {
+                override fun onLoadFailed(
+                    e: GlideException?, model: Any?, target: com.bumptech.glide.request.target.Target<Drawable>?,
+                    isFirstResource: Boolean
+                ): Boolean {
+                    Log.e(TAG, "Thumbnail load failed: ${e?.localizedMessage}")
+                    if (retries > 0) {
+                        CoroutineScope(Dispatchers.Main).launch {
+                            delay(300) // slight delay before retry
+                            loadThumbnailWithRetry(glideUrl, holder, retries - 1)
+                        }
+                    }
+                    return false // allow error placeholder to be shown
+                }
+
+                override fun onResourceReady(
+                    resource: Drawable?, model: Any?, target: com.bumptech.glide.request.target.Target<Drawable>?,
+                    dataSource: com.bumptech.glide.load.DataSource?, isFirstResource: Boolean
+                ): Boolean {
+                    return false // allow normal behavior
+                }
+            })
+            .into(holder.imageView)
+    }
 }
