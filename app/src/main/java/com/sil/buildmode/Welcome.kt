@@ -33,6 +33,7 @@ class Welcome : AppCompatActivity() {
         val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
         if (accessToken.isNotEmpty()) {
             startActivity(Intent(this, Main::class.java))
+            finish()
         }
     }
     private fun uiInitRelated() {

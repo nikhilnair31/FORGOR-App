@@ -70,7 +70,6 @@ class Main : AppCompatActivity() {
                 val currentList = resultAdapter.getData()
                 val updatedList = currentList.filter { it.optString("file_name") != deletedFileName }
                 resultAdapter.updateData(updatedList)
-                // resultAdapter.notifyDataSetChanged()
 
                 if (updatedList.isEmpty()) {
                     recyclerView.visibility = View.GONE

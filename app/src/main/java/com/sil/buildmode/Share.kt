@@ -41,24 +41,6 @@ class Share : AppCompatActivity() {
                     }
                 }
             }
-            type == "text/plain" -> {
-                if (action == Intent.ACTION_SEND) {
-                    val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
-                    if (sharedText != null) {
-                        if (android.util.Patterns.WEB_URL.matcher(sharedText).matches()) {
-                            handleSendUrl(sharedText)
-                        } else {
-                            handleSendText(sharedText)
-                        }
-                    }
-                }
-            }
-            type == "application/pdf" -> {
-                if (action == Intent.ACTION_SEND) {
-                    val pdfUri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
-                    handleSendPdf(pdfUri)
-                }
-            }
         }
 
         finish()
@@ -94,33 +76,6 @@ class Share : AppCompatActivity() {
             realPath?.let { path ->
                 val file = File(path)
                 Helpers.uploadImageFileToServer(this, file)
-            }
-        }
-    }
-    private fun handleSendText(text: String?) {
-        Log.d(TAG, "handleSendText | text: $text")
-        text?.let {
-            Helpers.uploadPostTextToServer(this, it)
-        }
-    }
-    private fun handleSendUrl(url: String?) {
-        Log.d(TAG, "handleSendUrl | url: $url")
-        url?.let {
-            Helpers.uploadPostUrlToServer(this, it)
-        }
-    }
-    private fun handleSendPdf(pdfUri: Uri?) {
-        Log.d(TAG, "handleSendPdf | pdfUri: $pdfUri")
-        pdfUri?.let {
-            var realPath = Helpers.getRealPathFromUri(this, it)
-            if (realPath == null) {
-                val tempFile = Helpers.copyUriToTempFile(this, it)
-                realPath = tempFile?.absolutePath
-            }
-
-            realPath?.let { path ->
-                val file = File(path)
-                Helpers.uploadPdfFileToServer(this, file)
             }
         }
     }

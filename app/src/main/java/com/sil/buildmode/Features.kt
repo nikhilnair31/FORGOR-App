@@ -161,9 +161,6 @@ class Features : AppCompatActivity() {
         )
         return hasRuntimePermissions(permissions) && isBatteryOptimized()
     }
-    private fun areOverlayPermissionsGranted(): Boolean {
-        return android.provider.Settings.canDrawOverlays(this)
-    }
 
     private fun onScreenshotPermissionsGranted() {
         Log.i(TAG, "Screenshot permissions granted")

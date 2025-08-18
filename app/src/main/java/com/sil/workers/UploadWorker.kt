@@ -30,32 +30,6 @@ class UploadWorker(context: Context, workerParams: WorkerParameters) : Coroutine
                         return@withContext Result.success()
                     }
                 }
-
-                "pdf" -> {
-                    val filePath = inputData.getString("filePath")
-                    if (!filePath.isNullOrEmpty()) {
-                        val file = File(filePath)
-                        Helpers.uploadPdfFileToServer(applicationContext, file)
-                        return@withContext Result.success()
-                    }
-                }
-
-                "text" -> {
-                    val content = inputData.getString("fileContent")
-                    if (!content.isNullOrEmpty()) {
-                        Helpers.uploadPostTextToServer(applicationContext, content)
-                        return@withContext Result.success()
-                    }
-                }
-
-                "url" -> {
-                    val url = inputData.getString("fileContent")
-                    if (!url.isNullOrEmpty()) {
-                        Helpers.uploadPostUrlToServer(applicationContext, url)
-                        return@withContext Result.success()
-                    }
-                }
-
                 else -> {
                     Log.e(TAG, "Unknown upload type: $uploadType")
                 }

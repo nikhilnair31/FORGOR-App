@@ -10,6 +10,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.sil.others.Helpers
 import androidx.core.net.toUri
+import androidx.core.view.isVisible
 import com.bhuvaneshw.pdf.PdfViewer
 import com.bumptech.glide.Glide
 import com.github.chrisbanes.photoview.PhotoView
@@ -30,11 +31,7 @@ class FullContent : AppCompatActivity() {
     private val SERVER_URL = BuildConfig.SERVER_URL
 
     private lateinit var imageView: PhotoView
-    private lateinit var pdfViewer: PdfViewer
-    private lateinit var textScrollView: View
-    private lateinit var textTextView: TextView
     private lateinit var similarPostButton: ImageButton
-    private lateinit var openPostButton: ImageButton
     private lateinit var sharePostButton: ImageButton
     private lateinit var deletePostButton: ImageButton
     // endregion
@@ -43,12 +40,8 @@ class FullContent : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_full_image)
 
-        pdfViewer = findViewById(R.id.pdf_viewer)
         imageView = findViewById(R.id.fullImageView)
-        textScrollView = findViewById(R.id.textScrollView)
-        textTextView = findViewById(R.id.textText)
         similarPostButton = findViewById(R.id.similarPostButton)
-        openPostButton = findViewById(R.id.openPostButton)
         sharePostButton = findViewById(R.id.sharePostButton)
         deletePostButton = findViewById(R.id.deletePostButton)
 
@@ -75,61 +68,6 @@ class FullContent : AppCompatActivity() {
             }
         }
 
-        // PDF Handling
-        else if (Helpers.isPdfFile(fileUrl)) {
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    Log.i(TAG, "initRelated isPdfFile fileUrl: $fileUrl")
-                    val localFile = Helpers.getPdfToCache(this@FullContent, fileUrl)
-
-                    withContext(Dispatchers.Main) {
-                        pdfViewer.visibility = View.VISIBLE
-
-                        pdfViewer.onReady {
-                            // ✅ Load local file only after viewer is initialized
-                            try {
-                                pdfViewer.load(localFile.absolutePath)
-                            } catch (e: Exception) {
-                                Log.e(TAG, "PDF load failed inside onReady", e)
-                            }
-                        }
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to load PDF", e)
-                }
-            }
-        }
-
-        // Text Handling
-        else if (Helpers.isTextFile(fileUrl)) {
-            Log.i(TAG, "initRelated isTextFile fileUrl: $fileUrl")
-
-            CoroutineScope(Dispatchers.IO).launch {
-                val localFile = Helpers.getTxtToCache(this@FullContent, fileUrl)
-
-                if (localFile != null && localFile.exists()) {
-                    val textContent = localFile.readText()
-
-                    withContext(Dispatchers.Main) {
-                        imageView.visibility = View.GONE
-                        textScrollView.visibility = View.VISIBLE
-                        textTextView.text = textContent
-                    }
-                } else {
-                    Log.e(TAG, "Failed to download or read text file.")
-                }
-            }
-        }
-
-        // Handle post URL
-        if (postUrl.isNotBlank() && postUrl != "-") {
-            openPostButton.visibility = View.VISIBLE
-            openPostButton.setOnClickListener {
-                val browserIntent = Intent(Intent.ACTION_VIEW, postUrl.toUri())
-                startActivity(browserIntent)
-            }
-        }
-
         // Similar
         similarPostButton.setOnClickListener {
             Helpers.getSimilarFromServer(this, fileName) { success, response ->
@@ -152,7 +90,7 @@ class FullContent : AppCompatActivity() {
 
         // Sharing
         sharePostButton.setOnClickListener {
-            Helpers.downloadAndShareFile(this, fileName, fileUrl, postUrl)
+            Helpers.downloadAndShareFile(this, fileName, fileUrl)
         }
 
         // Deletion
