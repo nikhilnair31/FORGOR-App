@@ -2,6 +2,7 @@ package com.sil.buildmode
 
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -11,8 +12,12 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.widget.doAfterTextChanged
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.RecyclerView
@@ -27,6 +32,8 @@ import com.sil.workers.TokenRefreshWorker
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 import androidx.core.view.isVisible
+import androidx.core.view.updatePadding
+import kotlin.math.max
 
 class Main : AppCompatActivity() {
     // region Vars
@@ -45,6 +52,7 @@ class Main : AppCompatActivity() {
     private lateinit var settingsButton: ImageButton
     private lateinit var placeholder: TextView
     private lateinit var recyclerView: RecyclerView
+    private lateinit var constraintLayout: ConstraintLayout
     // endregion
 
     // region Common
@@ -135,9 +143,7 @@ class Main : AppCompatActivity() {
 
     // region UI Related
     private fun initUI() {
-        window.navigationBarColor = ContextCompat.getColor(this, R.color.accent_0)
-        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightNavigationBars = true
-
+        constraintLayout = findViewById(R.id.constraintLayout)
         recyclerView = findViewById(R.id.imageRecyclerView)
         settingsButton = findViewById(R.id.settingsButton)
         searchEditText = findViewById(R.id.searchEditText)
@@ -154,6 +160,27 @@ class Main : AppCompatActivity() {
 
         searchEditText.doAfterTextChanged { text ->
             searchQueryUpdated(text.toString())
+        }
+
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        ViewCompat.setOnApplyWindowInsetsListener(constraintLayout) { _, insets ->
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val bottomForContent = max(ime.bottom, sys.bottom)
+
+            // content above IME/nav
+            constraintLayout.updatePadding(bottom = bottomForContent)
+
+            // make the neon bar extend under the gesture area
+            searchEditText.updatePadding(
+                left = searchEditText.paddingLeft,
+                top = searchEditText.paddingTop,
+                right = searchEditText.paddingRight,
+                bottom = sys.bottom// + 24 /* your original bottom padding */
+            )
+
+            insets
         }
     }
 

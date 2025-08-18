@@ -15,13 +15,19 @@ import android.widget.TextView
 import android.widget.ToggleButton
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.ThemedSpinnerAdapter
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.net.toUri
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import com.sil.others.Helpers
 import com.sil.others.Helpers.Companion.showToast
 import com.sil.services.ScreenshotService
+import kotlin.math.max
 
 class User : AppCompatActivity() {
     // region Vars
@@ -36,6 +42,7 @@ class User : AppCompatActivity() {
     private lateinit var emailText: EditText
     private lateinit var editEmailButton: Button
     private lateinit var userLogoutButton: Button
+    private lateinit var constraintLayout: ConstraintLayout
     // endregion
 
     // region Common
@@ -48,6 +55,7 @@ class User : AppCompatActivity() {
         initRelated()
     }
     private fun initRelated() {
+        constraintLayout = findViewById(R.id.constraintLayout)
         usernameText = findViewById(R.id.usernameEditText)
         editUsernameButton = findViewById(R.id.editUsername)
         emailText = findViewById(R.id.emailEditText)
@@ -84,6 +92,16 @@ class User : AppCompatActivity() {
         }
         userLogoutButton.setOnClickListener {
             userLogoutRelated()
+        }
+
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        ViewCompat.setOnApplyWindowInsetsListener(constraintLayout) { v, insets ->
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val bottom = max(ime.bottom, sys.bottom)
+            v.updatePadding(bottom = bottom)
+            insets
         }
     }
     // endregion
