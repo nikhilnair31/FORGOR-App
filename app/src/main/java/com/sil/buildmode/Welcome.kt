@@ -6,6 +6,12 @@ import android.content.SharedPreferences
 import android.os.Bundle
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
+import kotlin.math.max
 
 class Welcome : AppCompatActivity() {
     // region Vars
@@ -16,6 +22,7 @@ class Welcome : AppCompatActivity() {
 
     private lateinit var signInButton: Button
     private lateinit var signUpButton: Button
+    private lateinit var rootConstraintLayout: ConstraintLayout
     // endregion
 
     // region Common
@@ -37,6 +44,7 @@ class Welcome : AppCompatActivity() {
         }
     }
     private fun uiInitRelated() {
+        rootConstraintLayout = findViewById(R.id.rootConstraintLayout)
         signInButton = findViewById(R.id.signInButton)
         signUpButton = findViewById(R.id.signUpButton)
 
@@ -45,6 +53,23 @@ class Welcome : AppCompatActivity() {
         }
         signUpButton.setOnClickListener {
             startActivity(Intent(this, SignUp::class.java))
+        }
+
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        ViewCompat.setOnApplyWindowInsetsListener(rootConstraintLayout) { v, insets ->
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val bottom = max(ime.bottom, sys.bottom)
+
+            // content above IME/nav
+            rootConstraintLayout.updatePadding(
+                top = sys.top,
+            )
+
+            v.updatePadding(bottom = bottom)
+
+            insets
         }
     }
     // endregion

@@ -41,7 +41,7 @@ class Settings : AppCompatActivity() {
     private lateinit var userButton: Button
     private lateinit var savesLeftText: TextView
     private lateinit var screenshotToggleButton: ToggleButton
-    private lateinit var constraintLayout: ConstraintLayout
+    private lateinit var rootConstraintLayout: ConstraintLayout
     // endregion
 
     // region Common
@@ -54,7 +54,7 @@ class Settings : AppCompatActivity() {
         initRelated()
     }
     private fun initRelated() {
-        constraintLayout = findViewById(R.id.constraintLayout)
+        rootConstraintLayout = findViewById(R.id.rootConstraintLayout)
         userButton = findViewById(R.id.userActivity)
         savesLeftText = findViewById(R.id.savesLeftText)
         screenshotToggleButton = findViewById(R.id.screenshotToggleButton)
@@ -100,7 +100,7 @@ class Settings : AppCompatActivity() {
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        ViewCompat.setOnApplyWindowInsetsListener(constraintLayout) { v, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(rootConstraintLayout) { v, insets ->
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
             val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             val bottom = max(ime.bottom, sys.bottom)

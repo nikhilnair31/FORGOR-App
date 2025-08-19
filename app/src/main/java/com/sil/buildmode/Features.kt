@@ -11,11 +11,17 @@ import android.view.HapticFeedbackConstants
 import android.widget.Button
 import android.widget.ToggleButton
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import com.sil.others.Helpers.Companion.showToast
 import com.sil.services.ScreenshotService
+import kotlin.math.max
 
 class Features : AppCompatActivity() {
     // region Vars
@@ -31,6 +37,7 @@ class Features : AppCompatActivity() {
 
     private lateinit var screenshotToggleButton: ToggleButton
     private lateinit var buttonToMain: Button
+    private lateinit var rootConstraintLayout: ConstraintLayout
     // endregion
 
     // region Common
@@ -44,6 +51,7 @@ class Features : AppCompatActivity() {
     }
 
     private fun initRelated() {
+        rootConstraintLayout = findViewById(R.id.rootConstraintLayout)
         screenshotToggleButton = findViewById(R.id.screenshotToggleButton)
         buttonToMain = findViewById(R.id.buttonToMain)
 
@@ -71,6 +79,16 @@ class Features : AppCompatActivity() {
             val intent = Intent(this, Main::class.java)
             startActivity(intent)
             finish()
+        }
+
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        ViewCompat.setOnApplyWindowInsetsListener(rootConstraintLayout) { v, insets ->
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val bottom = max(ime.bottom, sys.bottom)
+            v.updatePadding(bottom = bottom)
+            insets
         }
     }
     //

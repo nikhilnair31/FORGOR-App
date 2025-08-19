@@ -42,7 +42,7 @@ class User : AppCompatActivity() {
     private lateinit var emailText: EditText
     private lateinit var editEmailButton: Button
     private lateinit var userLogoutButton: Button
-    private lateinit var constraintLayout: ConstraintLayout
+    private lateinit var rootConstraintLayout: ConstraintLayout
     // endregion
 
     // region Common
@@ -55,7 +55,7 @@ class User : AppCompatActivity() {
         initRelated()
     }
     private fun initRelated() {
-        constraintLayout = findViewById(R.id.constraintLayout)
+        rootConstraintLayout = findViewById(R.id.rootConstraintLayout)
         usernameText = findViewById(R.id.usernameEditText)
         editUsernameButton = findViewById(R.id.editUsername)
         emailText = findViewById(R.id.emailEditText)
@@ -96,7 +96,7 @@ class User : AppCompatActivity() {
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        ViewCompat.setOnApplyWindowInsetsListener(constraintLayout) { v, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(rootConstraintLayout) { v, insets ->
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
             val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             val bottom = max(ime.bottom, sys.bottom)

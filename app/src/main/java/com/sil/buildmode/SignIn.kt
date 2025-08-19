@@ -7,9 +7,15 @@ import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import com.sil.others.Helpers
+import kotlin.math.max
 import kotlin.toString
 
 class SignIn : AppCompatActivity() {
@@ -23,6 +29,7 @@ class SignIn : AppCompatActivity() {
     private lateinit var emailEditText: EditText
     private lateinit var passwordEditText: EditText
     private lateinit var loginButton: Button
+    private lateinit var rootConstraintLayout: ConstraintLayout
     // endregion
 
     // region Common
@@ -39,6 +46,7 @@ class SignIn : AppCompatActivity() {
     // region UI Related
     private fun uiInitRelated() {
         val minPasswordLength = resources.getInteger(R.integer.minPasswordLength)
+        rootConstraintLayout = findViewById(R.id.rootConstraintLayout)
         usernameEditText = findViewById(R.id.usernameEditText)
         emailEditText = findViewById(R.id.emailEditText)
         passwordEditText = findViewById(R.id.passwordEditText)
@@ -65,6 +73,16 @@ class SignIn : AppCompatActivity() {
 
         loginButton.setOnClickListener {
             loginRelated()
+        }
+
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        ViewCompat.setOnApplyWindowInsetsListener(rootConstraintLayout) { v, insets ->
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val bottom = max(ime.bottom, sys.bottom)
+            v.updatePadding(bottom = bottom)
+            insets
         }
     }
 

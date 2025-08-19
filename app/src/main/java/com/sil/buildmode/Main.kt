@@ -52,7 +52,7 @@ class Main : AppCompatActivity() {
     private lateinit var settingsButton: ImageButton
     private lateinit var placeholder: TextView
     private lateinit var recyclerView: RecyclerView
-    private lateinit var constraintLayout: ConstraintLayout
+    private lateinit var rootConstraintLayout: ConstraintLayout
     // endregion
 
     // region Common
@@ -143,7 +143,7 @@ class Main : AppCompatActivity() {
 
     // region UI Related
     private fun initUI() {
-        constraintLayout = findViewById(R.id.constraintLayout)
+        rootConstraintLayout = findViewById(R.id.rootConstraintLayout)
         recyclerView = findViewById(R.id.imageRecyclerView)
         settingsButton = findViewById(R.id.settingsButton)
         searchEditText = findViewById(R.id.searchEditText)
@@ -164,18 +164,21 @@ class Main : AppCompatActivity() {
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        ViewCompat.setOnApplyWindowInsetsListener(constraintLayout) { _, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(rootConstraintLayout) { _, insets ->
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
             val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             val bottomForContent = max(ime.bottom, sys.bottom)
 
             // content above IME/nav
-            constraintLayout.updatePadding(bottom = bottomForContent)
+            rootConstraintLayout.updatePadding(
+                top = sys.top,
+                bottom = bottomForContent
+            )
 
             // make the neon bar extend under the gesture area
             searchEditText.updatePadding(
                 left = searchEditText.paddingLeft,
-                top = searchEditText.paddingTop,
+                top = sys.bottom,
                 right = searchEditText.paddingRight,
                 bottom = sys.bottom// + 24 /* your original bottom padding */
             )

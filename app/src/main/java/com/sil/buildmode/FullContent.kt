@@ -8,9 +8,14 @@ import android.view.View
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
 import com.sil.others.Helpers
 import androidx.core.net.toUri
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
+import androidx.core.view.updatePadding
 import com.bhuvaneshw.pdf.PdfViewer
 import com.bumptech.glide.Glide
 import com.github.chrisbanes.photoview.PhotoView
@@ -20,6 +25,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import kotlin.math.max
 
 class FullContent : AppCompatActivity() {
     // region Vars
@@ -34,28 +40,39 @@ class FullContent : AppCompatActivity() {
     private lateinit var similarPostButton: ImageButton
     private lateinit var sharePostButton: ImageButton
     private lateinit var deletePostButton: ImageButton
+    private lateinit var rootConstraintLayout: ConstraintLayout
     // endregion
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_full_image)
 
+        rootConstraintLayout = findViewById(R.id.rootConstraintLayout)
         imageView = findViewById(R.id.fullImageView)
         similarPostButton = findViewById(R.id.similarPostButton)
         sharePostButton = findViewById(R.id.sharePostButton)
         deletePostButton = findViewById(R.id.deletePostButton)
 
         val fileName = intent.getStringExtra("fileName") ?: ""
-        val postUrl = intent.getStringExtra("postUrl") ?: ""
-        Log.i(TAG, "fileName: $fileName postUrl: $postUrl")
+        Log.i(TAG, "fileName: $fileName")
 
         val fileUrl = "$SERVER_URL/api/get_file/$fileName"
         Log.i(TAG, "fileUrl: $fileUrl")
 
-        initRelated(fileName, fileUrl, postUrl)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        ViewCompat.setOnApplyWindowInsetsListener(rootConstraintLayout) { v, insets ->
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val bottom = max(ime.bottom, sys.bottom)
+            v.updatePadding(bottom = bottom)
+            insets
+        }
+
+        initRelated(fileName, fileUrl)
     }
 
-    private fun initRelated(fileName: String, fileUrl: String, postUrl: String) {
+    private fun initRelated(fileName: String, fileUrl: String) {
         // Image Handling
         if (Helpers.isImageFile(fileUrl)) {
             val glideUrl = Helpers.getImageURL(this, fileUrl)
@@ -66,6 +83,11 @@ class FullContent : AppCompatActivity() {
                     .dontTransform()
                     .into(imageView)
             }
+        }
+
+        // Sharing
+        sharePostButton.setOnClickListener {
+            Helpers.downloadAndShareFile(this, fileName, fileUrl)
         }
 
         // Similar
@@ -86,11 +108,6 @@ class FullContent : AppCompatActivity() {
                     Log.e(TAG, "Failed to fetch similar results")
                 }
             }
-        }
-
-        // Sharing
-        sharePostButton.setOnClickListener {
-            Helpers.downloadAndShareFile(this, fileName, fileUrl)
         }
 
         // Deletion
