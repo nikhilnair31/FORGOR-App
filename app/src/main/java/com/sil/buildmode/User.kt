@@ -42,6 +42,7 @@ class User : AppCompatActivity() {
     private lateinit var emailText: EditText
     private lateinit var editEmailButton: Button
     private lateinit var userLogoutButton: Button
+    private lateinit var accountDeleteButton: Button
     private lateinit var rootConstraintLayout: ConstraintLayout
     // endregion
 
@@ -60,7 +61,8 @@ class User : AppCompatActivity() {
         editUsernameButton = findViewById(R.id.editUsername)
         emailText = findViewById(R.id.emailEditText)
         editEmailButton = findViewById(R.id.editEmail)
-        userLogoutButton = findViewById(R.id.userLogout)
+        userLogoutButton = findViewById(R.id.userLogoutButton)
+        accountDeleteButton = findViewById(R.id.accountDeleteButton)
 
         val username = generalSharedPreferences.getString("username", "")
         usernameText.setText(username)
@@ -93,13 +95,16 @@ class User : AppCompatActivity() {
         userLogoutButton.setOnClickListener {
             userLogoutRelated()
         }
+        accountDeleteButton.setOnClickListener {
+            accountDeleteRelated()
+        }
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         ViewCompat.setOnApplyWindowInsetsListener(rootConstraintLayout) { v, insets ->
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
             val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            val bottom = max(ime.bottom, sys.bottom)
+            val bottom = max(ime.bottom + 24, sys.bottom)
             v.updatePadding(bottom = bottom)
             insets
         }
@@ -158,6 +163,40 @@ class User : AppCompatActivity() {
             .remove("last_results_json")
             .remove("cached_saves_left")
             .putBoolean(KEY_SCREENSHOT_ENABLED, false)
+        }  // ← block until written
+
+        val serviceIntent = Intent(this@User, ScreenshotService::class.java)
+        stopService(serviceIntent)
+
+        val intent = Intent(this, Welcome::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        startActivity(intent)
+        finish()
+    }
+    private fun accountDeleteRelated() {
+        Log.i(TAG, "accountDeleteRelated")
+
+        Helpers.authAccountDelete(this) { success ->
+            runOnUiThread {
+                if (success) {
+                    Log.i(TAG, "Account delete success!")
+                    showToast(this, "Account deleted!")
+                } else {
+                    Log.i(TAG, "Account delete failed!")
+                    showToast(this, "Account delete failed!")
+                }
+            }
+        }
+
+        generalSharedPreferences.edit(commit = true) {
+            remove("username")
+                .remove("access_token")
+                .remove("refresh_token")
+                .remove("last_query")
+                .remove("last_results_json")
+                .remove("cached_saves_left")
+                .putBoolean(KEY_SCREENSHOT_ENABLED, false)
         }  // ← block until written
 
         val serviceIntent = Intent(this@User, ScreenshotService::class.java)

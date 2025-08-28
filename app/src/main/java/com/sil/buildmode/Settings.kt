@@ -16,14 +16,9 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
 import com.sil.others.Helpers
 import com.sil.others.Helpers.Companion.showToast
 import com.sil.services.ScreenshotService
-import kotlin.math.max
 
 class Settings : AppCompatActivity() {
     // region Vars
@@ -40,6 +35,7 @@ class Settings : AppCompatActivity() {
 
     private lateinit var userButton: Button
     private lateinit var savesLeftText: TextView
+    private lateinit var bulkDownloadButton: Button
     private lateinit var screenshotToggleButton: ToggleButton
     private lateinit var rootConstraintLayout: ConstraintLayout
     // endregion
@@ -55,12 +51,17 @@ class Settings : AppCompatActivity() {
     }
     private fun initRelated() {
         rootConstraintLayout = findViewById(R.id.rootConstraintLayout)
-        userButton = findViewById(R.id.userActivity)
+        userButton = findViewById(R.id.userActivityButton)
+        bulkDownloadButton = findViewById(R.id.bulkDownloadButton)
         savesLeftText = findViewById(R.id.savesLeftText)
         screenshotToggleButton = findViewById(R.id.screenshotToggleButton)
 
         userButton.setOnClickListener {
             startActivity(Intent(this, User::class.java))
+        }
+
+        bulkDownloadButton.setOnClickListener {
+            // Download
         }
 
         val cachedSavesLeft = generalSharedPreferences.getInt("cached_saves_left", -1)
@@ -96,16 +97,6 @@ class Settings : AppCompatActivity() {
                 generalSharedPreferences.edit { putBoolean(KEY_SCREENSHOT_ENABLED, false) }
                 updateToggle(screenshotToggleButton, false)
             }
-        }
-
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-
-        ViewCompat.setOnApplyWindowInsetsListener(rootConstraintLayout) { v, insets ->
-            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
-            val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            val bottom = max(ime.bottom, sys.bottom)
-            v.updatePadding(bottom = bottom)
-            insets
         }
     }
     // endregion

@@ -2,7 +2,6 @@ package com.sil.buildmode
 
 import android.content.Intent
 import android.content.SharedPreferences
-import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -10,20 +9,19 @@ import android.util.Log
 import android.view.View
 import android.widget.EditText
 import android.widget.ImageButton
-import android.widget.TextView
+import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.view.isVisible
+import androidx.core.view.updatePadding
 import androidx.core.widget.doAfterTextChanged
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.sil.others.Helpers
@@ -31,8 +29,6 @@ import com.sil.services.ScreenshotService
 import com.sil.workers.TokenRefreshWorker
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
-import androidx.core.view.isVisible
-import androidx.core.view.updatePadding
 import kotlin.math.max
 
 class Main : AppCompatActivity() {
@@ -43,16 +39,19 @@ class Main : AppCompatActivity() {
 
     private lateinit var generalSharedPreferences: SharedPreferences
 
+    private lateinit var rootConstraintLayout: ConstraintLayout
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var optionsButtonsLayout: LinearLayout
+    private lateinit var searchTextLayout: ConstraintLayout
+
     private var searchHandler = Handler(Looper.getMainLooper())
     private var searchTextWatcherEnabled = true
     private var searchRunnable: Runnable? = null
-    lateinit var resultAdapter: ResultAdapter
+    private lateinit var resultAdapter: ResultAdapter
 
     private lateinit var searchEditText: EditText
+    private lateinit var optionsButton: ImageButton
     private lateinit var settingsButton: ImageButton
-    private lateinit var placeholder: TextView
-    private lateinit var recyclerView: RecyclerView
-    private lateinit var rootConstraintLayout: ConstraintLayout
     // endregion
 
     // region Common
@@ -144,7 +143,10 @@ class Main : AppCompatActivity() {
     // region UI Related
     private fun initUI() {
         rootConstraintLayout = findViewById(R.id.rootConstraintLayout)
+        optionsButtonsLayout = findViewById(R.id.optionsButtonsLayout)
+        searchTextLayout = findViewById(R.id.searchTextLayout)
         recyclerView = findViewById(R.id.imageRecyclerView)
+        optionsButton = findViewById(R.id.optionsButton)
         settingsButton = findViewById(R.id.settingsButton)
         searchEditText = findViewById(R.id.searchEditText)
 
@@ -154,6 +156,14 @@ class Main : AppCompatActivity() {
         recyclerView.itemAnimator = DefaultItemAnimator()
         recyclerView.layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
 
+        optionsButton.setOnClickListener {
+            if (optionsButtonsLayout.isVisible) {
+                optionsButtonsLayout.visibility = View.GONE
+            } else {
+                optionsButtonsLayout.visibility = View.VISIBLE
+
+            }
+        }
         settingsButton.setOnClickListener {
             startActivity(Intent(this, Settings::class.java))
         }
@@ -167,21 +177,20 @@ class Main : AppCompatActivity() {
         ViewCompat.setOnApplyWindowInsetsListener(rootConstraintLayout) { _, insets ->
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
             val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            val bottomForContent = max(ime.bottom, sys.bottom)
+            val bottomForContent = max(ime.bottom + 36, sys.bottom)
 
             // content above IME/nav
             rootConstraintLayout.updatePadding(
-                top = sys.top,
-                bottom = bottomForContent
+                bottom = bottomForContent - 64
             )
 
             // make the neon bar extend under the gesture area
-            searchEditText.updatePadding(
-                left = searchEditText.paddingLeft,
-                top = sys.bottom,
-                right = searchEditText.paddingRight,
-                bottom = sys.bottom// + 24 /* your original bottom padding */
-            )
+//            searchEditText.updatePadding(
+//                left = searchEditText.paddingLeft,
+//                top = sys.bottom,
+//                right = searchEditText.paddingRight,
+//                bottom = sys.bottom// + 24 /* your original bottom padding */
+//            )
 
             insets
         }
@@ -193,7 +202,7 @@ class Main : AppCompatActivity() {
         searchRunnable?.let { searchHandler.removeCallbacks(it) }
 
         searchRunnable = Runnable {
-            val query = text.toString().trim()
+            val query = text.trim()
 
             if (query.isEmpty()) {
                 Log.i(TAG, "Empty search triggered")
@@ -248,7 +257,7 @@ class Main : AppCompatActivity() {
         searchHandler.postDelayed(searchRunnable!!, 300) // 1000 ms = 1 second
     }
 
-    fun View.fadeIn(duration: Long = 200, delay: Long = 0) {
+    private fun View.fadeIn(duration: Long = 200, delay: Long = 0) {
         if (!isVisible || alpha < 1f) {
             alpha = 0f
             visibility = View.VISIBLE
@@ -258,7 +267,7 @@ class Main : AppCompatActivity() {
                 .start()
         }
     }
-    fun View.fadeOut(duration: Long = 200, delay: Long = 0, endAction: (() -> Unit)? = null) {
+    private fun View.fadeOut(duration: Long = 200, delay: Long = 0, endAction: (() -> Unit)? = null) {
         if (isVisible && alpha > 0f) {
             animate().alpha(0f)
                 .setStartDelay(delay)

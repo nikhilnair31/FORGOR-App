@@ -19,7 +19,6 @@
     <string name="password">PASSWORD</string>
     <string name="passwordHint">PICK A PASSWORD</string>
     <string name="signupSuccess">SIGNED UP!</string>
-    <string name="settingsUserLogout">LOGOUT</string>
 
     <string name="featuresText">FEATURES</string>
     <string name="screenshotToggleOnText">MONITORING ALL SCREENSHOTS</string>
@@ -33,6 +32,8 @@
     <string name="failedLoadingContent">FAILED TO LOAD</string>
     <string name="noMoreResultsFound">NO MORE RESULTS FOUND</string>
 
+    <string name="imageSizeChangeDescription">CHANGE IMAGE SIZE</string>
+
     <string name="openPost">OPEN POST</string>
     <string name="sharePost">SHARE POST</string>
     <string name="deletePost">DELETE POST</string>
@@ -41,5 +42,8 @@
     <string name="settingsText">SETTINGS</string>
     <string name="saveText">SAVING</string>
     <string name="savesLeftText">SAVES LEFT TODAY: %1$d</string>
+    <string name="download">BULK DOWNLOAD</string>
+    <string name="settingsUserLogout">LOGOUT</string>
+    <string name="settingsUserDelete">DELETE ACCOUNT</string>
 
 </resources>

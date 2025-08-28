@@ -61,14 +61,6 @@ class FullContent : AppCompatActivity() {
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        ViewCompat.setOnApplyWindowInsetsListener(rootConstraintLayout) { v, insets ->
-            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
-            val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            val bottom = max(ime.bottom, sys.bottom)
-            v.updatePadding(bottom = bottom)
-            insets
-        }
-
         initRelated(fileName, fileUrl)
     }
 

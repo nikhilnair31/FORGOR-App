@@ -27,12 +27,15 @@
 
     <LinearLayout
         android:id="@+id/linearLayout"
+
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+
         android:layout_margin="16dp"
         android:padding="16dp"
 
         android:background="@color/base_1"
+
         android:orientation="vertical"
 
         app:layout_constraintBottom_toBottomOf="parent"
@@ -87,17 +90,24 @@
 
         <Button
             android:id="@+id/editUsername"
+
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+
             android:layout_marginTop="8dp"
+            android:padding="24dp"
+
             android:enabled="true"
 
-            android:fontFamily="@font/venus_cormier"
-            android:padding="24dp"
-            android:stateListAnimator="@null"
-            android:text="@string/editUsername"
-            android:textSize="14sp"
             app:cornerRadius="@dimen/softCorners"
+            android:backgroundTint="@color/accent_1"
+
+            android:textSize="14sp"
+            android:text="@string/editUsername"
+            android:textColor="@color/base_0"
+            android:fontFamily="@font/venus_cormier"
+
+            android:stateListAnimator="@null"
 
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -151,37 +161,74 @@
 
         <Button
             android:id="@+id/editEmail"
+
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+
             android:layout_marginTop="8dp"
+            android:padding="24dp"
+
             android:enabled="true"
 
-            android:fontFamily="@font/venus_cormier"
-            android:padding="24dp"
-            android:stateListAnimator="@null"
-            android:text="@string/editEmail"
-            android:textSize="14sp"
             app:cornerRadius="@dimen/softCorners"
+            android:backgroundTint="@color/accent_1"
+
+            android:textSize="14sp"
+            android:text="@string/editEmail"
+            android:textColor="@color/base_0"
+            android:fontFamily="@font/venus_cormier"
+
+            android:stateListAnimator="@null"
 
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/permissionsTextView" />
 
         <Button
-            android:id="@+id/userLogout"
+            android:id="@+id/userLogoutButton"
+
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+
             android:layout_marginTop="8dp"
             android:padding="24dp"
 
             android:enabled="true"
-            android:textSize="14sp"
+
+            app:cornerRadius="@dimen/softCorners"
             android:backgroundTint="@color/accent_0"
+
+            android:textSize="14sp"
+            android:text="@string/settingsUserLogout"
             android:textColor="@color/accent_1"
             android:fontFamily="@font/venus_cormier"
+
             android:stateListAnimator="@null"
-            android:text="@string/settingsUserLogout"
+
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/permissionsTextView" />
+
+        <Button
+            android:id="@+id/accountDeleteButton"
+
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+
+            android:layout_marginTop="8dp"
+            android:padding="24dp"
+
+            android:enabled="true"
+
             app:cornerRadius="@dimen/softCorners"
+            android:backgroundTint="@android:color/black"
+
+            android:textSize="14sp"
+            android:text="@string/settingsUserDelete"
+            android:textColor="@color/accent_0"
+            android:fontFamily="@font/venus_cormier"
+
+            android:stateListAnimator="@null"
 
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"

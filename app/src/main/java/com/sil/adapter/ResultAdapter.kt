@@ -39,7 +39,6 @@ RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
 
     class ResultViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val imageView: ImageView = view.findViewById(R.id.imageView)
-        val linkIcon: ImageView = view.findViewById(R.id.linkIcon)
     }
 
     fun getData(): MutableList<JSONObject> {
@@ -68,13 +67,6 @@ RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
         val postUrl = item.optString("post_url", "")
         val thumbnailUrl = "$SERVER_URL/api/get_thumbnail/$thumbnailName"
 
-        // Handle link icon
-        holder.linkIcon.visibility = if (postUrl.isBlank() || postUrl == "-") View.GONE else View.VISIBLE
-        holder.linkIcon.setOnClickListener {
-            val intent = Intent(Intent.ACTION_VIEW, postUrl.toUri())
-            context.startActivity(intent)
-        }
-
         // Handle image files
         val blankDrawable = R.color.accent_0.toDrawable()
         val glideUrl = Helpers.getImageURL(context, thumbnailUrl)
@@ -85,16 +77,6 @@ RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
         }
 
         loadThumbnailWithRetry(glideUrl, holder)
-
-        // Show link icon if postUrl is valid
-        if (postUrl.isNotBlank() && postUrl != "-") {
-            holder.linkIcon.visibility = View.VISIBLE
-            holder.linkIcon.setOnClickListener {
-                context.startActivity(Intent(Intent.ACTION_VIEW, postUrl.toUri()))
-            }
-        } else {
-            holder.linkIcon.visibility = View.GONE
-        }
 
         holder.itemView.setOnClickListener {
             Log.i(TAG, "Item clicked: $item")

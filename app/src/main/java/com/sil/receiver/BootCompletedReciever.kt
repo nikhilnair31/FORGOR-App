@@ -1,7 +1,10 @@
 package com.sil.receiver
 
+import StartScreenshotWorker
 import android.content.Context
 import android.content.Intent
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.sil.services.ScreenshotService
 
 class BootCompletedReceiver : android.content.BroadcastReceiver() {
@@ -13,8 +16,8 @@ class BootCompletedReceiver : android.content.BroadcastReceiver() {
 
             // Check if screenshot services were active
             if (prefs.getBoolean("isScreenshotMonitoringEnabled", false)) {
-                val serviceIntent = Intent(context, ScreenshotService::class.java)
-                context.startForegroundService(serviceIntent)
+                val workRequest = OneTimeWorkRequestBuilder<StartScreenshotWorker>().build()
+                WorkManager.getInstance(context).enqueue(workRequest)
             }
         }
     }
