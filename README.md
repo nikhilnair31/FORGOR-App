@@ -7,6 +7,7 @@ Meet FORGOR
 ## Tasks
 
 ### To-Do
+- [ ] Add options for digest frequency
 - [ ] Add link extraction when viewing individual posts
 
 ### Other

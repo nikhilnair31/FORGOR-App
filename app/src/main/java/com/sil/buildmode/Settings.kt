@@ -40,8 +40,7 @@ class Settings : AppCompatActivity() {
     private var pendingToggle: (() -> Unit)? = null
 
     private lateinit var userButton: Button
-    private lateinit var savesLeftText: TextView
-    private lateinit var bulkDownloadButton: Button
+    private lateinit var savingButton: TextView
     private lateinit var screenshotToggleButton: ToggleButton
     private lateinit var rootConstraintLayout: ConstraintLayout
     // endregion
@@ -58,28 +57,23 @@ class Settings : AppCompatActivity() {
     private fun initRelated() {
         rootConstraintLayout = findViewById(R.id.rootConstraintLayout)
         userButton = findViewById(R.id.userActivityButton)
-        bulkDownloadButton = findViewById(R.id.bulkDownloadButton)
-        savesLeftText = findViewById(R.id.savesLeftText)
+        savingButton = findViewById(R.id.savingActivityButton)
         screenshotToggleButton = findViewById(R.id.screenshotToggleButton)
 
         userButton.setOnClickListener {
             startActivity(Intent(this, User::class.java))
         }
-
-        bulkDownloadButton.setOnClickListener {
-            showConfirmBulkDownload()
+        savingButton.setOnClickListener {
+            startActivity(Intent(this, Saving::class.java))
         }
 
-        val cachedSavesLeft = generalSharedPreferences.getInt("cached_saves_left", -1)
-        if (cachedSavesLeft != -1) {
-            savesLeftText.text = getString(R.string.savesLeftText, cachedSavesLeft)
-        }
-        Helpers.getSavesLeft(this) { savesLeft ->
-            Log.i(TAG, "You have $savesLeft uploads left today!")
-            savesLeftText.text = getString(R.string.savesLeftText, savesLeft)
-            generalSharedPreferences.edit {
-                putInt("cached_saves_left", savesLeft)
-            }
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        ViewCompat.setOnApplyWindowInsetsListener(rootConstraintLayout) { v, insets ->
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val bottom = max(ime.bottom + 24, sys.bottom)
+            v.updatePadding(bottom = bottom)
+            insets
         }
 
         val isScreenshotServiceRunning = Helpers.isServiceRunning(this, ScreenshotService::class.java)
@@ -107,18 +101,6 @@ class Settings : AppCompatActivity() {
     }
     // endregion
 
-    // region Data Related
-    private fun bulkDownloadAllData() {
-        bulkDownloadButton.isEnabled = false
-        Helpers.bulkDownloadAll(this) { success ->
-            runOnUiThread {
-                bulkDownloadButton.isEnabled = true
-                if (success) showToast(this, "Backup emailed!") else showToast(this, "Download failed")
-            }
-        }
-    }
-    // endregion
-
     // region Service Related
     private fun startScreenshotService(serviceIntent: Intent) {
         startForegroundService(serviceIntent)
@@ -136,28 +118,6 @@ class Settings : AppCompatActivity() {
             screenshotToggleButton -> getString(if (isChecked) R.string.screenshotToggleOnText else R.string.screenshotToggleOffText)
             else -> ""
         }
-
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        ViewCompat.setOnApplyWindowInsetsListener(rootConstraintLayout) { v, insets ->
-            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
-            val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            val bottom = max(ime.bottom + 24, sys.bottom)
-            v.updatePadding(bottom = bottom)
-            insets
-        }
-    }
-    private fun showConfirmBulkDownload() {
-        MaterialAlertDialogBuilder (this)
-            .setIcon(R.drawable.outline_attach_email_24)
-            .setTitle("Send backup?")
-            .setMessage("This will bundle your saved items and email the backup to your account address.")
-            .setNegativeButton("Cancel", null)
-            .setPositiveButton("Send") { _, _ ->
-                // optional: small haptic
-                bulkDownloadButton.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                bulkDownloadAllData()
-            }
-            .show()
     }
     // endregion
 

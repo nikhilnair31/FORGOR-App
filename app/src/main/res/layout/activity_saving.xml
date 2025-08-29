@@ -16,7 +16,7 @@
         android:layout_marginBottom="8dp"
         android:fontFamily="@font/venus_cormier"
         android:gravity="center_horizontal|center_vertical"
-        android:text="@string/settingsText"
+        android:text="@string/savingText"
         android:textColor="@color/accent_0"
         android:textSize="64sp"
         app:layout_constraintBottom_toTopOf="@+id/linearLayout5"
@@ -42,85 +42,48 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
-        <Button
-            android:id="@+id/userActivityButton"
-
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-
-            android:layout_marginTop="8dp"
-            android:padding="24dp"
-
-            android:enabled="true"
-
-            app:cornerRadius="@dimen/softCorners"
-            android:backgroundTint="@color/accent_1"
-
-            android:textSize="14sp"
-            android:text="@string/user"
-            android:textColor="@color/base_0"
-            android:fontFamily="@font/venus_cormier"
-
-            android:stateListAnimator="@null"
-
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/permissionsTextView" />
-
-        <Button
-            android:id="@+id/savingActivityButton"
-
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-
-            android:layout_marginTop="8dp"
-            android:padding="24dp"
-
-            android:enabled="true"
-
-            app:cornerRadius="@dimen/softCorners"
-            android:backgroundTint="@color/accent_1"
-
-            android:textSize="14sp"
-            android:text="@string/savingText"
-            android:textColor="@color/base_0"
-            android:fontFamily="@font/venus_cormier"
-
-            android:stateListAnimator="@null"
-
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/permissionsTextView" />
-
         <TextView
-            android:id="@+id/featuresTextView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:padding="12dp"
-
-            android:fontFamily="@font/venus_cormier"
-            android:gravity="start"
-            android:text="@string/featuresText"
-            android:textColor="@color/accent_1"
-            android:textSize="14sp" />
-
-        <ToggleButton
-            android:id="@+id/screenshotToggleButton"
+            android:id="@+id/savesLeftText"
             android:layout_width="match_parent"
             android:layout_height="64dp"
             android:layout_marginTop="8dp"
-            android:padding="12dp"
-
-            android:checked="false"
             android:background="@color/base_0"
-            android:drawableTint="@color/accent_1"
+
             android:fontFamily="@font/venus_cormier"
+            android:gravity="center_horizontal|center_vertical"
+            android:padding="12dp"
+            android:text="@string/savesLeftText"
+            android:textColor="@color/accent_0"
+            android:textSize="14sp"
+
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <Button
+            android:id="@+id/bulkDownloadButton"
+
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+
+            android:layout_marginTop="8dp"
+            android:padding="24dp"
+
+            android:enabled="true"
+
+            app:cornerRadius="@dimen/softCorners"
+            android:backgroundTint="@color/accent_1"
+
+            android:textSize="14sp"
+            android:text="@string/download"
+            android:textColor="@color/base_0"
+            android:fontFamily="@font/venus_cormier"
+
             android:stateListAnimator="@null"
-            android:textColor="@color/accent_1"
-            android:textOff="@string/screenshotToggleOnText"
-            android:textOn="@string/screenshotToggleOnText"
-            app:elevation="0dp" />
+
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/permissionsTextView" />
 
     </LinearLayout>
 

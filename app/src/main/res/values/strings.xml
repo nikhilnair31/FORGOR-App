@@ -40,10 +40,11 @@
     <string name="findSimilarPost">FIND SIMILAR POST</string>
 
     <string name="settingsText">SETTINGS</string>
-    <string name="saveText">SAVING</string>
     <string name="savesLeftText">SAVES LEFT TODAY: %1$d</string>
     <string name="download">BULK DOWNLOAD</string>
     <string name="settingsUserLogout">LOGOUT</string>
     <string name="settingsUserDelete">DELETE ACCOUNT</string>
+
+    <string name="savingText">SAVING</string>
 
 </resources>
