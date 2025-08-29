@@ -82,11 +82,10 @@ class Features : AppCompatActivity() {
         }
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
-
         ViewCompat.setOnApplyWindowInsetsListener(rootConstraintLayout) { v, insets ->
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
             val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            val bottom = max(ime.bottom, sys.bottom)
+            val bottom = max(ime.bottom + 24, sys.bottom)
             v.updatePadding(bottom = bottom)
             insets
         }

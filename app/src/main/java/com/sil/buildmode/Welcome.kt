@@ -60,15 +60,9 @@ class Welcome : AppCompatActivity() {
         ViewCompat.setOnApplyWindowInsetsListener(rootConstraintLayout) { v, insets ->
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
             val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            val bottom = max(ime.bottom, sys.bottom)
-
-            // content above IME/nav
-            rootConstraintLayout.updatePadding(
-                top = sys.top,
-            )
-
+            val bottom = max(ime.bottom + 24, sys.bottom)
+            rootConstraintLayout.updatePadding(top = sys.top)
             v.updatePadding(bottom = bottom)
-
             insets
         }
     }

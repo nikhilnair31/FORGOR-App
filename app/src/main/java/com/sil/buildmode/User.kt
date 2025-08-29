@@ -24,6 +24,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.sil.others.Helpers
 import com.sil.others.Helpers.Companion.showToast
 import com.sil.services.ScreenshotService
@@ -96,11 +97,10 @@ class User : AppCompatActivity() {
             userLogoutRelated()
         }
         accountDeleteButton.setOnClickListener {
-            accountDeleteRelated()
+            showConfirmAccountDelete()
         }
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
-
         ViewCompat.setOnApplyWindowInsetsListener(rootConstraintLayout) { v, insets ->
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
             val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -108,6 +108,20 @@ class User : AppCompatActivity() {
             v.updatePadding(bottom = bottom)
             insets
         }
+    }
+
+    private fun showConfirmAccountDelete() {
+        MaterialAlertDialogBuilder (this)
+            .setIcon(R.drawable.outline_exclamation_24)
+            .setTitle("Delete account?")
+            .setMessage("This will permanently delete your account and all your data.")
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Proceed") { _, _ ->
+                // optional: small haptic
+                accountDeleteButton.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                accountDeleteRelated()
+            }
+            .show()
     }
     // endregion
 
@@ -189,15 +203,7 @@ class User : AppCompatActivity() {
             }
         }
 
-        generalSharedPreferences.edit(commit = true) {
-            remove("username")
-                .remove("access_token")
-                .remove("refresh_token")
-                .remove("last_query")
-                .remove("last_results_json")
-                .remove("cached_saves_left")
-                .putBoolean(KEY_SCREENSHOT_ENABLED, false)
-        }  // ← block until written
+        generalSharedPreferences.edit(commit = true) { clear() }
 
         val serviceIntent = Intent(this@User, ScreenshotService::class.java)
         stopService(serviceIntent)

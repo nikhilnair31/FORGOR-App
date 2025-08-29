@@ -7,19 +7,10 @@ Meet FORGOR
 ## Tasks
 
 ### To-Do
-- [ ] Fix the onclick of text posts
-- [ ] Add logic to find similar content
+- [ ] Add link extraction when viewing individual posts
 
 ### Other
-- [ ] Add a new overlay/quick setting/icon to quick add
 
 ### Done
-- [x] Add time/account based limits to saves
-- [x] Find app signing key for Play Store
-- [x] Create signed app bundle
-- [x] Add basic text sharing
-- [x] Add delete post button
-- [x] Auto sign out after refresh token expires?
-- [x] Show image in a new activity
-- [x] Show a "Similar" button in the new activity
-- [x] Remove toasts for query
+- [x] Add confirmation on account delete and bulk download
+- [x] Fixed the full screen

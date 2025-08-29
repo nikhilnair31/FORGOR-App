@@ -16,9 +16,15 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.sil.others.Helpers
 import com.sil.others.Helpers.Companion.showToast
 import com.sil.services.ScreenshotService
+import kotlin.math.max
 
 class Settings : AppCompatActivity() {
     // region Vars
@@ -61,7 +67,7 @@ class Settings : AppCompatActivity() {
         }
 
         bulkDownloadButton.setOnClickListener {
-            // Download
+            showConfirmBulkDownload()
         }
 
         val cachedSavesLeft = generalSharedPreferences.getInt("cached_saves_left", -1)
@@ -101,6 +107,18 @@ class Settings : AppCompatActivity() {
     }
     // endregion
 
+    // region Data Related
+    private fun bulkDownloadAllData() {
+        bulkDownloadButton.isEnabled = false
+        Helpers.bulkDownloadAll(this) { success ->
+            runOnUiThread {
+                bulkDownloadButton.isEnabled = true
+                if (success) showToast(this, "Backup emailed!") else showToast(this, "Download failed")
+            }
+        }
+    }
+    // endregion
+
     // region Service Related
     private fun startScreenshotService(serviceIntent: Intent) {
         startForegroundService(serviceIntent)
@@ -118,6 +136,28 @@ class Settings : AppCompatActivity() {
             screenshotToggleButton -> getString(if (isChecked) R.string.screenshotToggleOnText else R.string.screenshotToggleOffText)
             else -> ""
         }
+
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        ViewCompat.setOnApplyWindowInsetsListener(rootConstraintLayout) { v, insets ->
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val bottom = max(ime.bottom + 24, sys.bottom)
+            v.updatePadding(bottom = bottom)
+            insets
+        }
+    }
+    private fun showConfirmBulkDownload() {
+        MaterialAlertDialogBuilder (this)
+            .setIcon(R.drawable.outline_attach_email_24)
+            .setTitle("Send backup?")
+            .setMessage("This will bundle your saved items and email the backup to your account address.")
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Send") { _, _ ->
+                // optional: small haptic
+                bulkDownloadButton.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                bulkDownloadAllData()
+            }
+            .show()
     }
     // endregion
 

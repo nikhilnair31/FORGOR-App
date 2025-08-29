@@ -313,7 +313,7 @@ class Helpers {
 
         // region Auth Related
         fun refreshAccessToken(context: Context, onComplete: (success: Boolean, newToken: String?) -> Unit) {
-            val prefs = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
+            val prefs = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
             val refreshToken = prefs.getString("refresh_token", "") ?: ""
             if (refreshToken.isEmpty()) {
                 Log.e(TAG, "Refresh token missing")
@@ -453,7 +453,7 @@ class Helpers {
 
                         if (!accessToken.isEmpty() && !refreshToken.isEmpty()) {
                             Log.i(TAG, "Tokens received")
-                            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
+                            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
                             generalSharedPrefs.edit {
                                 putString("access_token", accessToken.toString())
                                 putString("refresh_token", refreshToken.toString())
@@ -472,7 +472,7 @@ class Helpers {
         fun authEditUsernameToServer(context: Context, newUsername: String, callback: (success: Boolean) -> Unit) {
             Log.i(TAG, "Trying to edit username to $newUsername")
 
-            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
+            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
             val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
             if (accessToken.isEmpty()) {
                 Log.e(TAG, "Access token missing")
@@ -537,7 +537,7 @@ class Helpers {
         fun authEditEmailToServer(context: Context, newEmail: String, callback: (success: Boolean) -> Unit) {
             Log.i(TAG, "Trying to edit email to $newEmail")
 
-            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
+            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
             val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
             if (accessToken.isEmpty()) {
                 Log.e(TAG, "Access token missing")
@@ -599,11 +599,67 @@ class Helpers {
 
             sendRequest(accessToken)
         }
+        fun authAccountDelete(context: Context, callback: (success: Boolean) -> Unit) {
+            Log.i(TAG, "Trying to delete account...")
+
+            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
+            val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
+            if (accessToken.isEmpty()) {
+                Log.e(TAG, "Access token missing")
+                showToast(context, "Not logged in")
+                return
+            }
+
+            fun sendRequest(token: String) {
+                val request = buildAuthorizedRequest(
+                    "$SERVER_URL/api/account_delete",
+                    token = token,
+                    method = "DELETE",
+                    body = null
+                )
+
+                httpClient.newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        Log.e(TAG, "Account delete failed: ${e.localizedMessage}")
+                        showToast(context, "Delete failed!")
+                        callback(false)
+                    }
+
+                    override fun onResponse(call: Call, response: Response) {
+                        val responseBody = response.body?.string()
+
+                        if (response.code == 401) {
+                            refreshAccessToken(context) { success, newToken ->
+                                if (success && !newToken.isNullOrEmpty()) {
+                                    sendRequest(newToken) // Retry with refreshed token
+                                } else {
+                                    showToast(context, "Session expired. Please log in again.")
+                                    callback(false)
+                                }
+                            }
+                            return
+                        }
+
+                        if (response.isSuccessful) {
+                            Log.i(TAG, "Account deleted successfully: $responseBody")
+                            showToast(context, "Account deleted")
+                            callback(true)
+                        } else {
+                            Log.e(TAG, "Delete error ${response.code}: $responseBody")
+                            showToast(context, "Delete failed!")
+                            callback(false)
+                        }
+                    }
+                })
+            }
+
+            sendRequest(accessToken)
+        }
 
         fun autoLogout(context: Context) {
             Log.i(TAG, "autoLogout | Logging out user...")
 
-            val prefs = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
+            val prefs = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
             prefs.edit {
                 remove("username")
                 remove("email")
@@ -806,6 +862,62 @@ class Helpers {
                     Log.e(TAG, "Exception: ${e.message}")
                 }
             }
+        }
+
+        fun bulkDownloadAll(context: Context, callback: (success: Boolean) -> Unit) {
+            Log.i(TAG, "Starting bulk download...")
+
+            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
+            val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
+            if (accessToken.isEmpty()) {
+                Log.e(TAG, "Access token missing")
+                showToast(context, "Not logged in")
+                callback(false)
+                return
+            }
+
+            fun sendRequest(token: String) {
+                val request = buildAuthorizedRequest(
+                    "$SERVER_URL/api/bulk_download_all",
+                    token = token,
+                    method = "GET",
+                    body = null
+                )
+
+                httpClient.newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        Log.e(TAG, "Bulk download failed: ${e.localizedMessage}")
+                        showToast(context, "Download failed!")
+                        callback(false)
+                    }
+
+                    override fun onResponse(call: Call, response: Response) {
+                        if (response.code == 401) {
+                            refreshAccessToken(context) { success, newToken ->
+                                if (success && !newToken.isNullOrEmpty()) {
+                                    sendRequest(newToken) // retry
+                                } else {
+                                    showToast(context, "Session expired. Please log in again.")
+                                    callback(false)
+                                }
+                            }
+                            return
+                        }
+
+                        if (response.isSuccessful) {
+                            Log.i(TAG, "Bulk download successful!")
+                            showToast(context, "Bulk download successful!")
+                            callback(true)
+                        } else {
+                            Log.e(TAG, "Bulk download error ${response.code}")
+                            showToast(context, "Download failed!")
+                            callback(false)
+                        }
+                    }
+                })
+            }
+
+            sendRequest(accessToken)
         }
 
         fun getScreenshotsPath(): String? {
