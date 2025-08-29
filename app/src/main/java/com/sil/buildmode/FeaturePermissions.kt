@@ -66,9 +66,39 @@ class FeaturePermissions : AppCompatActivity() {
         digestCycleButton = findViewById(R.id.digestFreqToggleButton)
         buttonToMain = findViewById(R.id.buttonToMain)
 
-        screenshotToggleButton.setOnCheckedChangeListener { _, isChecked ->
-            Log.i(TAG, "Screenshot toggle changed: isChecked=$isChecked")
+        initDigestButton()
+        initScreenshotToggle()
+        initMainButton()
 
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        ViewCompat.setOnApplyWindowInsetsListener(rootConstraintLayout) { v, insets ->
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val bottom = max(ime.bottom + 24, sys.bottom)
+            v.updatePadding(bottom = bottom)
+            insets
+        }
+    }
+    // endregion
+
+    // region UI Related
+    private fun initDigestButton() {
+        digestIndex = generalSharedPreferences.getInt("digest_index", 0).coerceIn(0, digestOptions.lastIndex)
+        Log.i(TAG, "digestIndex: $digestIndex")
+        renderDigestButton(digestIndex)
+
+        digestCycleButton.setOnClickListener {
+            val newIndex = (digestIndex + 1) % digestOptions.size
+            renderDigestButton(newIndex)
+            updateDigestFrequency(newIndex)
+        }
+    }
+    private fun initScreenshotToggle() {
+        val isRunning = Helpers.isServiceRunning(this, ScreenshotService::class.java)
+        updateToggle(screenshotToggleButton, isRunning)
+
+        screenshotToggleButton.setOnCheckedChangeListener { _, isChecked ->
+            Log.i(TAG, "Screenshot toggle changed: $isChecked")
             screenshotToggleButton.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
             val serviceIntent = Intent(this, ScreenshotService::class.java)
@@ -86,27 +116,22 @@ class FeaturePermissions : AppCompatActivity() {
                 updateToggle(screenshotToggleButton, false)
             }
         }
-        digestCycleButton.setOnClickListener {
-            updateDigestFrequency()
-        }
+    }
+    private fun initMainButton() {
         buttonToMain.setOnClickListener {
             val intent = Intent(this, Main::class.java)
             startActivity(intent)
             finish()
         }
-
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        ViewCompat.setOnApplyWindowInsetsListener(rootConstraintLayout) { v, insets ->
-            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
-            val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            val bottom = max(ime.bottom + 24, sys.bottom)
-            v.updatePadding(bottom = bottom)
-            insets
-        }
     }
-    // endregion
 
-    // region UI Related
+    private fun renderDigestButton(index: Int) {
+        val (label, bgCol, txtCol) = digestOptions[index]
+        digestCycleButton.setText(label)
+        digestCycleButton.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, bgCol))
+        digestCycleButton.setTextColor(ContextCompat.getColor(this, txtCol))
+        digestCycleButton.contentDescription = "Digest: $label"
+    }
     private fun updateToggle(toggle: ToggleButton, isChecked: Boolean) {
         toggle.isChecked = isChecked
         toggle.background = ContextCompat.getDrawable(this, if (isChecked) R.color.accent_0 else R.color.base_0)
@@ -119,11 +144,7 @@ class FeaturePermissions : AppCompatActivity() {
     // endregion
 
     // region Feature Related
-    private fun updateDigestFrequency() {
-        digestIndex = generalSharedPreferences.getInt("digest_index", 0).coerceIn(0, digestOptions.lastIndex)
-        val newIndex = (digestIndex + 1) % digestOptions.size
-        val (label, bgCol, txtCol) = digestOptions[newIndex]
-
+    private fun updateDigestFrequency(newIndex: Int) {
         // Call API
         val freqName = when (newIndex) {
             0 -> "none"
@@ -137,12 +158,6 @@ class FeaturePermissions : AppCompatActivity() {
                 // Save locally only if backend update succeeded
                 generalSharedPreferences.edit { putInt("digest_index", newIndex) }
                 digestIndex = newIndex
-
-                digestCycleButton.setText(label)
-                digestCycleButton.backgroundTintList =
-                    ColorStateList.valueOf(ContextCompat.getColor(this, bgCol))
-                digestCycleButton.setTextColor(ContextCompat.getColor(this, txtCol))
-                digestCycleButton.contentDescription = "Digest: $label"
             } else {
                 // Keep old state if backend failed
                 showToast(this, "Failed to update digest")
