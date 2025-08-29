@@ -98,10 +98,10 @@
             android:layout_marginTop="8dp"
             android:padding="24dp"
 
-            android:enabled="true"
+            android:enabled="false"
 
             app:cornerRadius="@dimen/softCorners"
-            android:backgroundTint="@color/accent_1"
+            android:backgroundTint="@android:color/darker_gray"
 
             android:textSize="14sp"
             android:text="@string/editUsername"
@@ -169,10 +169,10 @@
             android:layout_marginTop="8dp"
             android:padding="24dp"
 
-            android:enabled="true"
+            android:enabled="false"
 
             app:cornerRadius="@dimen/softCorners"
-            android:backgroundTint="@color/accent_1"
+            android:backgroundTint="@android:color/darker_gray"
 
             android:textSize="14sp"
             android:text="@string/editEmail"

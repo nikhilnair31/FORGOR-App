@@ -184,7 +184,7 @@ class Main : AppCompatActivity() {
             }
         }
         fileUploadButton.setOnClickListener {
-            startActivity(Intent(this, Settings::class.java))
+            //
         }
         settingsButton.setOnClickListener {
             startActivity(Intent(this, Settings::class.java))

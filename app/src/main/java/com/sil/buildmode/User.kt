@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.os.PowerManager
 import android.text.Editable
@@ -38,9 +39,9 @@ class User : AppCompatActivity() {
 
     private lateinit var generalSharedPreferences: SharedPreferences
 
-    private lateinit var usernameText: EditText
+    private lateinit var usernameEditText: EditText
     private lateinit var editUsernameButton: Button
-    private lateinit var emailText: EditText
+    private lateinit var emailEditText: EditText
     private lateinit var editEmailButton: Button
     private lateinit var userLogoutButton: Button
     private lateinit var accountDeleteButton: Button
@@ -58,33 +59,31 @@ class User : AppCompatActivity() {
     }
     private fun initRelated() {
         rootConstraintLayout = findViewById(R.id.rootConstraintLayout)
-        usernameText = findViewById(R.id.usernameEditText)
+        usernameEditText = findViewById(R.id.usernameEditText)
         editUsernameButton = findViewById(R.id.editUsername)
-        emailText = findViewById(R.id.emailEditText)
+        emailEditText = findViewById(R.id.emailEditText)
         editEmailButton = findViewById(R.id.editEmail)
         userLogoutButton = findViewById(R.id.userLogoutButton)
         accountDeleteButton = findViewById(R.id.accountDeleteButton)
 
         val username = generalSharedPreferences.getString("username", "")
-        usernameText.setText(username)
-        editUsernameButton.isEnabled = false  // Disable by default
-        usernameText.addTextChangedListener(object : android.text.TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+        usernameEditText.setText(username)
+        usernameEditText.addTextChangedListener(object : android.text.TextWatcher {
+            override fun afterTextChanged(s: Editable?) = updateButtonState(editUsernameButton, usernameEditText)
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
                 editUsernameButton.isEnabled = s.toString() != username
             }
-            override fun afterTextChanged(s: Editable?) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
 
         val email = generalSharedPreferences.getString("email", "")
-        emailText.setText(email)
-        editEmailButton.isEnabled = false  // Disable by default
-        emailText.addTextChangedListener(object : android.text.TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                editEmailButton.isEnabled = s.toString() != email
+        emailEditText.setText(email)
+        emailEditText.addTextChangedListener(object : android.text.TextWatcher {
+            override fun afterTextChanged(s: Editable?) = updateButtonState(editEmailButton, emailEditText)
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+                editEmailButton.isEnabled = s.toString() != username
             }
-            override fun afterTextChanged(s: Editable?) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
 
         editUsernameButton.setOnClickListener {
@@ -110,6 +109,18 @@ class User : AppCompatActivity() {
         }
     }
 
+    private fun updateButtonState(button: Button, editText: EditText) {
+        val isValid = editText.text.isNullOrBlank().not()
+
+        button.isEnabled = isValid
+        val tintColor = if (isValid)
+            ContextCompat.getColor(this, R.color.accent_1)     // enabled color
+        else
+            ContextCompat.getColor(this, android.R.color.darker_gray) // disabled color
+
+        button.backgroundTintList = ColorStateList.valueOf(tintColor)
+    }
+
     private fun showConfirmAccountDelete() {
         MaterialAlertDialogBuilder (this)
             .setIcon(R.drawable.outline_exclamation_24)
@@ -129,7 +140,7 @@ class User : AppCompatActivity() {
     private fun editUsernameRelated() {
         Log.i(TAG, "editUsernameRelated")
 
-        val newUsername = usernameText.text.toString()
+        val newUsername = usernameEditText.text.toString()
         Helpers.authEditUsernameToServer(this, newUsername) { success ->
             runOnUiThread {
                 if (success) {
@@ -149,7 +160,7 @@ class User : AppCompatActivity() {
     private fun editEmailRelated() {
         Log.i(TAG, "editEmailRelated")
 
-        val newEmail = emailText.text.toString()
+        val newEmail = emailEditText.text.toString()
         Helpers.authEditEmailToServer(this, newEmail) { success ->
             runOnUiThread {
                 if (success) {

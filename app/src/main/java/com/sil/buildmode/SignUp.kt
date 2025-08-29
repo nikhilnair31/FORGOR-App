@@ -48,8 +48,6 @@ class SignUp : AppCompatActivity() {
 
     // region UI Related
     private fun uiInitRelated() {
-        val minPasswordLength = resources.getInteger(R.integer.minPasswordLength)
-
         rootConstraintLayout = findViewById(R.id.rootConstraintLayout)
         usernameEditText = findViewById(R.id.usernameEditText)
         emailEditText = findViewById(R.id.emailEditText)
@@ -57,19 +55,6 @@ class SignUp : AppCompatActivity() {
         signupButton = findViewById(R.id.buttonSignup)
 
         // single place to update enabled + color
-        fun updateSignupButtonState() {
-            val isValid = usernameEditText.text.isNullOrBlank().not() &&
-                    emailEditText.text.isNullOrBlank().not() &&
-                    (passwordEditText.text?.length ?: 0) >= minPasswordLength
-
-            signupButton.isEnabled = isValid
-            val tintColor = if (isValid)
-                ContextCompat.getColor(this, R.color.accent_1)     // enabled color
-            else
-                ContextCompat.getColor(this, android.R.color.darker_gray) // disabled color
-
-            signupButton.backgroundTintList = ColorStateList.valueOf(tintColor)
-        }
 
         // lightweight watcher shared by all three fields
         val watcher = object : TextWatcher {
@@ -98,6 +83,21 @@ class SignUp : AppCompatActivity() {
         }
     }
 
+    private fun updateSignupButtonState() {
+        val minPasswordLength = resources.getInteger(R.integer.minPasswordLength)
+
+        val isValid = usernameEditText.text.isNullOrBlank().not() &&
+                emailEditText.text.isNullOrBlank().not() &&
+                (passwordEditText.text?.length ?: 0) >= minPasswordLength
+
+        signupButton.isEnabled = isValid
+        val tintColor = if (isValid)
+            ContextCompat.getColor(this, R.color.accent_1)     // enabled color
+        else
+            ContextCompat.getColor(this, android.R.color.darker_gray) // disabled color
+
+        signupButton.backgroundTintList = ColorStateList.valueOf(tintColor)
+    }
     private fun highlightButtonEffects(button: Button, newText: String) {
         button.setBackgroundColor(ContextCompat.getColor(this, R.color.accent_0))
         button.setTextColor(ContextCompat.getColor(this, R.color.accent_1))
