@@ -656,6 +656,70 @@ class Helpers {
             sendRequest(accessToken)
         }
 
+        fun authEditDigestToServer(context: Context, newFrequency: String, callback: (success: Boolean) -> Unit) {
+            Log.i(TAG, "Trying to edit digest frequency to $newFrequency")
+
+            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
+            val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
+            if (accessToken.isEmpty()) {
+                Log.e(TAG, "Access token missing")
+                showToast(context, "Not logged in")
+                return
+            }
+
+            val jsonBody = """
+                {
+                    "frequency": "$newFrequency"
+                }
+            """.trimIndent()
+            val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
+
+            fun sendRequest(token: String) {
+                val request = buildAuthorizedRequest(
+                    "$SERVER_URL/api/digest_frequency",
+                    token = token,
+                    method = "POST",
+                    body = requestBody
+                )
+
+                httpClient.newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        Log.e(TAG, "Edit digest failed: ${e.localizedMessage}")
+                        showToast(context, "Edit failed!")
+                        callback(false)
+                    }
+
+                    override fun onResponse(call: Call, response: Response) {
+                        val responseBody = response.body?.string()
+
+                        if (response.code == 401) {
+                            refreshAccessToken(context) { success, newToken ->
+                                if (success && !newToken.isNullOrEmpty()) {
+                                    sendRequest(newToken) // retry with refreshed token
+                                } else {
+                                    showToast(context, "Session expired. Please log in again.")
+                                    callback(false)
+                                }
+                            }
+                            return
+                        }
+
+                        if (response.isSuccessful) {
+                            Log.i(TAG, "Edit digest successful: $responseBody")
+                            showToast(context, "Digest updated")
+                            callback(true)
+                        } else {
+                            Log.e(TAG, "Edit digest error ${response.code}: $responseBody")
+                            showToast(context, "Edit failed!")
+                            callback(false)
+                        }
+                    }
+                })
+            }
+
+            sendRequest(accessToken)
+        }
+
         fun autoLogout(context: Context) {
             Log.i(TAG, "autoLogout | Logging out user...")
 

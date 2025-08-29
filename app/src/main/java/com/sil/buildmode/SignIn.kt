@@ -19,7 +19,6 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import com.sil.others.Helpers
 import kotlin.math.max
-import kotlin.toString
 
 class SignIn : AppCompatActivity() {
     // region Vars
@@ -125,7 +124,7 @@ class SignIn : AppCompatActivity() {
                         putString("email", emailText)
                     }
 
-                    val intent = Intent(this, Features::class.java)
+                    val intent = Intent(this, FeaturePermissions::class.java)
                     startActivity(intent)
                     finish()
                 } else {

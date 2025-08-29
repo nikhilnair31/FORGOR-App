@@ -21,8 +21,13 @@
     <string name="signupSuccess">SIGNED UP!</string>
 
     <string name="featuresText">FEATURES</string>
-    <string name="screenshotToggleOnText">MONITORING ALL SCREENSHOTS</string>
-    <string name="screenshotToggleOffText">MONITOR SCREENSHOTS</string>
+    <string name="monitoringText">AUTO ADD SCREENSHOTS</string>
+    <string name="screenshotToggleOnText">ON</string>
+    <string name="screenshotToggleOffText">OFF</string>
+    <string name="digestFrequencyText">EMAIL DIGEST FREQUENCY</string>
+    <string name="digestNoneText">NONE</string>
+    <string name="digestWeeklyText">WEEKLY</string>
+    <string name="digestMonthlyText">MONTHLY</string>
     <string name="stopForgoringText">STOP FORGORING</string>
 
     <string name="searchImagesDescription">SEARCH IMAGES</string>

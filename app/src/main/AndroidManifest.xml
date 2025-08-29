@@ -45,7 +45,7 @@
             android:windowSoftInputMode="adjustResize"
             android:exported="false" />
         <activity
-            android:name=".Features"
+            android:name=".FeaturePermissions"
             android:windowSoftInputMode="adjustResize"
             android:exported="false" />
         <activity
@@ -57,15 +57,19 @@
             android:name=".FullContent" >
         </activity>
         <activity
-            android:name=".Saving"
-            android:windowSoftInputMode="adjustResize"
-            android:exported="false" />
-        <activity
             android:name=".Settings"
             android:windowSoftInputMode="adjustResize"
             android:exported="false" />
         <activity
             android:name=".User"
+            android:windowSoftInputMode="adjustResize"
+            android:exported="false" />
+        <activity
+            android:name=".Saving"
+            android:windowSoftInputMode="adjustResize"
+            android:exported="false" />
+        <activity
+            android:name=".FeatureToggles"
             android:windowSoftInputMode="adjustResize"
             android:exported="false" />
         <activity

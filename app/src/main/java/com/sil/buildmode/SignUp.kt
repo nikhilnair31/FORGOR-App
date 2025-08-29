@@ -126,7 +126,7 @@ class SignUp : AppCompatActivity() {
                         putString("email", emailText)
                     }
 
-                    val intent = Intent(this, Features::class.java)
+                    val intent = Intent(this, FeaturePermissions::class.java)
                     startActivity(intent)
                     finish()
                 } else {

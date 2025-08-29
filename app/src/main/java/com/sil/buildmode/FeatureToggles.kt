@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.os.PowerManager
 import android.util.Log
@@ -19,11 +20,15 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import androidx.work.Logger
+import com.sil.others.Helpers
+import com.sil.others.Helpers.Companion
 import com.sil.others.Helpers.Companion.showToast
 import com.sil.services.ScreenshotService
+import kotlin.math.log
 import kotlin.math.max
 
-class Features : AppCompatActivity() {
+class FeatureToggles : AppCompatActivity() {
     // region Vars
     private val TAG = "Features"
     private val PREFS_GENERAL = "com.sil.buildmode.generalSharedPrefs"
@@ -36,14 +41,21 @@ class Features : AppCompatActivity() {
     private var pendingToggle: (() -> Unit)? = null
 
     private lateinit var screenshotToggleButton: ToggleButton
-    private lateinit var buttonToMain: Button
+    private lateinit var digestCycleButton: Button
     private lateinit var rootConstraintLayout: ConstraintLayout
+
+    private val digestOptions = listOf(
+        Triple(R.string.digestNoneText,   R.color.base_0, R.color.accent_1),
+        Triple(R.string.digestWeeklyText, R.color.accent_0,            R.color.accent_1),
+        Triple(R.string.digestMonthlyText,R.color.accent_0,            R.color.accent_1)
+    )
+    private var digestIndex = 0
     // endregion
 
     // region Common
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_features)
+        setContentView(R.layout.activity_feature_toggles)
 
         generalSharedPreferences = getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
 
@@ -53,11 +65,40 @@ class Features : AppCompatActivity() {
     private fun initRelated() {
         rootConstraintLayout = findViewById(R.id.rootConstraintLayout)
         screenshotToggleButton = findViewById(R.id.screenshotToggleButton)
-        buttonToMain = findViewById(R.id.buttonToMain)
+        digestCycleButton = findViewById(R.id.digestFreqToggleButton)
+
+        initDigestButton()
+        initScreenshotToggle()
+
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        ViewCompat.setOnApplyWindowInsetsListener(rootConstraintLayout) { v, insets ->
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val bottom = max(ime.bottom + 24, sys.bottom)
+            v.updatePadding(bottom = bottom)
+            insets
+        }
+    }
+    // endregion
+
+    // region UI Related
+    private fun initDigestButton() {
+        digestIndex = generalSharedPreferences.getInt("digest_index", 0).coerceIn(0, digestOptions.lastIndex)
+        Log.i(TAG, "digestIndex: $digestIndex")
+        renderDigestButton(digestIndex)
+
+        digestCycleButton.setOnClickListener {
+            val newIndex = (digestIndex + 1) % digestOptions.size
+            renderDigestButton(newIndex)
+            updateDigestFrequency(newIndex)
+        }
+    }
+    private fun initScreenshotToggle() {
+        val isRunning = Helpers.isServiceRunning(this, ScreenshotService::class.java)
+        updateToggle(screenshotToggleButton, isRunning)
 
         screenshotToggleButton.setOnCheckedChangeListener { _, isChecked ->
-            Log.i(TAG, "Screenshot toggle changed: isChecked=$isChecked")
-
+            Log.i(TAG, "Screenshot toggle changed: $isChecked")
             screenshotToggleButton.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
             val serviceIntent = Intent(this, ScreenshotService::class.java)
@@ -75,24 +116,15 @@ class Features : AppCompatActivity() {
                 updateToggle(screenshotToggleButton, false)
             }
         }
-        buttonToMain.setOnClickListener {
-            val intent = Intent(this, Main::class.java)
-            startActivity(intent)
-            finish()
-        }
-
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        ViewCompat.setOnApplyWindowInsetsListener(rootConstraintLayout) { v, insets ->
-            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
-            val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            val bottom = max(ime.bottom + 24, sys.bottom)
-            v.updatePadding(bottom = bottom)
-            insets
-        }
     }
-    //
 
-    // region UI Related
+    private fun renderDigestButton(index: Int) {
+        val (label, bgCol, txtCol) = digestOptions[index]
+        digestCycleButton.setText(label)
+        digestCycleButton.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, bgCol))
+        digestCycleButton.setTextColor(ContextCompat.getColor(this, txtCol))
+        digestCycleButton.contentDescription = "Digest: $label"
+    }
     private fun updateToggle(toggle: ToggleButton, isChecked: Boolean) {
         toggle.isChecked = isChecked
         toggle.background = ContextCompat.getDrawable(this, if (isChecked) R.color.accent_0 else R.color.base_0)
@@ -104,7 +136,27 @@ class Features : AppCompatActivity() {
     }
     // endregion
 
-    // region Service Related
+    // region Feature Related
+    private fun updateDigestFrequency(newIndex: Int) {
+        // Call API
+        val freqName = when (newIndex) {
+            0 -> "none"
+            1 -> "weekly"
+            2 -> "monthly"
+            else -> "none"
+        }
+
+        Helpers.authEditDigestToServer(this, freqName) { success ->
+            if (success) {
+                // Save locally only if backend update succeeded
+                generalSharedPreferences.edit { putInt("digest_index", newIndex) }
+                digestIndex = newIndex
+            } else {
+                // Keep old state if backend failed
+                showToast(this, "Failed to update digest")
+            }
+        }
+    }
     private fun startScreenshotService(serviceIntent: Intent) {
         startForegroundService(serviceIntent)
         generalSharedPreferences.edit { putBoolean(KEY_SCREENSHOT_ENABLED, true) }
