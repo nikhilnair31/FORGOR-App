@@ -7,7 +7,10 @@ Meet FORGOR
 ## Tasks
 
 ### To-Do
+- [ ] Add new activity for features
 - [ ] Add options for digest frequency
+- [ ] Add option to upload images
+- [ ] Add filter pills for search
 - [ ] Add link extraction when viewing individual posts
 
 ### Other

@@ -5,68 +5,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <LinearLayout
-        android:id="@+id/linearLayout"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-
-        android:orientation="vertical"
-
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="0dp"
-
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" >
-
-        <Button
-            android:id="@+id/signInButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="24dp"
-
-            android:background="@color/accent_0"
-            android:enabled="true"
-            android:fontFamily="@font/venus_cormier"
-            android:stateListAnimator="@null"
-            android:text="@string/signIn"
-            android:textSize="14sp"
-            app:cornerRadius="@dimen/softCorners"
-
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/permissionsTextView" />
-
-        <Button
-            android:id="@+id/signUpButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:padding="24dp"
-
-            app:backgroundTint="@color/base_1"
-            android:elevation="0dp"
-            android:stateListAnimator="@null"
-            android:textColor="@color/accent_1"
-            android:enabled="true"
-            android:textSize="14sp"
-            android:text="@string/signUp"
-            android:fontFamily="@font/venus_cormier"
-            app:cornerRadius="@dimen/softCorners"
-
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/permissionsTextView" />
-
-    </LinearLayout>
-
     <ImageView
         android:id="@+id/imageView"
 
-        android:layout_width="256dp"
-        android:layout_height="256dp"
+        android:layout_width="198dp"
+        android:layout_height="198dp"
 
+        android:layout_marginStart="-16dp"
+        android:layout_marginTop="-16dp"
         android:contentDescription="@string/appName"
         android:src="@mipmap/launcher_foreground"
         app:layout_constraintStart_toStartOf="parent"
@@ -90,5 +36,68 @@
         app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <LinearLayout
+        android:id="@+id/linearLayout"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+
+        android:orientation="vertical"
+
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="0dp"
+
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" >
+
+        <Button
+            android:id="@+id/signInButton"
+
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+
+            android:padding="24dp"
+
+            android:backgroundTint="@color/accent_1"
+
+            android:fontFamily="@font/venus_cormier"
+            android:text="@string/signIn"
+            android:textSize="14sp"
+
+            android:stateListAnimator="@null"
+            app:cornerRadius="@dimen/softCorners"
+            android:enabled="true"
+
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/permissionsTextView" />
+
+        <Button
+            android:id="@+id/signUpButton"
+
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+
+            android:layout_marginTop="8dp"
+            android:padding="24dp"
+
+            app:backgroundTint="@color/base_1"
+
+            android:textColor="@color/accent_1"
+            android:textSize="14sp"
+            android:text="@string/signUp"
+            android:fontFamily="@font/venus_cormier"
+
+            android:stateListAnimator="@null"
+            app:cornerRadius="@dimen/softCorners"
+            android:enabled="true"
+
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/permissionsTextView" />
+
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

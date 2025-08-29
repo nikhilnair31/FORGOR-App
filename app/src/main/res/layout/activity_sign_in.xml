@@ -13,8 +13,6 @@
 
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
-
-        android:layout_marginBottom="8dp"
         android:fontFamily="@font/venus_cormier"
         android:gravity="center_horizontal|center_vertical"
         android:text="@string/signIn"
@@ -32,12 +30,9 @@
         android:layout_height="wrap_content"
 
         android:layout_marginStart="16dp"
+
         android:layout_marginEnd="16dp"
-        android:layout_marginBottom="0dp"
-        android:padding="16dp"
-
         android:orientation="vertical"
-
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
@@ -54,12 +49,12 @@
                 android:id="@+id/usernameEditText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:padding="24dp"
-
                 android:background="@color/base_1"
+
                 android:fontFamily="@font/venus_cormier"
                 android:gravity="center"
                 android:inputType="textPersonName"
+                android:padding="24dp"
                 android:textColor="@android:color/white"
                 android:textSize="14sp"
 
@@ -82,12 +77,12 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:padding="24dp"
-
                 android:background="@color/base_1"
+
                 android:fontFamily="@font/venus_cormier"
                 android:gravity="center"
                 android:inputType="textEmailAddress"
+                android:padding="24dp"
                 android:textColor="@android:color/white"
                 android:textCursorDrawable="@drawable/cursor_color"
                 android:textSize="14sp"
@@ -111,13 +106,13 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:padding="24dp"
-
                 android:background="@color/base_1"
+
                 android:fontFamily="@font/venus_cormier"
                 android:gravity="center"
-                android:minEms="@integer/minPasswordLength"
                 android:inputType="textVisiblePassword"
+                android:minEms="@integer/minPasswordLength"
+                android:padding="24dp"
                 android:textColor="@android:color/white"
                 android:textSize="14sp"
 
@@ -129,19 +124,22 @@
 
         <Button
             android:id="@+id/buttonSignup"
+
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+
             android:layout_marginTop="8dp"
             android:padding="24dp"
 
+            android:backgroundTint="@android:color/darker_gray"
+
             android:enabled="false"
-            android:background="@color/base_1"
-            android:backgroundTint="@color/accent_1"
-            android:fontFamily="@font/venus_cormier"
             android:stateListAnimator="@null"
+            app:cornerRadius="@dimen/softCorners"
+
             android:text="@string/logIn"
             android:textSize="14sp"
-            app:cornerRadius="@dimen/softCorners"
+            android:fontFamily="@font/venus_cormier"
 
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"

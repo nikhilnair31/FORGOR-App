@@ -96,17 +96,23 @@
         tools:visibility="visible">
 
         <ImageButton
-            android:id="@+id/sizeToggle"
+            android:id="@+id/fileUploadButton"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight=".5"
+            android:background="@color/base_1"
+            android:contentDescription="@string/imageSizeChangeDescription"
+            android:src="@drawable/outline_upload_file_24"
+            app:tint="@color/accent_1" />
+
+        <ImageButton
+            android:id="@+id/sizeToggleButton"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight=".5"
             android:background="@color/base_1"
             android:contentDescription="@string/imageSizeChangeDescription"
             android:src="@drawable/baseline_view_module_24"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/settingsButton"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
             app:tint="@color/accent_1" />
 
         <ImageButton
@@ -117,10 +123,6 @@
             android:background="@color/base_1"
             android:contentDescription="@string/settingsText"
             android:src="@drawable/baseline_settings_24"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/sizeToggle"
-            app:layout_constraintTop_toTopOf="parent"
             app:tint="@color/accent_1" />
 
     </LinearLayout>
