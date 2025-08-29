@@ -30,6 +30,7 @@ import com.sil.workers.TokenRefreshWorker
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 import kotlin.math.max
+import androidx.core.content.edit
 
 class Main : AppCompatActivity() {
     // region Vars
@@ -38,6 +39,15 @@ class Main : AppCompatActivity() {
     private val KEY_SCREENSHOT_ENABLED = "isScreenshotMonitoringEnabled"
 
     private lateinit var generalSharedPreferences: SharedPreferences
+
+    private lateinit var layoutManager: StaggeredGridLayoutManager
+    private val spanOptions = listOf(2, 3, 4)
+    private val spanIcons = listOf(
+        R.drawable.outline_view_comfy_alt_24,   // 1 column
+        R.drawable.baseline_view_module_24,  // 2 columns
+        R.drawable.outline_view_compact_24     // 3 columns
+    )
+    private var currentSpanIndex = 0
 
     private lateinit var rootConstraintLayout: ConstraintLayout
     private lateinit var recyclerView: RecyclerView
@@ -51,6 +61,7 @@ class Main : AppCompatActivity() {
 
     private lateinit var searchEditText: EditText
     private lateinit var optionsButton: ImageButton
+    private lateinit var sizeToggle: ImageButton
     private lateinit var settingsButton: ImageButton
     // endregion
 
@@ -147,6 +158,7 @@ class Main : AppCompatActivity() {
         searchTextLayout = findViewById(R.id.searchTextLayout)
         recyclerView = findViewById(R.id.imageRecyclerView)
         optionsButton = findViewById(R.id.optionsButton)
+        sizeToggle = findViewById(R.id.sizeToggle)
         settingsButton = findViewById(R.id.settingsButton)
         searchEditText = findViewById(R.id.searchEditText)
 
@@ -154,7 +166,12 @@ class Main : AppCompatActivity() {
 
         recyclerView.adapter = resultAdapter
         recyclerView.itemAnimator = DefaultItemAnimator()
-        recyclerView.layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
+
+        currentSpanIndex = generalSharedPreferences.getInt("grid_span_index", 0)
+        layoutManager = StaggeredGridLayoutManager(spanOptions[currentSpanIndex], StaggeredGridLayoutManager.VERTICAL)
+        sizeToggle.setImageResource(spanIcons[currentSpanIndex])
+        layoutManager.spanCount = spanOptions[currentSpanIndex]
+        recyclerView.layoutManager = layoutManager
 
         optionsButton.setOnClickListener {
             if (optionsButtonsLayout.isVisible) {
@@ -166,6 +183,19 @@ class Main : AppCompatActivity() {
         }
         settingsButton.setOnClickListener {
             startActivity(Intent(this, Settings::class.java))
+        }
+        sizeToggle.setOnClickListener {
+            currentSpanIndex = (currentSpanIndex + 1) % spanOptions.size
+            val newSpanCount = spanOptions[currentSpanIndex]
+            layoutManager.spanCount = newSpanCount
+            recyclerView.requestLayout()
+
+            sizeToggle.setImageResource(spanIcons[currentSpanIndex])
+
+            // (optional) persist preference
+            generalSharedPreferences.edit {
+                putInt("grid_span_index", currentSpanIndex)
+            }
         }
 
         searchEditText.doAfterTextChanged { text ->
