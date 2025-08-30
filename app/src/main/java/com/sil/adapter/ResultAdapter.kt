@@ -90,6 +90,7 @@ RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
 
             val intent = Intent(context, FullContent::class.java).apply {
                 putExtra("fileName", fileName)
+                putExtra("tags", tags)
             }
 
             if (context is Main) {

@@ -291,6 +291,7 @@ class Main : AppCompatActivity() {
                             recyclerView.fadeOut()
                         } else {
                             resultAdapter.updateData(resultList)
+                            recyclerView.scrollToPosition(0)
                             recyclerView.fadeIn()
                         }
                     } catch (e: Exception) {
