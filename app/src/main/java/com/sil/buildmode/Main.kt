@@ -1,7 +1,9 @@
 package com.sil.buildmode
 
+import android.app.AlertDialog
 import android.content.Intent
 import android.content.SharedPreferences
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -10,6 +12,8 @@ import android.view.View
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.LinearLayout
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
@@ -49,6 +53,9 @@ class Main : AppCompatActivity() {
     )
     private var currentSpanIndex = 0
 
+    private val filterOptions = arrayOf("Social Media", "Flights", "Music", "Tracking", "TV/Movie", "Food", "Places")
+    private var activeFilters: MutableSet<String> = mutableSetOf()
+
     private lateinit var rootConstraintLayout: ConstraintLayout
     private lateinit var recyclerView: RecyclerView
     private lateinit var optionsButtonsLayout: LinearLayout
@@ -61,9 +68,10 @@ class Main : AppCompatActivity() {
 
     private lateinit var searchEditText: EditText
     private lateinit var optionsExpandButton: ImageButton
-    private lateinit var fileUploadButton: ImageButton
-    private lateinit var sizeToggleButton: ImageButton
     private lateinit var settingsButton: ImageButton
+    private lateinit var sizeToggleButton: ImageButton
+    private lateinit var fileUploadButton: ImageButton
+    private lateinit var filterPostsButton: ImageButton
     // endregion
 
     // region Common
@@ -159,21 +167,35 @@ class Main : AppCompatActivity() {
         searchTextLayout = findViewById(R.id.searchTextLayout)
         recyclerView = findViewById(R.id.imageRecyclerView)
         optionsExpandButton = findViewById(R.id.optionsButton)
-        fileUploadButton = findViewById(R.id.fileUploadButton)
-        sizeToggleButton = findViewById(R.id.sizeToggleButton)
         settingsButton = findViewById(R.id.settingsButton)
+        sizeToggleButton = findViewById(R.id.sizeToggleButton)
+        fileUploadButton = findViewById(R.id.fileUploadButton)
+        filterPostsButton = findViewById(R.id.filterPostsButton)
         searchEditText = findViewById(R.id.searchEditText)
 
-        resultAdapter = ResultAdapter(this, mutableListOf())
+        resultAdapter = ResultAdapter(this, mutableListOf()).apply {
+            setHasStableIds(true)                                        // ✨ stable IDs
+        }
 
         recyclerView.adapter = resultAdapter
         recyclerView.itemAnimator = DefaultItemAnimator()
 
         currentSpanIndex = generalSharedPreferences.getInt("grid_span_index", 0)
-        layoutManager = StaggeredGridLayoutManager(spanOptions[currentSpanIndex], StaggeredGridLayoutManager.VERTICAL)
+        layoutManager = StaggeredGridLayoutManager(
+            spanOptions[currentSpanIndex],
+            StaggeredGridLayoutManager.VERTICAL
+        )
+//        .apply {
+//            gapStrategy = StaggeredGridLayoutManager.GAP_HANDLING_NONE   // ✨ stop reordering to fill gaps
+//        }
         sizeToggleButton.setImageResource(spanIcons[currentSpanIndex])
         layoutManager.spanCount = spanOptions[currentSpanIndex]
         recyclerView.layoutManager = layoutManager
+//        recyclerView.setHasFixedSize(true)
+        recyclerView.setItemAnimator(null);
+
+        // ✨ disable change animations which can cause weird shuffles
+//        (recyclerView.itemAnimator as? androidx.recyclerview.widget.SimpleItemAnimator)?.supportsChangeAnimations = false
 
         optionsExpandButton.setOnClickListener {
             if (optionsButtonsLayout.isVisible) {
@@ -183,8 +205,11 @@ class Main : AppCompatActivity() {
 
             }
         }
+        filterPostsButton.setOnClickListener {
+            onFilterPostClick()
+        }
         fileUploadButton.setOnClickListener {
-            //
+            pickImagesLauncher.launch(arrayOf("image/*"))
         }
         settingsButton.setOnClickListener {
             startActivity(Intent(this, Settings::class.java))
@@ -193,11 +218,11 @@ class Main : AppCompatActivity() {
             currentSpanIndex = (currentSpanIndex + 1) % spanOptions.size
             val newSpanCount = spanOptions[currentSpanIndex]
             layoutManager.spanCount = newSpanCount
+//            layoutManager.invalidateSpanAssignments()
             recyclerView.requestLayout()
 
             sizeToggleButton.setImageResource(spanIcons[currentSpanIndex])
 
-            // (optional) persist preference
             generalSharedPreferences.edit {
                 putInt("grid_span_index", currentSpanIndex)
             }
@@ -208,29 +233,15 @@ class Main : AppCompatActivity() {
         }
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
-
         ViewCompat.setOnApplyWindowInsetsListener(rootConstraintLayout) { _, insets ->
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
             val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             val bottomForContent = max(ime.bottom + 36, sys.bottom)
 
-            // content above IME/nav
-            rootConstraintLayout.updatePadding(
-                bottom = bottomForContent - 64
-            )
-
-            // make the neon bar extend under the gesture area
-//            searchEditText.updatePadding(
-//                left = searchEditText.paddingLeft,
-//                top = sys.bottom,
-//                right = searchEditText.paddingRight,
-//                bottom = sys.bottom// + 24 /* your original bottom padding */
-//            )
-
+            rootConstraintLayout.updatePadding(bottom = bottomForContent - 64)
             insets
         }
     }
-
     private fun searchQueryUpdated(text: String) {
         if (!searchTextWatcherEnabled) return
 
@@ -313,6 +324,106 @@ class Main : AppCompatActivity() {
                 }
                 .start()
         }
+    }
+    // endregion
+
+    // region Data Related
+    private fun onFilterPostClick() {
+        val checked = BooleanArray(filterOptions.size) { i -> activeFilters.contains(filterOptions[i]) }
+
+        AlertDialog.Builder(this)
+            .setTitle("Filter by")
+            .setMultiChoiceItems(filterOptions, checked) { _, which, isChecked ->
+                if (isChecked) {
+                    activeFilters.add(filterOptions[which])
+                } else {
+                    activeFilters.remove(filterOptions[which])
+                }
+            }
+            .setPositiveButton("Apply") { _, _ ->
+                applyFilters()
+            }
+            .setNegativeButton("Clear") { _, _ ->
+                activeFilters.clear()
+                applyFilters()
+            }
+            .show()
+    }
+    private fun applyFilters() {
+        val currentList = resultAdapter.getData()
+
+        if (activeFilters.isEmpty()) {
+            // No filters → show all
+            resultAdapter.updateData(currentList)
+            recyclerView.fadeIn()
+            return
+        }
+
+        val filteredList = currentList.filter { item ->
+            val tagsJson = item.optString("tags", "")
+            val keywords = extractKeywords(tagsJson)
+            activeFilters.any { filter ->
+                keywords.any { it.contains(filter, ignoreCase = true) }
+            }
+        }
+
+        resultAdapter.updateData(filteredList.toMutableList())
+
+        if (filteredList.isEmpty()) {
+            recyclerView.fadeOut()
+        } else {
+            recyclerView.fadeIn()
+        }
+    }
+    private fun extractKeywords(tags: String): List<String> {
+        return try {
+            val cleaned = tags
+                .replace("```xml", "")
+                .replace("```text", "")
+                .replace("```", "")
+                .trim()
+
+            val json = JSONObject(cleaned)
+            if (json.has("keywords")) {
+                val arr = json.getJSONArray("keywords")
+                List(arr.length()) { arr.getString(it) }
+            } else {
+                emptyList()
+            }
+        } catch (e: Exception) {
+            // fallback: naive keyword split
+            tags.split(",", "\n", " ")
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
+        }
+    }
+
+    private val pickImagesLauncher = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris: List<Uri> ->
+        if (uris.isEmpty()) {
+            Toast.makeText(this, "No images selected", Toast.LENGTH_SHORT).show()
+            return@registerForActivityResult
+        }
+
+        // Persist read permission so other Activities (and future sessions) can read them
+        uris.forEach { uri ->
+            try {
+                contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (_: SecurityException) {
+                // It's okay if it's not persistable on some devices; we still pass transient grants below.
+            }
+        }
+
+        // Hand off to your existing Share activity which already handles upload logic.
+        val sendIntent = Intent(this, Share::class.java).apply {
+            action = Intent.ACTION_SEND_MULTIPLE
+            type = "image/*"
+            putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        startActivity(sendIntent)
     }
     // endregion
 

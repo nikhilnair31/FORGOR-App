@@ -9,6 +9,7 @@
     tools:context=".Main">
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:id="@+id/coordinatorLayout"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:fillViewport="true"
@@ -27,21 +28,21 @@
                 android:layout_height="match_parent"
                 app:layout_scrollFlags="scroll|exitUntilCollapsed">
 
-            <TextView
-                android:id="@+id/titleTextView"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="@color/base_0"
-                android:contentDescription="@string/appName"
-                android:fontFamily="@font/venus_cormier"
-                android:gravity="center_horizontal|center_vertical"
-                android:paddingTop="64dp"
-                android:text="@string/appName"
-                android:textColor="@color/accent_0"
-                android:textSize="80sp"
-                app:layout_collapseMode="pin"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent" />
+                <TextView
+                    android:id="@+id/titleTextView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@color/base_0"
+                    android:contentDescription="@string/appName"
+                    android:fontFamily="@font/venus_cormier"
+                    android:gravity="center_horizontal|center_vertical"
+                    android:paddingTop="64dp"
+                    android:text="@string/appName"
+                    android:textColor="@color/accent_0"
+                    android:textSize="80sp"
+                    app:layout_collapseMode="pin"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent" />
 
             </com.google.android.material.appbar.CollapsingToolbarLayout>
         </com.google.android.material.appbar.AppBarLayout>
@@ -80,48 +81,70 @@
         android:layout_width="0dp"
         android:layout_height="64dp"
 
-        android:divider="?android:attr/dividerVertical"
-        android:showDividers="middle"
-        android:dividerPadding="32dp"
-
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="8dp"
+
+        android:visibility="gone"
+        android:orientation="horizontal"
 
         app:layout_constraintBottom_toTopOf="@+id/searchTextLayout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
 
-        android:visibility="gone"
         tools:visibility="visible">
 
         <ImageButton
-            android:id="@+id/fileUploadButton"
-            android:layout_width="match_parent"
+            android:id="@+id/filterPostsButton"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight=".5"
+
+            android:layout_marginEnd="8dp"
+
+            android:layout_weight="0.25"
             android:background="@color/base_1"
-            android:contentDescription="@string/imageSizeChangeDescription"
+
+            android:contentDescription="@string/filterPostsButtonDescription"
+            android:src="@drawable/outline_filter_list_24"
+            app:tint="@color/accent_1" />
+
+        <ImageButton
+            android:id="@+id/fileUploadButton"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+
+            android:layout_marginEnd="8dp"
+
+            android:layout_weight="0.25"
+            android:background="@color/base_1"
+
+            android:contentDescription="@string/fileUploadButtonDescription"
             android:src="@drawable/outline_upload_file_24"
             app:tint="@color/accent_1" />
 
         <ImageButton
             android:id="@+id/sizeToggleButton"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight=".5"
+
+            android:layout_marginEnd="8dp"
+
+            android:layout_weight="0.25"
             android:background="@color/base_1"
-            android:contentDescription="@string/imageSizeChangeDescription"
+
+            android:contentDescription="@string/sizeToggleButtonDescription"
             android:src="@drawable/baseline_view_module_24"
             app:tint="@color/accent_1" />
 
         <ImageButton
             android:id="@+id/settingsButton"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight=".5"
+
+            android:layout_weight="0.25"
             android:background="@color/base_1"
-            android:contentDescription="@string/settingsText"
+
+            android:contentDescription="@string/settingsButtonDescription"
             android:src="@drawable/baseline_settings_24"
             app:tint="@color/accent_1" />
 
@@ -131,9 +154,11 @@
         android:id="@+id/searchTextLayout"
         android:layout_width="0dp"
         android:layout_height="64dp"
+
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="24dp"
+
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
@@ -142,10 +167,11 @@
             android:id="@+id/searchEditText"
             android:layout_width="0dp"
             android:layout_height="0dp"
+            android:layout_marginEnd="8dp"
             android:autofillHints=""
             android:background="@color/accent_0"
-            android:fontFamily="@font/venus_cormier"
 
+            android:fontFamily="@font/venus_cormier"
             android:gravity="start"
             android:hint="@string/searchHint"
             android:inputType="text"
@@ -156,8 +182,8 @@
             android:textColor="@color/accent_1"
             android:textColorHint="@color/accent_1t"
             android:textCursorDrawable="@drawable/cursor_color"
-            android:textSize="14sp"
 
+            android:textSize="14sp"
             app:elevation="0dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/optionsButton"
@@ -168,10 +194,13 @@
             android:id="@+id/optionsButton"
             android:layout_width="64dp"
             android:layout_height="0dp"
-            android:background="@color/accent_0"
-            android:contentDescription="@string/settingsText"
+
+            android:background="@color/base_1"
             android:src="@drawable/baseline_add_24"
-            app:tint="@color/accent_1"
+            app:tint="@color/accent_0"
+
+            android:contentDescription="@string/settingsText"
+
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />

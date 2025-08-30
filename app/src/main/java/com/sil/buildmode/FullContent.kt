@@ -19,6 +19,7 @@ import androidx.core.view.updatePadding
 import com.bhuvaneshw.pdf.PdfViewer
 import com.bumptech.glide.Glide
 import com.github.chrisbanes.photoview.PhotoView
+import com.sil.others.Helpers.Companion
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -56,17 +57,16 @@ class FullContent : AppCompatActivity() {
         val fileName = intent.getStringExtra("fileName") ?: ""
         Log.i(TAG, "fileName: $fileName")
 
-        val fileUrl = "$SERVER_URL/api/get_file/$fileName"
-        Log.i(TAG, "fileUrl: $fileUrl")
-
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        initRelated(fileName, fileUrl)
+        initRelated(fileName)
     }
 
-    private fun initRelated(fileName: String, fileUrl: String) {
+    private fun initRelated(fileName: String) {
+        val fileUrl = "$SERVER_URL/api/get_file/$fileName"
+
         // Image Handling
-        if (Helpers.isImageFile(fileUrl)) {
+        if (Helpers.isImageFile(fileName)) {
             val glideUrl = Helpers.getImageURL(this, fileUrl)
             if (glideUrl != null) {
                 imageView.visibility = View.VISIBLE

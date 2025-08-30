@@ -37,7 +37,11 @@
     <string name="failedLoadingContent">FAILED TO LOAD</string>
     <string name="noMoreResultsFound">NO MORE RESULTS FOUND</string>
 
-    <string name="imageSizeChangeDescription">CHANGE IMAGE SIZE</string>
+    <!--    CONTENT DESCRIPTIONS    -->
+    <string name="filterPostsButtonDescription">FILTER POSTS</string>
+    <string name="fileUploadButtonDescription">UPLOAD FILES</string>
+    <string name="sizeToggleButtonDescription">CHANGE IMAGE SIZE</string>
+    <string name="settingsButtonDescription">OPEN SETTINGS</string>
 
     <string name="openPost">OPEN POST</string>
     <string name="sharePost">SHARE POST</string>

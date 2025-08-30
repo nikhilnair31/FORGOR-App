@@ -53,6 +53,12 @@ RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
         diffResult.dispatchUpdatesTo(this)
     }
 
+    override fun getItemId(position: Int): Long {
+        val item = dataList[position]
+        val key = item.optString("file_name", item.optString("thumbnail_name", ""))
+        return key.hashCode().toLong()
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ResultViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_image_card, parent, false)
@@ -64,8 +70,9 @@ RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
 
         val fileName = item.optString("file_name", "")
         val thumbnailName = item.optString("thumbnail_name", "")
-        val postUrl = item.optString("post_url", "")
-        val thumbnailUrl = "$SERVER_URL/api/get_thumbnail/$thumbnailName"
+        val tags = item.optString("tags", "")
+
+        val thumbnailUrl = "${SERVER_URL}/api/get_thumbnail/$thumbnailName"
 
         // Handle image files
         val blankDrawable = R.color.accent_0.toDrawable()
@@ -83,7 +90,6 @@ RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
 
             val intent = Intent(context, FullContent::class.java).apply {
                 putExtra("fileName", fileName)
-                putExtra("postUrl", postUrl)
             }
 
             if (context is Main) {
