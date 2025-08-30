@@ -129,7 +129,7 @@ class FullContent : AppCompatActivity() {
         val handles = data.optJSONArray("account_identifiers") ?: JSONArray()
 
         var added = false
-        if (links != null && links.length() > 0) {
+        if (links.length() > 0) {
             for (i in 0 until links.length()) {
                 val link = links.optString(i)?.trim().orEmpty()
                 if (link.isNotEmpty()) {
@@ -141,7 +141,7 @@ class FullContent : AppCompatActivity() {
                 }
             }
         }
-        if (handles != null && handles.length() > 0) {
+        if (handles.length() > 0) {
             for (i in 0 until handles.length()) {
                 val handle = handles.optString(i)?.trim().orEmpty()
                 if (handle.isNotEmpty()) {

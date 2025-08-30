@@ -12,6 +12,7 @@ import android.view.View
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -53,25 +54,29 @@ class Main : AppCompatActivity() {
     )
     private var currentSpanIndex = 0
 
+    private lateinit var filterChipRow: LinearLayout
+    private lateinit var filterChipScroll: View
+    private var allResults: List<JSONObject> = emptyList() // base list for filters
     private val filterOptions = arrayOf("Social Media", "Flights", "Music", "Tracking", "TV/Movie", "Food", "Places")
     private var activeFilters: MutableSet<String> = mutableSetOf()
-
-    private lateinit var rootConstraintLayout: ConstraintLayout
-    private lateinit var recyclerView: RecyclerView
-    private lateinit var optionsButtonsLayout: LinearLayout
-    private lateinit var searchTextLayout: ConstraintLayout
 
     private var searchHandler = Handler(Looper.getMainLooper())
     private var searchTextWatcherEnabled = true
     private var searchRunnable: Runnable? = null
     private lateinit var resultAdapter: ResultAdapter
 
+    private lateinit var searchTextLayout: ConstraintLayout
     private lateinit var searchEditText: EditText
     private lateinit var optionsExpandButton: ImageButton
+
+    private lateinit var optionsButtonsLayout: LinearLayout
     private lateinit var settingsButton: ImageButton
     private lateinit var sizeToggleButton: ImageButton
     private lateinit var fileUploadButton: ImageButton
     private lateinit var filterPostsButton: ImageButton
+
+    private lateinit var rootConstraintLayout: ConstraintLayout
+    private lateinit var recyclerView: RecyclerView
     // endregion
 
     // region Common
@@ -171,6 +176,8 @@ class Main : AppCompatActivity() {
         sizeToggleButton = findViewById(R.id.sizeToggleButton)
         fileUploadButton = findViewById(R.id.fileUploadButton)
         filterPostsButton = findViewById(R.id.filterPostsButton)
+        filterChipScroll = findViewById(R.id.filterChipScroll)
+        filterChipRow = findViewById(R.id.filterChipRow)
         searchEditText = findViewById(R.id.searchEditText)
 
         resultAdapter = ResultAdapter(this, mutableListOf()).apply {
@@ -193,13 +200,14 @@ class Main : AppCompatActivity() {
         optionsExpandButton.setOnClickListener {
             if (optionsButtonsLayout.isVisible) {
                 optionsButtonsLayout.visibility = View.GONE
+                filterChipScroll.visibility = View.GONE
             } else {
                 optionsButtonsLayout.visibility = View.VISIBLE
 
             }
         }
         filterPostsButton.setOnClickListener {
-            onFilterPostClick()
+            filterChipScroll.visibility = if (filterChipScroll.isVisible) View.GONE else View.VISIBLE
         }
         fileUploadButton.setOnClickListener {
             pickImagesLauncher.launch(arrayOf("image/*"))
@@ -224,6 +232,8 @@ class Main : AppCompatActivity() {
             searchQueryUpdated(text.toString())
         }
 
+        buildFilterChips()
+
         WindowCompat.setDecorFitsSystemWindows(window, false)
         ViewCompat.setOnApplyWindowInsetsListener(rootConstraintLayout) { _, insets ->
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
@@ -234,6 +244,27 @@ class Main : AppCompatActivity() {
             insets
         }
     }
+
+    private fun buildFilterChips() {
+        filterChipRow.removeAllViews()
+        for (opt in filterOptions) {
+            val chip = layoutInflater.inflate(R.layout.item_link_chip, filterChipRow, false)
+            val tv = chip.findViewById<TextView>(R.id.chipTextView)
+            tv.text = opt
+
+            chip.setOnClickListener {
+                Log.i(TAG, "activeFilters: $activeFilters | opt: $opt")
+                val nowSelected = !activeFilters.contains(opt)
+                Log.i(TAG, "nowSelected: $nowSelected")
+                if (nowSelected) activeFilters.add(opt) else activeFilters.remove(opt)
+                Log.i(TAG, "activeFilters: $activeFilters")
+                setChipSelected(chip, nowSelected)
+                applyFilters()
+            }
+            filterChipRow.addView(chip)
+        }
+    }
+
     private fun searchQueryUpdated(text: String) {
         if (!searchTextWatcherEnabled) return
 
@@ -282,7 +313,8 @@ class Main : AppCompatActivity() {
                             resultAdapter.updateData(emptyList())
                             recyclerView.fadeOut()
                         } else {
-                            resultAdapter.updateData(resultList)
+                            allResults = resultList
+                            resultAdapter.updateData(allResults)
                             recyclerView.scrollToPosition(0)
                             recyclerView.fadeIn()
                         }
@@ -321,44 +353,25 @@ class Main : AppCompatActivity() {
     // endregion
 
     // region Data Related
-    private fun onFilterPostClick() {
-        val checked = BooleanArray(filterOptions.size) { i -> activeFilters.contains(filterOptions[i]) }
-
-        AlertDialog.Builder(this)
-            .setTitle("Filter by")
-            .setMultiChoiceItems(filterOptions, checked) { _, which, isChecked ->
-                if (isChecked) {
-                    activeFilters.add(filterOptions[which])
-                } else {
-                    activeFilters.remove(filterOptions[which])
-                }
-            }
-            .setPositiveButton("Apply") { _, _ ->
-                applyFilters()
-            }
-            .setNegativeButton("Clear") { _, _ ->
-                activeFilters.clear()
-                applyFilters()
-            }
-            .show()
-    }
     private fun applyFilters() {
-        val currentList = resultAdapter.getData()
+        val baseList = allResults
+        Log.i(TAG, "baseList: ${baseList.size}")
 
         if (activeFilters.isEmpty()) {
             // No filters → show all
-            resultAdapter.updateData(currentList)
+            resultAdapter.updateData(baseList)
             recyclerView.fadeIn()
             return
         }
 
-        val filteredList = currentList.filter { item ->
-            val tagsJson = item.optString("tags", "")
-            val keywords = extractKeywords(tagsJson)
+        val filteredList = baseList.filter { item ->
+            val tags = item.optString("tags", "")
+            Log.i(TAG, "tags: $tags")
             activeFilters.any { filter ->
-                keywords.any { it.contains(filter, ignoreCase = true) }
+                tags.contains(filter, ignoreCase = true)
             }
         }
+        Log.i(TAG, "filteredList: ${filteredList.size}")
 
         resultAdapter.updateData(filteredList.toMutableList())
 
@@ -368,27 +381,11 @@ class Main : AppCompatActivity() {
             recyclerView.fadeIn()
         }
     }
-    private fun extractKeywords(tags: String): List<String> {
-        return try {
-            val cleaned = tags
-                .replace("```xml", "")
-                .replace("```text", "")
-                .replace("```", "")
-                .trim()
-
-            val json = JSONObject(cleaned)
-            if (json.has("keywords")) {
-                val arr = json.getJSONArray("keywords")
-                List(arr.length()) { arr.getString(it) }
-            } else {
-                emptyList()
-            }
-        } catch (e: Exception) {
-            // fallback: naive keyword split
-            tags.split(",", "\n", " ")
-                .map { it.trim() }
-                .filter { it.isNotEmpty() }
-        }
+    private fun setChipSelected(chip: View, selected: Boolean) {
+        chip.isSelected = selected
+        chip.setBackgroundResource(
+            if (selected) R.drawable.bg_chip_selected else R.drawable.bg_chip
+        )
     }
 
     private val pickImagesLauncher = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris: List<Uri> ->
