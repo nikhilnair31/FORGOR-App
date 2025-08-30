@@ -19,6 +19,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.json.JSONArray
 import org.json.JSONObject
 
 class FullContent : AppCompatActivity() {
@@ -114,13 +115,18 @@ class FullContent : AppCompatActivity() {
     }
 
     private fun fillChips(tags: String) {
-        val data = JSONObject(tags)               // expects the shape you showed as “data”
-        val appName = data.optString("app_name")
-        val links = data.optJSONArray("links")
-        val handles = data.optJSONArray("account_identifiers")
-        Log.i(TAG, "appName: $appName, links: $links, handles: $handles")
-
         linksLinearLayout.removeAllViews()
+
+        val data = try {
+            JSONObject(tags)
+        } catch (_: Exception) {
+            linksLinearLayout.visibility = View.GONE
+            return
+        }
+
+        val appName = data.optString("app_name", "")
+        val links   = data.optJSONArray("links") ?: JSONArray()
+        val handles = data.optJSONArray("account_identifiers") ?: JSONArray()
 
         var added = false
         if (links != null && links.length() > 0) {

@@ -185,17 +185,10 @@ class Main : AppCompatActivity() {
             spanOptions[currentSpanIndex],
             StaggeredGridLayoutManager.VERTICAL
         )
-//        .apply {
-//            gapStrategy = StaggeredGridLayoutManager.GAP_HANDLING_NONE   // ✨ stop reordering to fill gaps
-//        }
         sizeToggleButton.setImageResource(spanIcons[currentSpanIndex])
         layoutManager.spanCount = spanOptions[currentSpanIndex]
         recyclerView.layoutManager = layoutManager
-//        recyclerView.setHasFixedSize(true)
         recyclerView.setItemAnimator(null);
-
-        // ✨ disable change animations which can cause weird shuffles
-//        (recyclerView.itemAnimator as? androidx.recyclerview.widget.SimpleItemAnimator)?.supportsChangeAnimations = false
 
         optionsExpandButton.setOnClickListener {
             if (optionsButtonsLayout.isVisible) {
@@ -218,7 +211,6 @@ class Main : AppCompatActivity() {
             currentSpanIndex = (currentSpanIndex + 1) % spanOptions.size
             val newSpanCount = spanOptions[currentSpanIndex]
             layoutManager.spanCount = newSpanCount
-//            layoutManager.invalidateSpanAssignments()
             recyclerView.requestLayout()
 
             sizeToggleButton.setImageResource(spanIcons[currentSpanIndex])
