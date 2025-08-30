@@ -8,11 +8,11 @@ Meet FORGOR
 
 ### To-Do
 - [ ] Add filter pills for search
-- [ ] Add link extraction when viewing individual posts
 
 ### Other
 
 ### Done
+- [x] Add link extraction when viewing individual posts
 - [x] Scroll to top on search
 - [x] Fixed moving posts
 - [x] Add option to upload images

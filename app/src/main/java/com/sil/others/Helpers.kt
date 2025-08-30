@@ -1,6 +1,7 @@
 package com.sil.others
 
 import android.app.ActivityManager
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
@@ -14,6 +15,7 @@ import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import androidx.core.content.edit
+import androidx.core.net.toUri
 import com.bumptech.glide.load.model.GlideUrl
 import com.bumptech.glide.load.model.LazyHeaders
 import com.sil.buildmode.BuildConfig
@@ -1064,6 +1066,40 @@ class Helpers {
             }
             return tempFile
         }
+        // endregion
+
+        // region URL Related
+        fun sanitizeLinkLabel(url: String): String {
+            return try {
+                val u = url.toUri()
+                val host = u.host?.replace("www.", "") ?: url
+                val path = u.path.orEmpty().trim('/').takeIf { it.isNotEmpty() } ?: ""
+                if (path.isEmpty()) host else "$host/$path"
+            } catch (_: Exception) { url }
+        }
+
+        fun resolveHandleToUrl(appName: String, raw: String): String {
+            val handle = raw.removePrefix("@")
+            return when (appName.lowercase()) {
+                "youtube" -> "https://www.youtube.com/@$handle"
+                "instagram" -> "https://www.instagram.com/$handle/"
+                "twitter", "x" -> "https://x.com/$handle"
+                "tiktok" -> "https://www.tiktok.com/@$handle"
+                "reddit" -> "https://www.reddit.com/user/$handle"
+                else -> "https://www.google.com/search?q=${Uri.encode(raw)}"
+            }
+        }
+
+        fun Context.openExternal(url: String) {
+            try {
+                startActivity(Intent(Intent.ACTION_VIEW, url.toUri())) // `contextIntent` might be a custom helper; directly use Intent
+            } catch (e: ActivityNotFoundException) { // Be more specific with the exception
+                Log.e(TAG, "No activity found to handle opening $url: ${e.localizedMessage}")
+            } catch (e: Exception) { // Catch other potential exceptions
+                Log.e(TAG, "Failed to open $url: ${e.localizedMessage}")
+            }
+        }
+
         // endregion
 
         // region Service Related

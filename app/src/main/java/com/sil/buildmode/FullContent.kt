@@ -2,7 +2,6 @@ package com.sil.buildmode
 
 import android.app.AlertDialog
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -11,24 +10,16 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
-import com.sil.others.Helpers
-import androidx.core.net.toUri
-import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.isVisible
-import androidx.core.view.updatePadding
-import com.bhuvaneshw.pdf.PdfViewer
 import com.bumptech.glide.Glide
 import com.github.chrisbanes.photoview.PhotoView
-import com.sil.others.Helpers.Companion
+import com.sil.others.Helpers
+import com.sil.others.Helpers.Companion.openExternal
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.json.JSONObject
-import kotlin.math.max
 
 class FullContent : AppCompatActivity() {
     // region Vars
@@ -60,11 +51,11 @@ class FullContent : AppCompatActivity() {
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        initRelated(fileName)
+        initButtons(fileName)
         fillChips(tags)
     }
 
-    private fun initRelated(fileName: String) {
+    private fun initButtons(fileName: String) {
         val fileUrl = "$SERVER_URL/api/get_file/$fileName"
 
         // Image Handling
@@ -127,6 +118,7 @@ class FullContent : AppCompatActivity() {
         val appName = data.optString("app_name")
         val links = data.optJSONArray("links")
         val handles = data.optJSONArray("account_identifiers")
+        Log.i(TAG, "appName: $appName, links: $links, handles: $handles")
 
         linksLinearLayout.removeAllViews()
 
@@ -136,8 +128,8 @@ class FullContent : AppCompatActivity() {
                 val link = links.optString(i)?.trim().orEmpty()
                 if (link.isNotEmpty()) {
                     addChipButton(
-                        text = sanitizeLinkLabel(link),
-                        onClick = { openExternal(link) }
+                        text = Helpers.sanitizeLinkLabel(link),
+                        onClick = { this.openExternal(link) }
                     )
                     added = true
                 }
@@ -147,10 +139,10 @@ class FullContent : AppCompatActivity() {
             for (i in 0 until handles.length()) {
                 val handle = handles.optString(i)?.trim().orEmpty()
                 if (handle.isNotEmpty()) {
-                    val resolved = resolveHandleToUrl(appName, handle)
+                    val resolved = Helpers.resolveHandleToUrl(appName, handle)
                     addChipButton(
                         text = handle,
-                        onClick = { openExternal(resolved) }
+                        onClick = { this.openExternal(resolved) }
                     )
                     added = true
                 }
@@ -166,34 +158,5 @@ class FullContent : AppCompatActivity() {
         tv.text = text
         chip.setOnClickListener { onClick() }
         linksLinearLayout.addView(chip)
-    }
-
-    private fun sanitizeLinkLabel(url: String): String {
-        return try {
-            val u = url.toUri()
-            val host = u.host?.replace("www.", "") ?: url
-            val path = u.path.orEmpty().trim('/').takeIf { it.isNotEmpty() } ?: ""
-            if (path.isEmpty()) host else "$host/$path"
-        } catch (_: Exception) { url }
-    }
-
-    private fun resolveHandleToUrl(appName: String, raw: String): String {
-        val handle = raw.removePrefix("@")
-        return when (appName.lowercase()) {
-            "youtube" -> "https://www.youtube.com/@$handle"
-            "instagram" -> "https://www.instagram.com/$handle/"
-            "twitter", "x" -> "https://x.com/$handle"
-            "tiktok" -> "https://www.tiktok.com/@$handle"
-            "reddit" -> "https://www.reddit.com/user/$handle"
-            else -> "https://www.google.com/search?q=${Uri.encode(raw)}"
-        }
-    }
-
-    private fun openExternal(url: String) {
-        try {
-            startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to open $url: ${e.localizedMessage}")
-        }
     }
 }
