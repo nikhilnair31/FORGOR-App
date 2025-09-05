@@ -26,6 +26,7 @@
     <string name="screenshotToggleOffText">OFF</string>
     <string name="digestFrequencyText">EMAIL DIGEST FREQUENCY</string>
     <string name="digestNoneText">NONE</string>
+    <string name="digestDailyText">DAILY</string>
     <string name="digestWeeklyText">WEEKLY</string>
     <string name="digestMonthlyText">MONTHLY</string>
     <string name="stopForgoringText">STOP FORGORING</string>

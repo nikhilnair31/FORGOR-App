@@ -20,17 +20,14 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
-import androidx.work.Logger
 import com.sil.others.Helpers
-import com.sil.others.Helpers.Companion
 import com.sil.others.Helpers.Companion.showToast
 import com.sil.services.ScreenshotService
-import kotlin.math.log
 import kotlin.math.max
 
 class FeatureToggles : AppCompatActivity() {
     // region Vars
-    private val TAG = "Features"
+    private val TAG = "FeatureToggles"
     private val PREFS_GENERAL = "com.sil.buildmode.generalSharedPrefs"
     private val KEY_SCREENSHOT_ENABLED = "isScreenshotMonitoringEnabled"
     private lateinit var generalSharedPreferences: SharedPreferences
@@ -45,9 +42,10 @@ class FeatureToggles : AppCompatActivity() {
     private lateinit var rootConstraintLayout: ConstraintLayout
 
     private val digestOptions = listOf(
-        Triple(R.string.digestNoneText,   R.color.base_0, R.color.accent_1),
-        Triple(R.string.digestWeeklyText, R.color.accent_0,            R.color.accent_1),
-        Triple(R.string.digestMonthlyText,R.color.accent_0,            R.color.accent_1)
+        Triple(R.string.digestNoneText,     R.color.base_0,     R.color.accent_1),
+        Triple(R.string.digestDailyText,    R.color.accent_0,   R.color.accent_1),
+        Triple(R.string.digestWeeklyText,   R.color.accent_0,   R.color.accent_1),
+        Triple(R.string.digestMonthlyText,  R.color.accent_0,   R.color.accent_1)
     )
     private var digestIndex = 0
     // endregion
@@ -141,8 +139,9 @@ class FeatureToggles : AppCompatActivity() {
         // Call API
         val freqName = when (newIndex) {
             0 -> "none"
-            1 -> "weekly"
-            2 -> "monthly"
+            1 -> "daily"
+            2 -> "weekly"
+            3 -> "monthly"
             else -> "none"
         }
 

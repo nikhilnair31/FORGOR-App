@@ -27,7 +27,7 @@ import kotlin.math.max
 
 class FeaturePermissions : AppCompatActivity() {
     // region Vars
-    private val TAG = "Features"
+    private val TAG = "FeaturePermissions"
     private val PREFS_GENERAL = "com.sil.buildmode.generalSharedPrefs"
     private val KEY_SCREENSHOT_ENABLED = "isScreenshotMonitoringEnabled"
     private lateinit var generalSharedPreferences: SharedPreferences
@@ -43,11 +43,12 @@ class FeaturePermissions : AppCompatActivity() {
     private lateinit var rootConstraintLayout: ConstraintLayout
 
     private val digestOptions = listOf(
-        Triple(R.string.digestNoneText,   R.color.base_0, R.color.accent_1),
-        Triple(R.string.digestWeeklyText, R.color.accent_0,            R.color.accent_1),
-        Triple(R.string.digestMonthlyText,R.color.accent_0,            R.color.accent_1)
+        Triple(R.string.digestNoneText,     R.color.base_0,     R.color.accent_1),
+        Triple(R.string.digestDailyText,    R.color.accent_0,   R.color.accent_1),
+        Triple(R.string.digestWeeklyText,   R.color.accent_0,   R.color.accent_1),
+        Triple(R.string.digestMonthlyText,  R.color.accent_0,   R.color.accent_1)
     )
-    private var digestIndex = generalSharedPreferences.getInt("digest_index", 0).coerceIn(0, digestOptions.lastIndex)
+    private var digestIndex = 0
     // endregion
 
     // region Common
@@ -148,8 +149,9 @@ class FeaturePermissions : AppCompatActivity() {
         // Call API
         val freqName = when (newIndex) {
             0 -> "none"
-            1 -> "weekly"
-            2 -> "monthly"
+            1 -> "daily"
+            2 -> "weekly"
+            3 -> "monthly"
             else -> "none"
         }
 

@@ -7,11 +7,11 @@ Meet FORGOR
 ## Tasks
 
 ### To-Do
-- [ ] Add filter pills for search
 
 ### Other
 
 ### Done
+- [x] Add filter pills for search
 - [x] Add link extraction when viewing individual posts
 - [x] Scroll to top on search
 - [x] Fixed moving posts
