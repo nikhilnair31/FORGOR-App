@@ -33,8 +33,6 @@ import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
-import okio.buffer
-import okio.sink
 import org.json.JSONObject
 import java.io.File
 import java.io.FileNotFoundException
@@ -658,8 +656,8 @@ class Helpers {
             sendRequest(accessToken)
         }
 
-        fun authEditDigestToServer(context: Context, newFrequency: String, callback: (success: Boolean) -> Unit) {
-            Log.i(TAG, "Trying to edit digest frequency to $newFrequency")
+        fun authEditSummaryToServer(context: Context, newFrequency: String, callback: (success: Boolean) -> Unit) {
+            Log.i(TAG, "Trying to edit summary frequency to $newFrequency")
 
             val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
             val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
@@ -678,7 +676,7 @@ class Helpers {
 
             fun sendRequest(token: String) {
                 val request = buildAuthorizedRequest(
-                    "$SERVER_URL/api/digest_frequency",
+                    "$SERVER_URL/api/summary_frequency",
                     token = token,
                     method = "POST",
                     body = requestBody
@@ -686,7 +684,7 @@ class Helpers {
 
                 httpClient.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException) {
-                        Log.e(TAG, "Edit digest failed: ${e.localizedMessage}")
+                        Log.e(TAG, "Edit summary freq failed: ${e.localizedMessage}")
                         showToast(context, "Edit failed!")
                         callback(false)
                     }
@@ -707,11 +705,11 @@ class Helpers {
                         }
 
                         if (response.isSuccessful) {
-                            Log.i(TAG, "Edit digest successful: $responseBody")
-                            showToast(context, "Digest updated")
+                            Log.i(TAG, "Edit summary freq successful: $responseBody")
+                            showToast(context, "Summary updated")
                             callback(true)
                         } else {
-                            Log.e(TAG, "Edit digest error ${response.code}: $responseBody")
+                            Log.e(TAG, "Edit summary freq error ${response.code}: $responseBody")
                             showToast(context, "Edit failed!")
                             callback(false)
                         }

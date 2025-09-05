@@ -38,17 +38,17 @@ class FeaturePermissions : AppCompatActivity() {
     private var pendingToggle: (() -> Unit)? = null
 
     private lateinit var screenshotToggleButton: ToggleButton
-    private lateinit var digestCycleButton: Button
+    private lateinit var summaryCycleButton: Button
     private lateinit var buttonToMain: Button
     private lateinit var rootConstraintLayout: ConstraintLayout
 
-    private val digestOptions = listOf(
-        Triple(R.string.digestNoneText,     R.color.base_0,     R.color.accent_1),
-        Triple(R.string.digestDailyText,    R.color.accent_0,   R.color.accent_1),
-        Triple(R.string.digestWeeklyText,   R.color.accent_0,   R.color.accent_1),
-        Triple(R.string.digestMonthlyText,  R.color.accent_0,   R.color.accent_1)
+    private val summaryOptions = listOf(
+        Triple(R.string.summaryNoneText,     R.color.base_0,     R.color.accent_1),
+        Triple(R.string.summaryDailyText,    R.color.accent_0,   R.color.accent_1),
+        Triple(R.string.summaryWeeklyText,   R.color.accent_0,   R.color.accent_1),
+        Triple(R.string.summaryMonthlyText,  R.color.accent_0,   R.color.accent_1)
     )
-    private var digestIndex = 0
+    private var summaryIndex = 0
     // endregion
 
     // region Common
@@ -64,10 +64,10 @@ class FeaturePermissions : AppCompatActivity() {
     private fun initRelated() {
         rootConstraintLayout = findViewById(R.id.rootConstraintLayout)
         screenshotToggleButton = findViewById(R.id.screenshotToggleButton)
-        digestCycleButton = findViewById(R.id.digestFreqToggleButton)
+        summaryCycleButton = findViewById(R.id.summaryFreqToggleButton)
         buttonToMain = findViewById(R.id.buttonToMain)
 
-        initDigestButton()
+        initSummaryCycleButton()
         initScreenshotToggle()
         initMainButton()
 
@@ -83,15 +83,15 @@ class FeaturePermissions : AppCompatActivity() {
     // endregion
 
     // region UI Related
-    private fun initDigestButton() {
-        digestIndex = generalSharedPreferences.getInt("digest_index", 0).coerceIn(0, digestOptions.lastIndex)
-        Log.i(TAG, "digestIndex: $digestIndex")
-        renderDigestButton(digestIndex)
+    private fun initSummaryCycleButton() {
+        summaryIndex = generalSharedPreferences.getInt("summary_index", 0).coerceIn(0, summaryOptions.lastIndex)
+        Log.i(TAG, "SummaryIndex: $summaryIndex")
+        renderSummaryButton(summaryIndex)
 
-        digestCycleButton.setOnClickListener {
-            val newIndex = (digestIndex + 1) % digestOptions.size
-            renderDigestButton(newIndex)
-            updateDigestFrequency(newIndex)
+        summaryCycleButton.setOnClickListener {
+            val newIndex = (summaryIndex + 1) % summaryOptions.size
+            renderSummaryButton(newIndex)
+            updateSummaryFrequency(newIndex)
         }
     }
     private fun initScreenshotToggle() {
@@ -126,12 +126,12 @@ class FeaturePermissions : AppCompatActivity() {
         }
     }
 
-    private fun renderDigestButton(index: Int) {
-        val (label, bgCol, txtCol) = digestOptions[index]
-        digestCycleButton.setText(label)
-        digestCycleButton.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, bgCol))
-        digestCycleButton.setTextColor(ContextCompat.getColor(this, txtCol))
-        digestCycleButton.contentDescription = "Digest: $label"
+    private fun renderSummaryButton(index: Int) {
+        val (label, bgCol, txtCol) = summaryOptions[index]
+        summaryCycleButton.setText(label)
+        summaryCycleButton.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, bgCol))
+        summaryCycleButton.setTextColor(ContextCompat.getColor(this, txtCol))
+        summaryCycleButton.contentDescription = "summary: $label"
     }
     private fun updateToggle(toggle: ToggleButton, isChecked: Boolean) {
         toggle.isChecked = isChecked
@@ -145,7 +145,7 @@ class FeaturePermissions : AppCompatActivity() {
     // endregion
 
     // region Feature Related
-    private fun updateDigestFrequency(newIndex: Int) {
+    private fun updateSummaryFrequency(newIndex: Int) {
         // Call API
         val freqName = when (newIndex) {
             0 -> "none"
@@ -155,14 +155,14 @@ class FeaturePermissions : AppCompatActivity() {
             else -> "none"
         }
 
-        Helpers.authEditDigestToServer(this, freqName) { success ->
+        Helpers.authEditSummaryToServer(this, freqName) { success ->
             if (success) {
                 // Save locally only if backend update succeeded
-                generalSharedPreferences.edit { putInt("digest_index", newIndex) }
-                digestIndex = newIndex
+                generalSharedPreferences.edit { putInt("summary_index", newIndex) }
+                summaryIndex = newIndex
             } else {
                 // Keep old state if backend failed
-                showToast(this, "Failed to update digest")
+                showToast(this, "Failed to update summary")
             }
         }
     }

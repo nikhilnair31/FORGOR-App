@@ -41,13 +41,13 @@ class FeatureToggles : AppCompatActivity() {
     private lateinit var digestCycleButton: Button
     private lateinit var rootConstraintLayout: ConstraintLayout
 
-    private val digestOptions = listOf(
-        Triple(R.string.digestNoneText,     R.color.base_0,     R.color.accent_1),
-        Triple(R.string.digestDailyText,    R.color.accent_0,   R.color.accent_1),
-        Triple(R.string.digestWeeklyText,   R.color.accent_0,   R.color.accent_1),
-        Triple(R.string.digestMonthlyText,  R.color.accent_0,   R.color.accent_1)
+    private val summaryOptions = listOf(
+        Triple(R.string.summaryNoneText,     R.color.base_0,     R.color.accent_1),
+        Triple(R.string.summaryDailyText,    R.color.accent_0,   R.color.accent_1),
+        Triple(R.string.summaryWeeklyText,   R.color.accent_0,   R.color.accent_1),
+        Triple(R.string.summaryMonthlyText,  R.color.accent_0,   R.color.accent_1)
     )
-    private var digestIndex = 0
+    private var summaryIndex = 0
     // endregion
 
     // region Common
@@ -63,7 +63,7 @@ class FeatureToggles : AppCompatActivity() {
     private fun initRelated() {
         rootConstraintLayout = findViewById(R.id.rootConstraintLayout)
         screenshotToggleButton = findViewById(R.id.screenshotToggleButton)
-        digestCycleButton = findViewById(R.id.digestFreqToggleButton)
+        digestCycleButton = findViewById(R.id.summaryFreqToggleButton)
 
         initDigestButton()
         initScreenshotToggle()
@@ -81,12 +81,12 @@ class FeatureToggles : AppCompatActivity() {
 
     // region UI Related
     private fun initDigestButton() {
-        digestIndex = generalSharedPreferences.getInt("digest_index", 0).coerceIn(0, digestOptions.lastIndex)
-        Log.i(TAG, "digestIndex: $digestIndex")
-        renderDigestButton(digestIndex)
+        summaryIndex = generalSharedPreferences.getInt("summary_index", 0).coerceIn(0, summaryOptions.lastIndex)
+        Log.i(TAG, "digestIndex: $summaryIndex")
+        renderDigestButton(summaryIndex)
 
         digestCycleButton.setOnClickListener {
-            val newIndex = (digestIndex + 1) % digestOptions.size
+            val newIndex = (summaryIndex + 1) % summaryOptions.size
             renderDigestButton(newIndex)
             updateDigestFrequency(newIndex)
         }
@@ -117,7 +117,7 @@ class FeatureToggles : AppCompatActivity() {
     }
 
     private fun renderDigestButton(index: Int) {
-        val (label, bgCol, txtCol) = digestOptions[index]
+        val (label, bgCol, txtCol) = summaryOptions[index]
         digestCycleButton.setText(label)
         digestCycleButton.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, bgCol))
         digestCycleButton.setTextColor(ContextCompat.getColor(this, txtCol))
@@ -145,11 +145,11 @@ class FeatureToggles : AppCompatActivity() {
             else -> "none"
         }
 
-        Helpers.authEditDigestToServer(this, freqName) { success ->
+        Helpers.authEditSummaryToServer(this, freqName) { success ->
             if (success) {
                 // Save locally only if backend update succeeded
-                generalSharedPreferences.edit { putInt("digest_index", newIndex) }
-                digestIndex = newIndex
+                generalSharedPreferences.edit { putInt("summary_index", newIndex) }
+                summaryIndex = newIndex
             } else {
                 // Keep old state if backend failed
                 showToast(this, "Failed to update digest")

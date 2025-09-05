@@ -24,11 +24,11 @@
     <string name="monitoringText">AUTO ADD SCREENSHOTS</string>
     <string name="screenshotToggleOnText">ON</string>
     <string name="screenshotToggleOffText">OFF</string>
-    <string name="digestFrequencyText">EMAIL DIGEST FREQUENCY</string>
-    <string name="digestNoneText">NONE</string>
-    <string name="digestDailyText">DAILY</string>
-    <string name="digestWeeklyText">WEEKLY</string>
-    <string name="digestMonthlyText">MONTHLY</string>
+    <string name="summaryFrequencyText">EMAIL SUMMARY FREQUENCY</string>
+    <string name="summaryNoneText">NONE</string>
+    <string name="summaryDailyText">DAILY</string>
+    <string name="summaryWeeklyText">WEEKLY</string>
+    <string name="summaryMonthlyText">MONTHLY</string>
     <string name="stopForgoringText">STOP FORGORING</string>
 
     <string name="searchImagesDescription">SEARCH IMAGES</string>

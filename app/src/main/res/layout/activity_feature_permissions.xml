@@ -89,12 +89,12 @@
             android:gravity="start"
 
             android:fontFamily="@font/venus_cormier"
-            android:text="@string/digestFrequencyText"
+            android:text="@string/summaryFrequencyText"
             android:textColor="@color/accent_1"
             android:textSize="14sp" />
 
         <Button
-            android:id="@+id/digestFreqToggleButton"
+            android:id="@+id/summaryFreqToggleButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
 
@@ -106,7 +106,7 @@
             android:backgroundTint="@color/base_0"
 
             android:textSize="14sp"
-            android:text="@string/digestNoneText"
+            android:text="@string/summaryNoneText"
             android:textColor="@color/accent_1"
             android:fontFamily="@font/venus_cormier"
 
