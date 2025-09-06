@@ -37,9 +37,10 @@ class FeatureToggles : AppCompatActivity() {
 
     private var pendingToggle: (() -> Unit)? = null
 
-    private lateinit var screenshotToggleButton: ToggleButton
-    private lateinit var digestCycleButton: Button
     private lateinit var rootConstraintLayout: ConstraintLayout
+    private lateinit var screenshotToggleButton: ToggleButton
+    private lateinit var summaryCycleButton: Button
+    private lateinit var digestToggleButton: ToggleButton
 
     private val summaryOptions = listOf(
         Triple(R.string.summaryNoneText,     R.color.base_0,     R.color.accent_1),
@@ -63,10 +64,12 @@ class FeatureToggles : AppCompatActivity() {
     private fun initRelated() {
         rootConstraintLayout = findViewById(R.id.rootConstraintLayout)
         screenshotToggleButton = findViewById(R.id.screenshotToggleButton)
-        digestCycleButton = findViewById(R.id.summaryFreqToggleButton)
+        summaryCycleButton = findViewById(R.id.summaryFreqToggleButton)
+        digestToggleButton = findViewById(R.id.digestEnabledToggleButton)
 
-        initDigestButton()
         initScreenshotToggle()
+        initSummaryCycleButton()
+        initDigestToggle()
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         ViewCompat.setOnApplyWindowInsetsListener(rootConstraintLayout) { v, insets ->
@@ -80,17 +83,6 @@ class FeatureToggles : AppCompatActivity() {
     // endregion
 
     // region UI Related
-    private fun initDigestButton() {
-        summaryIndex = generalSharedPreferences.getInt("summary_index", 0).coerceIn(0, summaryOptions.lastIndex)
-        Log.i(TAG, "digestIndex: $summaryIndex")
-        renderDigestButton(summaryIndex)
-
-        digestCycleButton.setOnClickListener {
-            val newIndex = (summaryIndex + 1) % summaryOptions.size
-            renderDigestButton(newIndex)
-            updateDigestFrequency(newIndex)
-        }
-    }
     private fun initScreenshotToggle() {
         val isRunning = Helpers.isServiceRunning(this, ScreenshotService::class.java)
         updateToggle(screenshotToggleButton, isRunning)
@@ -115,27 +107,46 @@ class FeatureToggles : AppCompatActivity() {
             }
         }
     }
+    private fun initSummaryCycleButton() {
+        summaryIndex = generalSharedPreferences.getInt("summary_index", 0).coerceIn(0, summaryOptions.lastIndex)
+        Log.i(TAG, "digestIndex: $summaryIndex")
+        renderSummaryButton(summaryIndex)
 
-    private fun renderDigestButton(index: Int) {
+        summaryCycleButton.setOnClickListener {
+            val newIndex = (summaryIndex + 1) % summaryOptions.size
+            renderSummaryButton(newIndex)
+            updateSummaryFrequency(newIndex)
+        }
+    }
+    private fun initDigestToggle() {
+        digestToggleButton.setOnCheckedChangeListener { _, isChecked ->
+            Log.i(TAG, "Digest toggle changed: $isChecked")
+            digestToggleButton.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+            updateToggle(digestToggleButton, isChecked)
+            updateDigestEnabled(isChecked)
+        }
+    }
+
+    private fun renderSummaryButton(index: Int) {
         val (label, bgCol, txtCol) = summaryOptions[index]
-        digestCycleButton.setText(label)
-        digestCycleButton.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, bgCol))
-        digestCycleButton.setTextColor(ContextCompat.getColor(this, txtCol))
-        digestCycleButton.contentDescription = "Digest: $label"
+        summaryCycleButton.setText(label)
+        summaryCycleButton.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, bgCol))
+        summaryCycleButton.setTextColor(ContextCompat.getColor(this, txtCol))
+        summaryCycleButton.contentDescription = "Digest: $label"
     }
     private fun updateToggle(toggle: ToggleButton, isChecked: Boolean) {
         toggle.isChecked = isChecked
         toggle.background = ContextCompat.getDrawable(this, if (isChecked) R.color.accent_0 else R.color.base_0)
 
         toggle.text = when (toggle) {
-            screenshotToggleButton -> getString(if (isChecked) R.string.screenshotToggleOnText else R.string.screenshotToggleOffText)
+            screenshotToggleButton -> getString(if (isChecked) R.string.toggleOnText else R.string.toggleOffText)
             else -> ""
         }
     }
     // endregion
 
     // region Feature Related
-    private fun updateDigestFrequency(newIndex: Int) {
+    private fun updateSummaryFrequency(newIndex: Int) {
         // Call API
         val freqName = when (newIndex) {
             0 -> "none"
@@ -145,11 +156,22 @@ class FeatureToggles : AppCompatActivity() {
             else -> "none"
         }
 
-        Helpers.authEditSummaryToServer(this, freqName) { success ->
+        Helpers.editSummaryFreqToServer(this, freqName) { success ->
             if (success) {
                 // Save locally only if backend update succeeded
                 generalSharedPreferences.edit { putInt("summary_index", newIndex) }
                 summaryIndex = newIndex
+            } else {
+                // Keep old state if backend failed
+                showToast(this, "Failed to update digest")
+            }
+        }
+    }
+    private fun updateDigestEnabled(enabled: Boolean) {
+        Helpers.editDigestEnabledToServer(this, enabled) { success ->
+            if (success) {
+                // Save locally only if backend update succeeded
+                generalSharedPreferences.edit { putBoolean("digest_enabled", enabled) }
             } else {
                 // Keep old state if backend failed
                 showToast(this, "Failed to update digest")

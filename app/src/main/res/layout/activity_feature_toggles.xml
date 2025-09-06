@@ -74,7 +74,6 @@
             android:text="@string/monitoringText"
             android:textColor="@color/accent_1"
             android:textSize="14sp" />
-
         <ToggleButton
             android:id="@+id/screenshotToggleButton"
             android:layout_width="match_parent"
@@ -90,8 +89,8 @@
 
             android:fontFamily="@font/venus_cormier"
             android:textColor="@color/accent_1"
-            android:textOff="@string/screenshotToggleOffText"
-            android:textOn="@string/screenshotToggleOnText"
+            android:textOff="@string/toggleOffText"
+            android:textOn="@string/toggleOnText"
 
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -111,7 +110,6 @@
             android:text="@string/summaryFrequencyText"
             android:textColor="@color/accent_1"
             android:textSize="14sp" />
-
         <Button
             android:id="@+id/summaryFreqToggleButton"
             android:layout_width="match_parent"
@@ -130,6 +128,42 @@
             android:fontFamily="@font/venus_cormier"
 
             android:stateListAnimator="@null"
+
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/featuresTextView" />
+
+        <TextView
+            android:id="@+id/digestEnabledTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+
+            android:layout_marginTop="8dp"
+            android:padding="12dp"
+
+            android:gravity="start"
+
+            android:fontFamily="@font/venus_cormier"
+            android:text="@string/digestFrequencyText"
+            android:textColor="@color/accent_1"
+            android:textSize="14sp" />
+        <ToggleButton
+            android:id="@+id/digestEnabledToggleButton"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+
+            android:layout_marginBottom="8dp"
+
+            android:background="@color/base_0"
+            android:drawableTint="@color/accent_1"
+
+            android:checked="false"
+            android:stateListAnimator="@null"
+
+            android:fontFamily="@font/venus_cormier"
+            android:textColor="@color/accent_1"
+            android:textOff="@string/toggleOffText"
+            android:textOn="@string/toggleOnText"
 
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"

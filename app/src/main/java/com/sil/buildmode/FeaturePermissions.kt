@@ -37,10 +37,11 @@ class FeaturePermissions : AppCompatActivity() {
 
     private var pendingToggle: (() -> Unit)? = null
 
+    private lateinit var rootConstraintLayout: ConstraintLayout
     private lateinit var screenshotToggleButton: ToggleButton
     private lateinit var summaryCycleButton: Button
+    private lateinit var digestToggleButton: ToggleButton
     private lateinit var buttonToMain: Button
-    private lateinit var rootConstraintLayout: ConstraintLayout
 
     private val summaryOptions = listOf(
         Triple(R.string.summaryNoneText,     R.color.base_0,     R.color.accent_1),
@@ -65,10 +66,12 @@ class FeaturePermissions : AppCompatActivity() {
         rootConstraintLayout = findViewById(R.id.rootConstraintLayout)
         screenshotToggleButton = findViewById(R.id.screenshotToggleButton)
         summaryCycleButton = findViewById(R.id.summaryFreqToggleButton)
+        digestToggleButton = findViewById(R.id.digestEnabledToggleButton)
         buttonToMain = findViewById(R.id.buttonToMain)
 
-        initSummaryCycleButton()
         initScreenshotToggle()
+        initSummaryCycleButton()
+        initDigestToggle()
         initMainButton()
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -83,17 +86,6 @@ class FeaturePermissions : AppCompatActivity() {
     // endregion
 
     // region UI Related
-    private fun initSummaryCycleButton() {
-        summaryIndex = generalSharedPreferences.getInt("summary_index", 0).coerceIn(0, summaryOptions.lastIndex)
-        Log.i(TAG, "SummaryIndex: $summaryIndex")
-        renderSummaryButton(summaryIndex)
-
-        summaryCycleButton.setOnClickListener {
-            val newIndex = (summaryIndex + 1) % summaryOptions.size
-            renderSummaryButton(newIndex)
-            updateSummaryFrequency(newIndex)
-        }
-    }
     private fun initScreenshotToggle() {
         val isRunning = Helpers.isServiceRunning(this, ScreenshotService::class.java)
         updateToggle(screenshotToggleButton, isRunning)
@@ -118,6 +110,25 @@ class FeaturePermissions : AppCompatActivity() {
             }
         }
     }
+    private fun initSummaryCycleButton() {
+        summaryIndex = generalSharedPreferences.getInt("summary_index", 0).coerceIn(0, summaryOptions.lastIndex)
+        Log.i(TAG, "SummaryIndex: $summaryIndex")
+        renderSummaryButton(summaryIndex)
+
+        summaryCycleButton.setOnClickListener {
+            val newIndex = (summaryIndex + 1) % summaryOptions.size
+            renderSummaryButton(newIndex)
+            updateSummaryFrequency(newIndex)
+        }
+    }
+    private fun initDigestToggle() {
+        digestToggleButton.setOnCheckedChangeListener { _, isChecked ->
+            Log.i(TAG, "Digest toggle changed: $isChecked")
+            digestToggleButton.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+            updateToggle(digestToggleButton, isChecked)
+            updateDigestEnabled(isChecked)
+        }
+    }
     private fun initMainButton() {
         buttonToMain.setOnClickListener {
             val intent = Intent(this, Main::class.java)
@@ -138,7 +149,7 @@ class FeaturePermissions : AppCompatActivity() {
         toggle.background = ContextCompat.getDrawable(this, if (isChecked) R.color.accent_0 else R.color.base_0)
 
         toggle.text = when (toggle) {
-            screenshotToggleButton -> getString(if (isChecked) R.string.screenshotToggleOnText else R.string.screenshotToggleOffText)
+            screenshotToggleButton -> getString(if (isChecked) R.string.toggleOnText else R.string.toggleOffText)
             else -> ""
         }
     }
@@ -155,7 +166,7 @@ class FeaturePermissions : AppCompatActivity() {
             else -> "none"
         }
 
-        Helpers.authEditSummaryToServer(this, freqName) { success ->
+        Helpers.editSummaryFreqToServer(this, freqName) { success ->
             if (success) {
                 // Save locally only if backend update succeeded
                 generalSharedPreferences.edit { putInt("summary_index", newIndex) }
@@ -163,6 +174,17 @@ class FeaturePermissions : AppCompatActivity() {
             } else {
                 // Keep old state if backend failed
                 showToast(this, "Failed to update summary")
+            }
+        }
+    }
+    private fun updateDigestEnabled(enabled: Boolean) {
+        Helpers.editDigestEnabledToServer(this, enabled) { success ->
+            if (success) {
+                // Save locally only if backend update succeeded
+                generalSharedPreferences.edit { putBoolean("digest_enabled", enabled) }
+            } else {
+                // Keep old state if backend failed
+                showToast(this, "Failed to update digest")
             }
         }
     }

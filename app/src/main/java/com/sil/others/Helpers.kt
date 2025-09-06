@@ -59,17 +59,29 @@ class Helpers {
         // endregion
 
         // region API Related
-        fun buildAuthorizedRequest(url: String, method: String = "POST", token: String, body: RequestBody? = null): Request {
+        private fun buildAuthorizedRequest(url: String, method: String = "POST", token: String, body: RequestBody? = null): Request {
             val builder = Request.Builder()
                 .url(url)
                 .addHeader("Authorization", "Bearer $token")
                 .addHeader("User-Agent", USER_AGENT)
                 .addHeader("X-App-Key", APP_KEY)
 
-            if (method == "POST") builder.post(body ?: ByteArray(0).toRequestBody())
+            val empty = ByteArray(0).toRequestBody()
+
+            when (method.uppercase()) {
+                "GET" -> builder.get()
+                "POST" -> builder.post(body ?: empty)
+                "PUT" -> builder.put(body ?: empty)
+                "PATCH" -> builder.patch(body ?: empty)
+                "DELETE" -> {
+                    if (body != null) builder.delete(body) else builder.delete()
+                }
+                else -> builder.method(method.uppercase(), body) // fallback
+            }
+
             return builder.build()
         }
-        fun withValidToken(context: Context, onValid: (token: String) -> Unit, onInvalid: (() -> Unit)? = null) {
+        private fun withValidToken(context: Context, onValid: (token: String) -> Unit, onInvalid: (() -> Unit)? = null) {
             val prefs = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
             val token = prefs.getString("access_token", "") ?: ""
             if (token.isEmpty()) {
@@ -469,6 +481,84 @@ class Helpers {
                 }
             })
         }
+
+        fun autoLogout(context: Context) {
+            Log.i(TAG, "autoLogout | Logging out user...")
+
+            val prefs = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
+            prefs.edit {
+                remove("username")
+                remove("email")
+                remove("access_token")
+                remove("refresh_token")
+            }
+
+            showToast(context, "Session expired. Please sign in again.")
+
+            val intent = Intent(context, com.sil.buildmode.Welcome::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            context.startActivity(intent)
+        }
+        // endregion
+
+        // region User Account Related
+        fun authAccountDelete(context: Context, callback: (success: Boolean) -> Unit) {
+            Log.i(TAG, "Trying to delete account...")
+
+            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
+            val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
+            if (accessToken.isEmpty()) {
+                Log.e(TAG, "Access token missing")
+                showToast(context, "Not logged in")
+                return
+            }
+
+            fun sendRequest(token: String) {
+                val request = buildAuthorizedRequest(
+                    "$SERVER_URL/api/account_delete",
+                    token = token,
+                    method = "DELETE",
+                    body = null
+                )
+
+                httpClient.newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        Log.e(TAG, "Account delete failed: ${e.localizedMessage}")
+                        showToast(context, "Delete failed!")
+                        callback(false)
+                    }
+
+                    override fun onResponse(call: Call, response: Response) {
+                        val responseBody = response.body?.string()
+
+                        if (response.code == 401) {
+                            refreshAccessToken(context) { success, newToken ->
+                                if (success && !newToken.isNullOrEmpty()) {
+                                    sendRequest(newToken) // Retry with refreshed token
+                                } else {
+                                    showToast(context, "Session expired. Please log in again.")
+                                    callback(false)
+                                }
+                            }
+                            return
+                        }
+
+                        if (response.isSuccessful) {
+                            Log.i(TAG, "Account deleted successfully: $responseBody")
+                            showToast(context, "Account deleted")
+                            callback(true)
+                        } else {
+                            Log.e(TAG, "Delete error ${response.code}: $responseBody")
+                            showToast(context, "Delete failed!")
+                            callback(false)
+                        }
+                    }
+                })
+            }
+
+            sendRequest(accessToken)
+        }
+
         fun authEditUsernameToServer(context: Context, newUsername: String, callback: (success: Boolean) -> Unit) {
             Log.i(TAG, "Trying to edit username to $newUsername")
 
@@ -491,6 +581,7 @@ class Helpers {
                 val request = buildAuthorizedRequest(
                     "$SERVER_URL/api/update-username",
                     token = token,
+                    method = "PUT",
                     body = requestBody
                 )
 
@@ -556,6 +647,7 @@ class Helpers {
                 val request = buildAuthorizedRequest(
                     "$SERVER_URL/api/update-email",
                     token = token,
+                    method = "PUT",
                     body = requestBody
                 )
 
@@ -599,64 +691,8 @@ class Helpers {
 
             sendRequest(accessToken)
         }
-        fun authAccountDelete(context: Context, callback: (success: Boolean) -> Unit) {
-            Log.i(TAG, "Trying to delete account...")
 
-            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
-            val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
-            if (accessToken.isEmpty()) {
-                Log.e(TAG, "Access token missing")
-                showToast(context, "Not logged in")
-                return
-            }
-
-            fun sendRequest(token: String) {
-                val request = buildAuthorizedRequest(
-                    "$SERVER_URL/api/account_delete",
-                    token = token,
-                    method = "DELETE",
-                    body = null
-                )
-
-                httpClient.newCall(request).enqueue(object : Callback {
-                    override fun onFailure(call: Call, e: IOException) {
-                        Log.e(TAG, "Account delete failed: ${e.localizedMessage}")
-                        showToast(context, "Delete failed!")
-                        callback(false)
-                    }
-
-                    override fun onResponse(call: Call, response: Response) {
-                        val responseBody = response.body?.string()
-
-                        if (response.code == 401) {
-                            refreshAccessToken(context) { success, newToken ->
-                                if (success && !newToken.isNullOrEmpty()) {
-                                    sendRequest(newToken) // Retry with refreshed token
-                                } else {
-                                    showToast(context, "Session expired. Please log in again.")
-                                    callback(false)
-                                }
-                            }
-                            return
-                        }
-
-                        if (response.isSuccessful) {
-                            Log.i(TAG, "Account deleted successfully: $responseBody")
-                            showToast(context, "Account deleted")
-                            callback(true)
-                        } else {
-                            Log.e(TAG, "Delete error ${response.code}: $responseBody")
-                            showToast(context, "Delete failed!")
-                            callback(false)
-                        }
-                    }
-                })
-            }
-
-            sendRequest(accessToken)
-        }
-
-        fun authEditSummaryToServer(context: Context, newFrequency: String, callback: (success: Boolean) -> Unit) {
+        fun editSummaryFreqToServer(context: Context, newFrequency: String, callback: (success: Boolean) -> Unit) {
             Log.i(TAG, "Trying to edit summary frequency to $newFrequency")
 
             val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
@@ -676,9 +712,9 @@ class Helpers {
 
             fun sendRequest(token: String) {
                 val request = buildAuthorizedRequest(
-                    "$SERVER_URL/api/summary_frequency",
+                    "$SERVER_URL/api/summary-frequency",
                     token = token,
-                    method = "POST",
+                    method = "PUT",
                     body = requestBody
                 )
 
@@ -719,23 +755,68 @@ class Helpers {
 
             sendRequest(accessToken)
         }
+        fun editDigestEnabledToServer(context: Context, newEnabled: Boolean, callback: (success: Boolean) -> Unit) {
+            Log.i(TAG, "Trying to edit digest enabled to $newEnabled")
 
-        fun autoLogout(context: Context) {
-            Log.i(TAG, "autoLogout | Logging out user...")
-
-            val prefs = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
-            prefs.edit {
-                remove("username")
-                remove("email")
-                remove("access_token")
-                remove("refresh_token")
+            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
+            val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
+            if (accessToken.isEmpty()) {
+                Log.e(TAG, "Access token missing")
+                showToast(context, "Not logged in")
+                return
             }
 
-            showToast(context, "Session expired. Please sign in again.")
+            val jsonBody = """
+                {
+                    "enabled": "$newEnabled"
+                }
+            """.trimIndent()
+            val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
 
-            val intent = Intent(context, com.sil.buildmode.Welcome::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            context.startActivity(intent)
+            fun sendRequest(token: String) {
+                val request = buildAuthorizedRequest(
+                    "$SERVER_URL/api/digest-enabled",
+                    token = token,
+                    method = "PUT",
+                    body = requestBody
+                )
+
+                httpClient.newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        Log.e(TAG, "Edit digest enabled failed: ${e.localizedMessage}")
+                        showToast(context, "Edit failed!")
+                        callback(false)
+                    }
+
+                    override fun onResponse(call: Call, response: Response) {
+                        val responseBody = response.body?.string()
+
+                        if (response.code == 401) {
+                            refreshAccessToken(context) { success, newToken ->
+                                if (success && !newToken.isNullOrEmpty()) {
+                                    sendRequest(newToken) // retry with refreshed token
+                                } else {
+                                    showToast(context, "Session expired. Please log in again.")
+                                    callback(false)
+                                }
+                            }
+                            return
+                        }
+
+                        if (response.isSuccessful) {
+                            Log.i(TAG, "Edit digest enabled successful: $responseBody")
+                            showToast(context, "Digest enabled updated")
+                            callback(true)
+                        } else {
+                            Log.e(TAG, "Edit digest enabled error ${response.code}: $responseBody")
+                            showToast(context, "Edit failed!")
+                            callback(false)
+                        }
+                    }
+                })
+            }
+
+            sendRequest(accessToken)
         }
         // endregion
 
