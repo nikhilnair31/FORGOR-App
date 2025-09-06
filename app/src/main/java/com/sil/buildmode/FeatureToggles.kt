@@ -108,9 +108,12 @@ class FeatureToggles : AppCompatActivity() {
         }
     }
     private fun initSummaryCycleButton() {
-        summaryIndex = generalSharedPreferences.getInt("summary_index", 0).coerceIn(0, summaryOptions.lastIndex)
-        Log.i(TAG, "digestIndex: $summaryIndex")
-        renderSummaryButton(summaryIndex)
+        val cachedSummaryIndex = generalSharedPreferences.getInt("summary_index", 0).coerceIn(0, summaryOptions.lastIndex)
+        renderSummaryButton(cachedSummaryIndex)
+        Helpers.getSummaryFrequency(this) { summaryIndex ->
+            generalSharedPreferences.edit { putInt("summary_index", summaryIndex) }
+            renderSummaryButton(cachedSummaryIndex)
+        }
 
         summaryCycleButton.setOnClickListener {
             val newIndex = (summaryIndex + 1) % summaryOptions.size
@@ -119,8 +122,14 @@ class FeatureToggles : AppCompatActivity() {
         }
     }
     private fun initDigestToggle() {
-        val isDigestEnabled = generalSharedPreferences.getBoolean("digest_enabled", false)
-        updateToggle(digestToggleButton, isDigestEnabled)
+        val cachedIsDigestEnabled = generalSharedPreferences.getBoolean("digest_enabled", false)
+        Log.i(TAG, "cachedIsDigestEnabled: $cachedIsDigestEnabled")
+        updateToggle(digestToggleButton, cachedIsDigestEnabled)
+        Helpers.getIsDigestEnabled(this) { isDigestEnabled ->
+            Log.i(TAG, "isDigestEnabled: $isDigestEnabled")
+            generalSharedPreferences.edit { putBoolean("digest_enabled", isDigestEnabled) }
+            updateToggle(digestToggleButton, isDigestEnabled)
+        }
 
         digestToggleButton.setOnCheckedChangeListener { _, isChecked ->
             Log.i(TAG, "Digest toggle changed: $isChecked")

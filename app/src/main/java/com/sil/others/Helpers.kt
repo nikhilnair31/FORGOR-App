@@ -212,7 +212,7 @@ class Helpers {
         }
         // endregion
 
-        // region Saving Related
+        // region File Related
         fun getSavesLeft(context: Context, callback: (Int) -> Unit) {
             Log.i(TAG, "Getting saves left from server...")
 
@@ -560,7 +560,120 @@ class Helpers {
             sendRequest(accessToken)
         }
 
-        fun authEditUsernameToServer(context: Context, newUsername: String, callback: (success: Boolean) -> Unit) {
+        fun getSummaryFrequency(context: Context, callback: (success: Int) -> Unit) {
+            Log.i(TAG, "Trying to get summary frequency index...")
+
+            fun sendRequest(token: String) {
+                val request = buildAuthorizedRequest(
+                    url = "$SERVER_URL/api/summary-frequency",
+                    method = "GET",
+                    token = token
+                )
+
+                httpClient.newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        Log.e(TAG, "Failed to get summary frequency index: ${e.localizedMessage}")
+                        showToast(context, "Failed to get summary frequency index!")
+                        callback(0)
+                    }
+
+                    override fun onResponse(call: Call, response: Response) {
+                        if (response.code == 401) {
+                            refreshAccessToken(context) { success, newToken ->
+                                if (success && newToken != null) sendRequest(newToken)
+                                else {
+                                    showToast(context, "Login expired")
+                                    callback(0)
+                                }
+                            }
+                            return
+                        }
+
+                        if (response.isSuccessful) {
+                            response.body?.string()?.let { body ->
+                                try {
+                                    val json = JSONObject(body)
+                                    val summaryFrequencyIndex = json.getInt("summary_index")
+                                    val sharedPrefs = context.getSharedPreferences(TAG, MODE_PRIVATE)
+                                    sharedPrefs.edit { putInt("summary_index", summaryFrequencyIndex) }
+                                    callback(summaryFrequencyIndex)
+                                } catch (e: Exception) {
+                                    Log.e(TAG, "JSON parsing error: ${e.localizedMessage}")
+                                    callback(0)
+                                }
+                            } ?: run {
+                                callback(0)
+                            }
+                        } else {
+                            showToast(context, "Could not get summary frequency index")
+                            callback(0)
+                        }
+                    }
+                })
+            }
+
+            withValidToken(context, { token -> sendRequest(token) })
+        }
+        fun getIsDigestEnabled(context: Context, callback: (success: Boolean) -> Unit) {
+            Log.i(TAG, "Trying to get digest enabled...")
+
+            fun sendRequest(token: String) {
+                val request = buildAuthorizedRequest(
+                    url = "$SERVER_URL/api/digest-enabled",
+                    method = "GET",
+                    token = token
+                )
+
+                httpClient.newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        Log.e(TAG, "Failed to get digest enabled: ${e.localizedMessage}")
+                        showToast(context, "Failed to get digest enabled!")
+                        callback(false)
+                    }
+
+                    override fun onResponse(call: Call, response: Response) {
+                        if (response.code == 401) {
+                            refreshAccessToken(context) { success, newToken ->
+                                if (success && newToken != null) sendRequest(newToken)
+                                else {
+                                    showToast(context, "Login expired")
+                                    callback(false)
+                                }
+                            }
+                            return
+                        }
+                        if (response.code == 403) {
+                            showToast(context, "Daily save limit reached")
+                            return
+                        }
+
+                        if (response.isSuccessful) {
+                            response.body?.string()?.let { body ->
+                                try {
+                                    val json = JSONObject(body)
+                                    val digestEnabled = json.getBoolean("digest_enabled")
+                                    val sharedPrefs = context.getSharedPreferences(TAG, MODE_PRIVATE)
+                                    sharedPrefs.edit { putBoolean("digest_enabled", digestEnabled) }
+                                    callback(digestEnabled)
+                                } catch (e: Exception) {
+                                    Log.e(TAG, "JSON parsing error: ${e.localizedMessage}")
+                                    callback(false)
+                                }
+                            } ?: run {
+                                callback(false)
+                            }
+                        } else {
+                            showToast(context, "Could not get digest enabled")
+                            callback(false)
+                        }
+                    }
+                })
+            }
+
+            withValidToken(context, { token -> sendRequest(token) })
+        }
+
+        fun editUserUsernameToServer(context: Context, newUsername: String, callback: (success: Boolean) -> Unit) {
             Log.i(TAG, "Trying to edit username to $newUsername")
 
             val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
@@ -626,7 +739,7 @@ class Helpers {
 
             sendRequest(accessToken)
         }
-        fun authEditEmailToServer(context: Context, newEmail: String, callback: (success: Boolean) -> Unit) {
+        fun editUserEmailToServer(context: Context, newEmail: String, callback: (success: Boolean) -> Unit) {
             Log.i(TAG, "Trying to edit email to $newEmail")
 
             val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
@@ -692,7 +805,6 @@ class Helpers {
 
             sendRequest(accessToken)
         }
-
         fun editSummaryFreqToServer(context: Context, newFrequency: String, callback: (success: Boolean) -> Unit) {
             Log.i(TAG, "Trying to edit summary frequency to $newFrequency")
 

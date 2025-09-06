@@ -1,26 +1,18 @@
 package com.sil.buildmode
 
-import android.Manifest
 import android.content.Intent
 import android.content.SharedPreferences
-import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.os.Bundle
-import android.os.PowerManager
 import android.text.Editable
 import android.util.Log
 import android.view.HapticFeedbackConstants
 import android.widget.Button
 import android.widget.EditText
-import android.widget.TextView
-import android.widget.ToggleButton
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.ThemedSpinnerAdapter
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
-import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -141,7 +133,7 @@ class User : AppCompatActivity() {
         Log.i(TAG, "editUsernameRelated")
 
         val newUsername = usernameEditText.text.toString()
-        Helpers.authEditUsernameToServer(this, newUsername) { success ->
+        Helpers.editUserUsernameToServer(this, newUsername) { success ->
             runOnUiThread {
                 if (success) {
                     Log.i(TAG, "Edit username success")
@@ -161,7 +153,7 @@ class User : AppCompatActivity() {
         Log.i(TAG, "editEmailRelated")
 
         val newEmail = emailEditText.text.toString()
-        Helpers.authEditEmailToServer(this, newEmail) { success ->
+        Helpers.editUserEmailToServer(this, newEmail) { success ->
             runOnUiThread {
                 if (success) {
                     Log.i(TAG, "Edit email success")
