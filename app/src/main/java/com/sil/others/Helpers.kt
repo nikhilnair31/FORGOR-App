@@ -25,6 +25,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.Call
 import okhttp3.Callback
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
@@ -810,6 +811,69 @@ class Helpers {
                         } else {
                             Log.e(TAG, "Edit digest enabled error ${response.code}: $responseBody")
                             showToast(context, "Edit failed!")
+                            callback(false)
+                        }
+                    }
+                })
+            }
+
+            sendRequest(accessToken)
+        }
+        // endregion
+
+        // region Interaction Related
+        fun insertPostInteraction(context: Context, fileId: Int, query: String, callback: (success: Boolean) -> Unit) {
+            Log.i(TAG, "Trying to insert interaction for fileId $fileId with query $query")
+
+            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
+            val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
+            if (accessToken.isEmpty()) {
+                Log.e(TAG, "Access token missing")
+                showToast(context, "Not logged in")
+                return
+            }
+
+            // Valid JSON, no trailing comma. fileId stays numeric.
+            val json = JSONObject().apply {
+                put("fileId", fileId)
+                put("query", query)
+            }
+            val requestBody = json.toString().toRequestBody("application/json".toMediaType())
+
+            fun sendRequest(token: String) {
+                val request = buildAuthorizedRequest(
+                    "$SERVER_URL/api/insert-post-interaction",
+                    token = token,
+                    method = "PUT",
+                    body = requestBody
+                )
+
+                httpClient.newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        Log.e(TAG, "Insert interaction failed: ${e.localizedMessage}")
+                        callback(false)
+                    }
+
+                    override fun onResponse(call: Call, response: Response) {
+                        val responseBody = response.body?.string()
+
+                        if (response.code == 401) {
+                            refreshAccessToken(context) { success, newToken ->
+                                if (success && !newToken.isNullOrEmpty()) {
+                                    sendRequest(newToken) // retry with refreshed token
+                                } else {
+                                    showToast(context, "Session expired. Please log in again.")
+                                    callback(false)
+                                }
+                            }
+                            return
+                        }
+
+                        if (response.isSuccessful) {
+                            Log.i(TAG, "Insert interaction successful: $responseBody")
+                            callback(true)
+                        } else {
+                            Log.e(TAG, "Insert interaction error ${response.code}: $responseBody")
                             callback(false)
                         }
                     }

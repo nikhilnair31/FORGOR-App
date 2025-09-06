@@ -2,6 +2,7 @@ package com.sil.buildmode
 
 import android.app.AlertDialog
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -10,11 +11,13 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.edit
 import androidx.core.view.WindowCompat
 import com.bumptech.glide.Glide
 import com.github.chrisbanes.photoview.PhotoView
 import com.sil.others.Helpers
 import com.sil.others.Helpers.Companion.openExternal
+import com.sil.others.Helpers.Companion.showToast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -25,8 +28,10 @@ import org.json.JSONObject
 class FullContent : AppCompatActivity() {
     // region Vars
     private val TAG = "FullContent"
-
+    private val PREFS_GENERAL = "com.sil.buildmode.generalSharedPrefs"
     private val SERVER_URL = BuildConfig.SERVER_URL
+
+    private lateinit var generalSharedPreferences: SharedPreferences
 
     private lateinit var imageView: PhotoView
     private lateinit var similarPostButton: ImageButton
@@ -40,6 +45,8 @@ class FullContent : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_full_image)
 
+        generalSharedPreferences = getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
+
         rootConstraintLayout = findViewById(R.id.rootConstraintLayout)
         imageView = findViewById(R.id.fullImageView)
         similarPostButton = findViewById(R.id.similarPostButton)
@@ -47,13 +54,27 @@ class FullContent : AppCompatActivity() {
         linksLinearLayout = findViewById(R.id.linksLinearLayout)
         deletePostButton = findViewById(R.id.deletePostButton)
 
+        val fileId = intent.getIntExtra("fileId", 0)
         val fileName = intent.getStringExtra("fileName") ?: ""
         val tags = intent.getStringExtra("tags") ?: ""
+        val lastQuery = generalSharedPreferences.getString("last_query", "") ?: ""
 
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-
+        initInteraction(fileId, lastQuery)
         initButtons(fileName)
         fillChips(tags)
+
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+    }
+
+    private fun initInteraction(fileId: Int, lastQuery: String) {
+        // Insert to interactions
+        Helpers.insertPostInteraction(this, fileId, lastQuery) { success ->
+            if (success) {
+                Log.i(TAG, "Inserted post interaction")
+            } else {
+                Log.e(TAG, "Failed to insert post interaction")
+            }
+        }
     }
 
     private fun initButtons(fileName: String) {

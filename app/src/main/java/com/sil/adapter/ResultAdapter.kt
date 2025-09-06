@@ -68,6 +68,7 @@ RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
     override fun onBindViewHolder(holder: ResultViewHolder, position: Int) {
         val item = dataList[position]
 
+        val fileId = item.optInt("file_id", 0)
         val fileName = item.optString("file_name", "")
         val thumbnailName = item.optString("thumbnail_name", "")
         val tags = item.optString("tags", "")
@@ -86,9 +87,10 @@ RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
         loadThumbnailWithRetry(glideUrl, holder)
 
         holder.itemView.setOnClickListener {
-            Log.i(TAG, "Item clicked: $item")
+            // Log.i(TAG, "setOnClickListener item: $item")
 
             val intent = Intent(context, FullContent::class.java).apply {
+                putExtra("fileId", fileId)
                 putExtra("fileName", fileName)
                 putExtra("tags", tags)
             }
