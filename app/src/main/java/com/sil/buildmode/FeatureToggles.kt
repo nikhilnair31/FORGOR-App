@@ -119,6 +119,9 @@ class FeatureToggles : AppCompatActivity() {
         }
     }
     private fun initDigestToggle() {
+        val isDigestEnabled = generalSharedPreferences.getBoolean("digest_enabled", false)
+        updateToggle(digestToggleButton, isDigestEnabled)
+
         digestToggleButton.setOnCheckedChangeListener { _, isChecked ->
             Log.i(TAG, "Digest toggle changed: $isChecked")
             digestToggleButton.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
@@ -139,7 +142,7 @@ class FeatureToggles : AppCompatActivity() {
         toggle.background = ContextCompat.getDrawable(this, if (isChecked) R.color.accent_0 else R.color.base_0)
 
         toggle.text = when (toggle) {
-            screenshotToggleButton -> getString(if (isChecked) R.string.toggleOnText else R.string.toggleOffText)
+            toggle -> getString(if (isChecked) R.string.toggleOnText else R.string.toggleOffText)
             else -> ""
         }
     }
