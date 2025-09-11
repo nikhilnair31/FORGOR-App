@@ -1,9 +1,7 @@
 package com.sil.buildmode
 
-import android.app.AlertDialog
 import android.content.Intent
 import android.content.SharedPreferences
-import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -18,6 +16,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.edit
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -36,7 +35,6 @@ import com.sil.workers.TokenRefreshWorker
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 import kotlin.math.max
-import androidx.core.content.edit
 
 class Main : AppCompatActivity() {
     // region Vars
@@ -390,9 +388,7 @@ class Main : AppCompatActivity() {
         )
     }
 
-    private val pickImagesLauncher = registerForActivityResult(
-        ActivityResultContracts.PickMultipleVisualMedia()
-    ) { uris ->
+    private val pickImagesLauncher = registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) { uris ->
         if (uris.isNullOrEmpty()) {
             Toast.makeText(this, "No images selected", Toast.LENGTH_SHORT).show()
             return@registerForActivityResult

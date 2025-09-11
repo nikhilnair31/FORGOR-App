@@ -15,6 +15,7 @@ import androidx.core.content.edit
 import androidx.core.view.WindowCompat
 import com.bumptech.glide.Glide
 import com.github.chrisbanes.photoview.PhotoView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.sil.others.Helpers
 import com.sil.others.Helpers.Companion.openExternal
 import com.sil.others.Helpers.Companion.showToast
@@ -119,9 +120,9 @@ class FullContent : AppCompatActivity() {
 
         // Deletion
         deletePostButton.setOnClickListener {
-            AlertDialog.Builder(this)
-                .setTitle("Delete File")
-                .setMessage("Are you sure you want to delete this file?")
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Delete screenshot?")
+                .setMessage("It will be removed from the server and cannot be recovered. The screenshot will NOT be deleted from your device.")
                 .setPositiveButton("Delete") { _, _ ->
                     Helpers.deleteFile(this, fileName)
                     CoroutineScope(Dispatchers.Main).launch {

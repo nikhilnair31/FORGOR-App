@@ -12,9 +12,9 @@ class MyApplication : Application() {
         super.onCreate()
 
         // Set default crash handler
-        Thread.setDefaultUncaughtExceptionHandler(Thread.UncaughtExceptionHandler { thread: Thread?, throwable: Throwable? ->
+        Thread.setDefaultUncaughtExceptionHandler { thread: Thread?, throwable: Throwable? ->
             logCrashToFile(throwable)
-        })
+        }
     }
 
     private fun logCrashToFile(throwable: Throwable?) {

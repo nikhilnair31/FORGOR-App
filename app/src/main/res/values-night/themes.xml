@@ -1,7 +1,7 @@
 <resources>
     <style
         name="Theme.BUILDMODE"
-        parent="Theme.MaterialComponents.DayNight.NoActionBar"
+        parent="Theme.Material3.DayNight.NoActionBar"
     >
         <!-- Base -->
         <item name="android:enforceNavigationBarContrast">false</item>
