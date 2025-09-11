@@ -11,6 +11,7 @@
 
     <application
         android:label="@string/appName"
+        android:name="com.sil.others.MyApplication"
         android:supportsRtl="true"
         android:allowBackup="false"
         android:icon="@mipmap/mia_launcher"
