@@ -1,16 +1,19 @@
 package com.sil.services
 
 import android.app.Service
+import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
 import android.os.Environment
 import android.os.FileObserver
 import android.os.IBinder
+import android.provider.MediaStore
 import android.util.Log
 import com.sil.others.Helpers
 import com.sil.others.NotificationHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -79,24 +82,55 @@ class ScreenshotService : Service() {
     }
 
     private inner class ScreenshotFileObserver(path: String) : FileObserver(path, MOVED_TO) {
-        private val observedPath = path
-
         override fun onEvent(event: Int, path: String?) {
-            Log.i(TAG, "onEvent | event: $event | path: $path")
-
             if (event == MOVED_TO && path != null) {
-                val file = File(observedPath, path)
-                if (Helpers.isImageFile(file.name)) {
-                    Log.i(TAG, "New screenshot detected at ${file.absolutePath} with name: ${file.name}")
+                Log.i(TAG, "Screenshot detected: $path")
 
-                    Helpers.uploadImageFileToServer(this@ScreenshotService, file)
+                // Delay to ensure MediaStore has indexed it
+                CoroutineScope(Dispatchers.IO).launch {
+                    delay(1000)
+
+                    val projection = arrayOf(
+                        MediaStore.Images.Media._ID,
+                        MediaStore.Images.Media.DISPLAY_NAME,
+                        MediaStore.Images.Media.DATE_ADDED
+                    )
+
+                    val selection = "${MediaStore.Images.Media.DISPLAY_NAME}=?"
+                    val selectionArgs = arrayOf(path)
+
+                    val sortOrder = "${MediaStore.Images.Media.DATE_ADDED} DESC"
+
+                    contentResolver.query(
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                        projection,
+                        selection,
+                        selectionArgs,
+                        sortOrder
+                    )?.use { cursor ->
+                        if (cursor.moveToFirst()) {
+                            val idCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+                            val id = cursor.getLong(idCol)
+                            val uri = ContentUris.withAppendedId(
+                                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                                id
+                            )
+
+                            Log.i(TAG, "Uploading screenshot via URI: $uri")
+
+                            val tempFile = Helpers.copyUriToTempFile(this@ScreenshotService, uri)
+                            if (tempFile != null) {
+                                Helpers.uploadImageFileToServer(this@ScreenshotService, tempFile)
+                            } else {
+                                Log.e(TAG, "Failed to copy screenshot to temp file")
+                            }
+                        } else {
+                            Log.e(TAG, "No MediaStore match for $path")
+                        }
+                    }
                 }
             }
         }
     }
     // endregion
-
-    companion object {
-        private val TAG = "Screenshot Service"
-    }
 }

@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
+import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.util.Log
@@ -158,10 +159,7 @@ class FeaturePermissions : AppCompatActivity() {
         toggle.isChecked = isChecked
         toggle.background = ContextCompat.getDrawable(this, if (isChecked) R.color.accent_0 else R.color.base_0)
 
-        toggle.text = when (toggle) {
-            screenshotToggleButton -> getString(if (isChecked) R.string.toggleOnText else R.string.toggleOffText)
-            else -> ""
-        }
+        toggle.text = getString(if (isChecked) R.string.toggleOnText else R.string.toggleOffText)
     }
     // endregion
 
@@ -207,17 +205,21 @@ class FeaturePermissions : AppCompatActivity() {
 
     // region Permissions Related
     private fun requestScreenshotPermissions() {
-        val permissions = arrayOf(
-            Manifest.permission.READ_MEDIA_IMAGES,
-            Manifest.permission.POST_NOTIFICATIONS,
-        )
-        if (!hasRuntimePermissions(permissions)) {
-            ActivityCompat.requestPermissions(this, permissions, initRequestCode)
-        } else if (!isBatteryOptimized()) {
-            requestIgnoreBatteryOptimizations()
-        } else {
-            onScreenshotPermissionsGranted()
+        val permissions = when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> arrayOf(
+                Manifest.permission.READ_MEDIA_IMAGES,
+                Manifest.permission.READ_MEDIA_VIDEO,
+                Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED,
+                Manifest.permission.POST_NOTIFICATIONS
+            )
+
+            else -> arrayOf(
+                Manifest.permission.READ_MEDIA_IMAGES,
+                Manifest.permission.READ_MEDIA_VIDEO,
+                Manifest.permission.POST_NOTIFICATIONS
+            )
         }
+        ActivityCompat.requestPermissions(this, permissions, initRequestCode)
     }
 
     private fun hasRuntimePermissions(permissions: Array<String>): Boolean {
@@ -265,11 +267,21 @@ class FeaturePermissions : AppCompatActivity() {
     }
 
     private fun areScreenshotPermissionsGranted(): Boolean {
-        val permissions = arrayOf(
-            Manifest.permission.READ_MEDIA_IMAGES,
-            Manifest.permission.POST_NOTIFICATIONS
-        )
-        return hasRuntimePermissions(permissions) && isBatteryOptimized()
+        return when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> {
+                ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED) == PackageManager.PERMISSION_GRANTED &&
+                        ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED &&
+                        isBatteryOptimized()
+            }
+
+            else -> {
+                ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.READ_MEDIA_IMAGES
+                ) == PackageManager.PERMISSION_GRANTED &&
+                        isBatteryOptimized()
+            }
+        }
     }
 
     private fun onScreenshotPermissionsGranted() {

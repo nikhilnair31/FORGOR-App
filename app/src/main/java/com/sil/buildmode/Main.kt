@@ -14,6 +14,7 @@ import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -203,14 +204,15 @@ class Main : AppCompatActivity() {
                 filterChipScroll.visibility = View.GONE
             } else {
                 optionsButtonsLayout.visibility = View.VISIBLE
-
             }
         }
         filterPostsButton.setOnClickListener {
             filterChipScroll.visibility = if (filterChipScroll.isVisible) View.GONE else View.VISIBLE
         }
         fileUploadButton.setOnClickListener {
-            pickImagesLauncher.launch(arrayOf("image/*"))
+            pickImagesLauncher.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+            )
         }
         settingsButton.setOnClickListener {
             startActivity(Intent(this, Settings::class.java))
@@ -388,25 +390,25 @@ class Main : AppCompatActivity() {
         )
     }
 
-    private val pickImagesLauncher = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris: List<Uri> ->
-        if (uris.isEmpty()) {
+    private val pickImagesLauncher = registerForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia()
+    ) { uris ->
+        if (uris.isNullOrEmpty()) {
             Toast.makeText(this, "No images selected", Toast.LENGTH_SHORT).show()
             return@registerForActivityResult
         }
 
-        // Persist read permission so other Activities (and future sessions) can read them
+        // Persist temporary read permission
         uris.forEach { uri ->
             try {
                 contentResolver.takePersistableUriPermission(
                     uri,
                     Intent.FLAG_GRANT_READ_URI_PERMISSION
                 )
-            } catch (_: SecurityException) {
-                // It's okay if it's not persistable on some devices; we still pass transient grants below.
-            }
+            } catch (_: SecurityException) { }
         }
 
-        // Hand off to your existing Share activity which already handles upload logic.
+        // Forward to your existing Share activity
         val sendIntent = Intent(this, Share::class.java).apply {
             action = Intent.ACTION_SEND_MULTIPLE
             type = "image/*"
