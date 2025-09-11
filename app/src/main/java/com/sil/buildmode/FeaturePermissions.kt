@@ -127,8 +127,10 @@ class FeaturePermissions : AppCompatActivity() {
     }
     private fun initDigestToggle() {
         val cachedIsDigestEnabled = generalSharedPreferences.getBoolean("digest_enabled", false)
+        Log.i(TAG, "cachedIsDigestEnabled: $cachedIsDigestEnabled")
         updateToggle(digestToggleButton, cachedIsDigestEnabled)
         Helpers.getIsDigestEnabled(this) { isDigestEnabled ->
+            Log.i(TAG, "isDigestEnabled: $isDigestEnabled")
             generalSharedPreferences.edit { putBoolean("digest_enabled", isDigestEnabled) }
             updateToggle(digestToggleButton, isDigestEnabled)
         }
@@ -222,19 +224,9 @@ class FeaturePermissions : AppCompatActivity() {
         ActivityCompat.requestPermissions(this, permissions, initRequestCode)
     }
 
-    private fun hasRuntimePermissions(permissions: Array<String>): Boolean {
-        return permissions.all {
-            ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
-        }
-    }
-
     private fun isBatteryOptimized(): Boolean {
         val pm = getSystemService(POWER_SERVICE) as PowerManager
         return pm.isIgnoringBatteryOptimizations(packageName)
-    }
-    private fun requestIgnoreBatteryOptimizations() {
-        val intent = Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-        startActivityForResult(intent, batteryUnrestrictedRequestCode)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -255,7 +247,8 @@ class FeaturePermissions : AppCompatActivity() {
         if (requestCode == initRequestCode) {
             if (grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
                 if (!isBatteryOptimized()) {
-                    requestIgnoreBatteryOptimizations()
+                    val intent = Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                    startActivityForResult(intent, batteryUnrestrictedRequestCode)
                 } else {
                     onScreenshotPermissionsGranted()
                 }
