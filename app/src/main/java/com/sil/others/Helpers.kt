@@ -1181,7 +1181,7 @@ class Helpers {
             }
         }
 
-        fun bulkDownloadAll(context: Context, callback: (success: Boolean) -> Unit) {
+        fun requestDataExport(context: Context, callback: (success: Boolean) -> Unit) {
             Log.i(TAG, "Starting bulk download...")
 
             val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
@@ -1195,7 +1195,7 @@ class Helpers {
 
             fun sendRequest(token: String) {
                 val request = buildAuthorizedRequest(
-                    "$SERVER_URL/api/bulk_download_all",
+                    "$SERVER_URL/api/data-export",
                     token = token,
                     method = "GET",
                     body = null
@@ -1209,26 +1209,38 @@ class Helpers {
                     }
 
                     override fun onResponse(call: Call, response: Response) {
-                        if (response.code == 401) {
-                            refreshAccessToken(context) { success, newToken ->
-                                if (success && !newToken.isNullOrEmpty()) {
-                                    sendRequest(newToken) // retry
-                                } else {
-                                    showToast(context, "Session expired. Please log in again.")
-                                    callback(false)
+                        when (response.code) {
+                            200 -> {
+                                Log.i(TAG, "Bulk download successful!")
+                                showToast(context, "Bulk download successful!")
+                                callback(true)
+                            }
+
+                            401 -> {
+                                refreshAccessToken(context) { success, newToken ->
+                                    if (success && !newToken.isNullOrEmpty()) {
+                                        sendRequest(newToken) // retry
+                                    } else {
+                                        showToast(context, "Session expired. Please log in again.")
+                                        callback(false)
+                                    }
                                 }
                             }
-                            return
-                        }
 
-                        if (response.isSuccessful) {
-                            Log.i(TAG, "Bulk download successful!")
-                            showToast(context, "Bulk download successful!")
-                            callback(true)
-                        } else {
-                            Log.e(TAG, "Bulk download error ${response.code}")
-                            showToast(context, "Download failed!")
-                            callback(false)
+                            403 -> {
+                                showToast(context, "Forbidden or daily limit reached")
+                                callback(false)
+                            }
+                            429 -> {
+                                showToast(context, "Too many requests, slow down")
+                                callback(false)
+                            }
+
+                            else -> {
+                                Log.e(TAG, "Bulk download error ${response.code}")
+                                showToast(context, "Download failed! Code: ${response.code}")
+                                callback(false)
+                            }
                         }
                     }
                 })

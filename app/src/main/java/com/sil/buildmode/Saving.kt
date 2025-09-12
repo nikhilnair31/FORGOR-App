@@ -1,20 +1,13 @@
 package com.sil.buildmode
 
-import android.Manifest
-import android.content.Intent
 import android.content.SharedPreferences
-import android.content.pm.PackageManager
 import android.os.Bundle
-import android.os.PowerManager
 import android.util.Log
 import android.view.HapticFeedbackConstants
 import android.widget.Button
 import android.widget.TextView
-import android.widget.ToggleButton
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -22,8 +15,6 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.sil.others.Helpers
-import com.sil.others.Helpers.Companion.showToast
-import com.sil.services.ScreenshotService
 import kotlin.math.max
 
 class Saving : AppCompatActivity() {
@@ -34,7 +25,7 @@ class Saving : AppCompatActivity() {
     private lateinit var generalSharedPreferences: SharedPreferences
 
     private lateinit var savesLeftText: TextView
-    private lateinit var bulkDownloadButton: Button
+    private lateinit var requestDataExportButton: Button
     private lateinit var rootConstraintLayout: ConstraintLayout
     // endregion
 
@@ -49,10 +40,10 @@ class Saving : AppCompatActivity() {
     }
     private fun initRelated() {
         rootConstraintLayout = findViewById(R.id.rootConstraintLayout)
-        bulkDownloadButton = findViewById(R.id.bulkDownloadButton)
+        requestDataExportButton = findViewById(R.id.requestDataExportButton)
         savesLeftText = findViewById(R.id.savesLeftText)
 
-        bulkDownloadButton.setOnClickListener {
+        requestDataExportButton.setOnClickListener {
             showConfirmBulkDownload()
         }
 
@@ -80,12 +71,11 @@ class Saving : AppCompatActivity() {
     // endregion
 
     // region Data Related
-    private fun bulkDownloadAllData() {
-        bulkDownloadButton.isEnabled = false
-        Helpers.bulkDownloadAll(this) { success ->
+    private fun requestDataExport() {
+        requestDataExportButton.isEnabled = false
+        Helpers.requestDataExport(this) { success ->
             runOnUiThread {
-                bulkDownloadButton.isEnabled = true
-                if (success) showToast(this, "Backup emailed!") else showToast(this, "Download failed")
+                requestDataExportButton.isEnabled = true
             }
         }
     }
@@ -100,8 +90,8 @@ class Saving : AppCompatActivity() {
             .setNegativeButton("Cancel", null)
             .setPositiveButton("Send") { _, _ ->
                 // optional: small haptic
-                bulkDownloadButton.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                bulkDownloadAllData()
+                requestDataExportButton.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                requestDataExport()
             }
             .show()
     }
