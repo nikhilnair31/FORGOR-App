@@ -22,6 +22,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
+import androidx.core.view.isNotEmpty
 
 class FullContent : AppCompatActivity() {
     // region Vars
@@ -37,6 +38,7 @@ class FullContent : AppCompatActivity() {
     private lateinit var deletePostButton: ImageButton
     private lateinit var linksLinearLayout: LinearLayout
     private lateinit var rootConstraintLayout: ConstraintLayout
+    private var isUiVisible = true
     // endregion
 
     // region Common
@@ -60,6 +62,10 @@ class FullContent : AppCompatActivity() {
         val tags = intent.getStringExtra("tags") ?: ""
         val lastQuery = generalSharedPreferences.getString("last_query", "") ?: ""
 
+        imageView.setOnPhotoTapListener { _, _, _ ->
+            toggleUI()
+        }
+
         initInteraction(fileId, lastQuery)
         initButtons(fileName)
         initLinks(tags)
@@ -80,6 +86,45 @@ class FullContent : AppCompatActivity() {
     // endregion
 
     // region UI Related
+    private fun toggleUI() {
+        isUiVisible = !isUiVisible
+        val visibility = if (isUiVisible) View.VISIBLE else View.GONE
+
+        // Animate visibility (optional: remove if you want instant toggle)
+        listOf(similarPostButton, sharePostButton, deletePostButton).forEach { button ->
+            if (isUiVisible) {
+                button.animate().alpha(1f).setDuration(200).withStartAction {
+                    button.visibility = View.VISIBLE
+                }.start()
+            } else {
+                button.animate().alpha(0f).setDuration(200).withEndAction {
+                    button.visibility = View.GONE
+                }.start()
+            }
+        }
+
+        // Handle link layout separately
+        if (isUiVisible && linksLinearLayout.isNotEmpty()) {
+            linksLinearLayout.animate().alpha(1f).setDuration(200).withStartAction {
+                linksLinearLayout.visibility = View.VISIBLE
+            }.start()
+        } else {
+            linksLinearLayout.animate().alpha(0f).setDuration(200).withEndAction {
+                linksLinearLayout.visibility = View.GONE
+            }.start()
+        }
+
+        // Toggle system UI (status/nav bars)
+        if (!isUiVisible) {
+            window.decorView.systemUiVisibility = (
+                    View.SYSTEM_UI_FLAG_FULLSCREEN
+                            or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                            or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                    )
+        } else {
+            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+        }
+    }
     private fun initButtons(fileName: String) {
         val fileUrl = "$SERVER_URL/api/get_file/$fileName"
 

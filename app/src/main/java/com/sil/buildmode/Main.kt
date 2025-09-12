@@ -29,6 +29,7 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import com.google.android.material.appbar.AppBarLayout
 import com.sil.others.Helpers
 import com.sil.others.Helpers.Companion.showToast
 import com.sil.services.ScreenshotService
@@ -64,6 +65,7 @@ class Main : AppCompatActivity() {
     private var searchTextWatcherEnabled = true
     private var searchRunnable: Runnable? = null
     private lateinit var resultAdapter: ResultAdapter
+    private lateinit var appBarLayout: AppBarLayout
 
     private lateinit var emptyGroupLayout: ConstraintLayout
     private lateinit var emptyPlaceholder: TextView
@@ -129,7 +131,11 @@ class Main : AppCompatActivity() {
                     }
 
                     resultAdapter.updateData(resultList)
-                    // resultAdapter.notifyDataSetChanged()
+                    recyclerView.postDelayed({
+                        recyclerView.scrollToPosition(0)
+                        // Force AppBar to expand after scroll
+                        appBarLayout.setExpanded(true, true)
+                    }, 50)
                     recyclerView.fadeIn()
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to parse similar results: ${e.localizedMessage}")
@@ -170,6 +176,7 @@ class Main : AppCompatActivity() {
 
     // region UI Related
     private fun initUI() {
+        appBarLayout = findViewById(R.id.appBar)
         rootConstraintLayout = findViewById(R.id.rootConstraintLayout)
         optionsButtonsLayout = findViewById(R.id.optionsButtonsLayout)
         searchTextLayout = findViewById(R.id.searchTextLayout)
