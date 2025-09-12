@@ -1,6 +1,5 @@
 package com.sil.buildmode
 
-import android.app.AlertDialog
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
@@ -11,14 +10,12 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.content.edit
 import androidx.core.view.WindowCompat
 import com.bumptech.glide.Glide
 import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.sil.others.Helpers
 import com.sil.others.Helpers.Companion.openExternal
-import com.sil.others.Helpers.Companion.showToast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -42,6 +39,7 @@ class FullContent : AppCompatActivity() {
     private lateinit var rootConstraintLayout: ConstraintLayout
     // endregion
 
+    // region Common
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_full_image)
@@ -55,6 +53,8 @@ class FullContent : AppCompatActivity() {
         linksLinearLayout = findViewById(R.id.linksLinearLayout)
         deletePostButton = findViewById(R.id.deletePostButton)
 
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
         val fileId = intent.getIntExtra("fileId", 0)
         val fileName = intent.getStringExtra("fileName") ?: ""
         val tags = intent.getStringExtra("tags") ?: ""
@@ -62,11 +62,11 @@ class FullContent : AppCompatActivity() {
 
         initInteraction(fileId, lastQuery)
         initButtons(fileName)
-        fillChips(tags)
-
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        initLinks(tags)
     }
+    // endregion
 
+    // region Server Related
     private fun initInteraction(fileId: Int, lastQuery: String) {
         // Insert to interactions
         Helpers.insertPostInteraction(this, fileId, lastQuery) { success ->
@@ -77,7 +77,9 @@ class FullContent : AppCompatActivity() {
             }
         }
     }
+    // endregion
 
+    // region UI Related
     private fun initButtons(fileName: String) {
         val fileUrl = "$SERVER_URL/api/get_file/$fileName"
 
@@ -136,9 +138,11 @@ class FullContent : AppCompatActivity() {
         }
     }
 
-    private fun fillChips(tags: String) {
+    private fun initLinks(tags: String) {
+        // Clear previous links
         linksLinearLayout.removeAllViews()
 
+        // Get links else hide links
         val data = try {
             JSONObject(tags)
         } catch (_: Exception) {
@@ -146,45 +150,44 @@ class FullContent : AppCompatActivity() {
             return
         }
 
+        // Extract data
         val appName = data.optString("app_name", "")
         val links   = data.optJSONArray("links") ?: JSONArray()
         val handles = data.optJSONArray("account_identifiers") ?: JSONArray()
 
+        // Add chips for links and account identifiers
         var added = false
-        if (links.length() > 0) {
-            for (i in 0 until links.length()) {
-                val link = links.optString(i)?.trim().orEmpty()
-                if (link.isNotEmpty()) {
+        fun addChipButton(text: String, onClick: () -> Unit) {
+            val chip = layoutInflater.inflate(R.layout.item_link_chip, linksLinearLayout, false)
+            val tv = chip.findViewById<TextView>(R.id.chipTextView)
+            tv.text = text
+            chip.setOnClickListener { onClick() }
+            linksLinearLayout.addView(chip)
+        }
+        fun addChipsFromArray(arr: JSONArray, label: (String) -> String, url: (String) -> String) {
+            for (i in 0 until arr.length()) {
+                val raw = arr.optString(i)?.trim().orEmpty()
+                if (raw.isNotEmpty()) {
                     addChipButton(
-                        text = Helpers.sanitizeLinkLabel(link),
-                        onClick = { this.openExternal(link) }
+                        text = label(raw),
+                        onClick = { openExternal(url(raw)) }
                     )
                     added = true
                 }
             }
         }
-        if (handles.length() > 0) {
-            for (i in 0 until handles.length()) {
-                val handle = handles.optString(i)?.trim().orEmpty()
-                if (handle.isNotEmpty()) {
-                    val resolved = Helpers.resolveHandleToUrl(appName, handle)
-                    addChipButton(
-                        text = handle,
-                        onClick = { this.openExternal(resolved) }
-                    )
-                    added = true
-                }
-            }
-        }
-
+        addChipsFromArray(
+            links,
+            label = { Helpers.sanitizeLinkLabel(it) },
+            url = { it }
+        )
+        addChipsFromArray(
+            handles,
+            label = { it },
+            url = { Helpers.resolveHandleToUrl(appName, it) }
+        )
         linksLinearLayout.visibility = if (added) View.VISIBLE else View.GONE
     }
 
-    private fun addChipButton(text: String, onClick: () -> Unit) {
-        val chip = layoutInflater.inflate(R.layout.item_link_chip, linksLinearLayout, false)
-        val tv = chip.findViewById<TextView>(R.id.chipTextView)
-        tv.text = text
-        chip.setOnClickListener { onClick() }
-        linksLinearLayout.addView(chip)
-    }
+    // endregion
 }
