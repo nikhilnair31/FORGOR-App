@@ -57,5 +57,6 @@
     <string name="settingsUserDelete">DELETE ACCOUNT</string>
 
     <string name="savingText">SAVING</string>
+    <string name="noResultsIcon">NO RESULTS</string>
 
 </resources>

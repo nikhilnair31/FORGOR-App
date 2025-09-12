@@ -1472,6 +1472,34 @@ class Helpers {
         }
         // endregion
 
+        // region Network Related
+        fun isConnectedFast(context: Context): Boolean {
+            val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? android.net.ConnectivityManager
+            val network = cm?.activeNetwork ?: run {
+                Log.w("NetworkCheck", "No active network")
+                return false
+            }
+
+            val capabilities = cm.getNetworkCapabilities(network) ?: run {
+                Log.w("NetworkCheck", "No capabilities for active network")
+                return false
+            }
+
+            val hasInternet = capabilities.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            val isWifi = capabilities.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI)
+            val isCellular = capabilities.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR)
+            val downSpeedKbps = capabilities.linkDownstreamBandwidthKbps
+            val upSpeedKbps = capabilities.linkUpstreamBandwidthKbps
+
+            Log.i("NetworkCheck", "hasInternet=$hasInternet, isWifi=$isWifi, isCellular=$isCellular, down=$downSpeedKbps kbps, up=$upSpeedKbps kbps")
+
+            val fastEnough = downSpeedKbps >= 500
+            Log.i("NetworkCheck", "Network fast enough: $fastEnough")
+
+            return hasInternet && (isWifi || isCellular) && fastEnough
+        }
+        // endregion
+
         // region Service Related
         fun isServiceRunning(context: Context, serviceClass: Class<*>): Boolean {
             Log.i(TAG, "isServiceRunning | Checking if ${serviceClass.simpleName} is running...")

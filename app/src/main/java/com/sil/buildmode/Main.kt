@@ -30,6 +30,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.sil.others.Helpers
+import com.sil.others.Helpers.Companion.showToast
 import com.sil.services.ScreenshotService
 import com.sil.workers.TokenRefreshWorker
 import org.json.JSONObject
@@ -63,6 +64,7 @@ class Main : AppCompatActivity() {
     private var searchTextWatcherEnabled = true
     private var searchRunnable: Runnable? = null
     private lateinit var resultAdapter: ResultAdapter
+    private lateinit var emptyGroupLayout: ConstraintLayout
 
     private lateinit var searchTextLayout: ConstraintLayout
     private lateinit var searchEditText: EditText
@@ -169,6 +171,7 @@ class Main : AppCompatActivity() {
         rootConstraintLayout = findViewById(R.id.rootConstraintLayout)
         optionsButtonsLayout = findViewById(R.id.optionsButtonsLayout)
         searchTextLayout = findViewById(R.id.searchTextLayout)
+        emptyGroupLayout = findViewById(R.id.emptyGroupLayout)
         recyclerView = findViewById(R.id.imageRecyclerView)
         optionsExpandButton = findViewById(R.id.optionsButton)
         settingsButton = findViewById(R.id.settingsButton)
@@ -278,7 +281,13 @@ class Main : AppCompatActivity() {
 
                 resultAdapter.updateData(emptyList())
                 recyclerView.fadeOut()
+                // emptyGroupLayout.fadeIn()
 
+                return@Runnable
+            }
+
+            if (!Helpers.isConnectedFast(this)) {
+                showToast( this, "No or slow internet connection")
                 return@Runnable
             }
 
@@ -299,6 +308,7 @@ class Main : AppCompatActivity() {
 
                         resultAdapter.updateData(emptyList())
                         recyclerView.fadeOut()
+                        emptyGroupLayout.fadeIn()
 
                         return@runOnUiThread
                     }
@@ -312,11 +322,13 @@ class Main : AppCompatActivity() {
                         if (resultList.isEmpty()) {
                             resultAdapter.updateData(emptyList())
                             recyclerView.fadeOut()
+                            emptyGroupLayout.fadeIn()
                         } else {
                             allResults = resultList
                             resultAdapter.updateData(allResults)
                             recyclerView.scrollToPosition(0)
                             recyclerView.fadeIn()
+                            emptyGroupLayout.fadeOut()
                         }
                     } catch (e: Exception) {
                         Log.e(TAG, "Error parsing response: ${e.localizedMessage}")
