@@ -10,6 +10,7 @@ import android.net.Uri
 import android.os.Environment
 import android.provider.DocumentsContract
 import android.provider.MediaStore
+import android.util.Base64
 import android.util.Log
 import android.webkit.MimeTypeMap
 import android.widget.Toast
@@ -44,6 +45,8 @@ import java.io.IOException
 import java.io.OutputStream
 import java.util.TimeZone
 import java.util.concurrent.TimeUnit
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
 
 class Helpers {
     companion object {
@@ -1378,6 +1381,56 @@ class Helpers {
         }
         // endregion
 
+        // region Tracking Related
+        fun getTrackingLinks(context: Context, urls: JSONArray, callback: (JSONArray?) -> Unit) {
+            withValidToken(context, { token ->
+                val jsonBody = JSONObject().apply {
+                    put("urls", urls)
+                }
+                val requestBody = jsonBody.toString().toRequestBody("application/json".toMediaType())
+
+                val request = buildAuthorizedRequest(
+                    "$SERVER_URL/api/generate-tracking-links",
+                    token = token,
+                    body = requestBody
+                )
+
+                httpClient.newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        Log.e(TAG, "Failed to get tracking links: ${e.localizedMessage}")
+                        callback(null)
+                    }
+
+                    override fun onResponse(call: Call, response: Response) {
+                        val body = response.body?.string()
+                        if (response.isSuccessful && body != null) {
+                            try {
+                                val json = JSONObject(body)
+                                val links = json.optJSONArray("links") ?: JSONArray()
+                                callback(links)
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Parse error: ${e.localizedMessage}")
+                                callback(null)
+                            }
+                        } else if (response.code == 401) {
+                            refreshAccessToken(context) { success, newToken ->
+                                if (success && !newToken.isNullOrEmpty()) {
+                                    getTrackingLinks(context, urls, callback) // retry
+                                } else {
+                                    showToast(context, "Session expired")
+                                    callback(null)
+                                }
+                            }
+                        } else {
+                            Log.e(TAG, "Error ${response.code}: $body")
+                            callback(null)
+                        }
+                    }
+                })
+            }, onInvalid = { callback(null) })
+        }
+        // endregion
+
         // region URL Related
         fun sanitizeLinkLabel(url: String): String {
             return try {
@@ -1388,16 +1441,24 @@ class Helpers {
             } catch (_: Exception) { url }
         }
 
-        fun resolveHandleToUrl(appName: String, raw: String): String {
-            val handle = raw.removePrefix("@")
-            return when (appName.lowercase()) {
-                "youtube" -> "https://www.youtube.com/@$handle"
-                "instagram" -> "https://www.instagram.com/$handle/"
-                "twitter", "x" -> "https://x.com/$handle"
-                "tiktok" -> "https://www.tiktok.com/@$handle"
-                "reddit" -> "https://www.reddit.com/user/$handle"
-                else -> "https://www.google.com/search?q=${Uri.encode(raw)}"
+        fun resolveHandlesToUrls(appName: String, handles: JSONArray): JSONArray {
+            val result = JSONArray()
+            for (i in 0 until handles.length()) {
+                val raw = handles.optString(i)?.trim().orEmpty()
+                if (raw.isNotEmpty()) {
+                    val handle = raw.removePrefix("@")
+                    val url = when (appName.lowercase()) {
+                        "youtube" -> "https://www.youtube.com/@$handle"
+                        "instagram" -> "https://www.instagram.com/$handle/"
+                        "twitter", "x" -> "https://x.com/$handle"
+                        "tiktok" -> "https://www.tiktok.com/@$handle"
+                        "reddit" -> "https://www.reddit.com/user/$handle"
+                        else -> "https://www.google.com/search?q=${Uri.encode(raw)}"
+                    }
+                    result.put(url)
+                }
             }
+            return result
         }
 
         fun Context.openExternal(url: String) {
@@ -1409,7 +1470,6 @@ class Helpers {
                 Log.e(TAG, "Failed to open $url: ${e.localizedMessage}")
             }
         }
-
         // endregion
 
         // region Service Related

@@ -141,6 +141,7 @@ class FullContent : AppCompatActivity() {
     private fun initLinks(tags: String) {
         // Clear previous links
         linksLinearLayout.removeAllViews()
+        linksLinearLayout.visibility = View.GONE
 
         // Get links else hide links
         val data = try {
@@ -155,8 +156,13 @@ class FullContent : AppCompatActivity() {
         val links   = data.optJSONArray("links") ?: JSONArray()
         val handles = data.optJSONArray("account_identifiers") ?: JSONArray()
 
+        // Convert
+        val handleUrls = Helpers.resolveHandlesToUrls(appName, handles)
+
         // Add chips for links and account identifiers
-        var added = false
+        var addedLink = false
+        var addedHandle = false
+
         fun addChipButton(text: String, onClick: () -> Unit) {
             val chip = layoutInflater.inflate(R.layout.item_link_chip, linksLinearLayout, false)
             val tv = chip.findViewById<TextView>(R.id.chipTextView)
@@ -164,29 +170,51 @@ class FullContent : AppCompatActivity() {
             chip.setOnClickListener { onClick() }
             linksLinearLayout.addView(chip)
         }
-        fun addChipsFromArray(arr: JSONArray, label: (String) -> String, url: (String) -> String) {
-            for (i in 0 until arr.length()) {
-                val raw = arr.optString(i)?.trim().orEmpty()
-                if (raw.isNotEmpty()) {
-                    addChipButton(
-                        text = label(raw),
-                        onClick = { openExternal(url(raw)) }
-                    )
-                    added = true
+        fun updateLinksLayoutVisibility() {
+            linksLinearLayout.visibility = if (addedLink || addedHandle) View.VISIBLE else View.GONE
+        }
+
+        // Tracking for raw URLs
+        if (links.length() > 0) {
+            Helpers.getTrackingLinks(this, links) { trackingLinks ->
+                runOnUiThread {
+                    if (trackingLinks != null) {
+                        for (i in 0 until trackingLinks.length()) {
+                            val obj = trackingLinks.optJSONObject(i)
+                            val original = obj?.optString("original") ?: continue
+                            val tracking = obj.optString("tracking")
+                            addChipButton(
+                                text = Helpers.sanitizeLinkLabel(original),
+                                onClick = { openExternal(tracking) }
+                            )
+                            addedLink = true
+                        }
+                    }
+                    updateLinksLayoutVisibility()
                 }
             }
         }
-        addChipsFromArray(
-            links,
-            label = { Helpers.sanitizeLinkLabel(it) },
-            url = { it }
-        )
-        addChipsFromArray(
-            handles,
-            label = { it },
-            url = { Helpers.resolveHandleToUrl(appName, it) }
-        )
-        linksLinearLayout.visibility = if (added) View.VISIBLE else View.GONE
+
+        // Tracking for handles (converted to URLs)
+        if (handleUrls.length() > 0) {
+            Helpers.getTrackingLinks(this, handleUrls) { trackingHandles ->
+                runOnUiThread {
+                    if (trackingHandles != null) {
+                        for (i in 0 until trackingHandles.length()) {
+                            val obj = trackingHandles.optJSONObject(i)
+                            val original = obj?.optString("original") ?: continue
+                            val tracking = obj.optString("tracking")
+                            addChipButton(
+                                text = Helpers.sanitizeLinkLabel(original),
+                                onClick = { openExternal(tracking) }
+                            )
+                            addedHandle = true
+                        }
+                    }
+                    updateLinksLayoutVisibility()
+                }
+            }
+        }
     }
 
     // endregion
