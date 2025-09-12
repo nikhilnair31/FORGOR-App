@@ -21,6 +21,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import com.sil.models.FrequencyOption
 import com.sil.others.Helpers
 import com.sil.others.Helpers.Companion.showToast
 import com.sil.services.ScreenshotService
@@ -44,12 +45,7 @@ class FeaturePermissions : AppCompatActivity() {
     private lateinit var digestCycleButton: Button
     private lateinit var buttonToMain: Button
 
-    private val frequencyOptions = listOf(
-        Triple(R.string.summaryNoneText,     R.color.base_0,     R.color.accent_1),
-        Triple(R.string.summaryDailyText,    R.color.accent_0,   R.color.accent_1),
-        Triple(R.string.summaryWeeklyText,   R.color.accent_0,   R.color.accent_1),
-        Triple(R.string.summaryMonthlyText,  R.color.accent_0,   R.color.accent_1)
-    )
+    private val frequencyOptions = mutableListOf<FrequencyOption>()
     private var summaryFrequencyIndex = 0
     private var digestFrequencyIndex = 0
     // endregion
@@ -61,7 +57,9 @@ class FeaturePermissions : AppCompatActivity() {
 
         generalSharedPreferences = getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
 
-        initRelated()
+        fetchFrequencies {
+            initRelated()
+        }
     }
 
     private fun initRelated() {
@@ -113,31 +111,43 @@ class FeaturePermissions : AppCompatActivity() {
         }
     }
     private fun initSummaryCycleButton() {
-        val cachedSummaryIndex = generalSharedPreferences.getInt("summary_index", 0).coerceIn(0, frequencyOptions.lastIndex)
-        renderCycleButton(summaryCycleButton, cachedSummaryIndex)
-        Helpers.getSummaryFrequency(this) { summaryIndex ->
-            generalSharedPreferences.edit { putInt("summary_index", summaryIndex) }
-            renderCycleButton(summaryCycleButton, cachedSummaryIndex)
+        val cachedId = generalSharedPreferences.getInt("summary_frequency_id", frequencyOptions.first().id)
+
+        summaryFrequencyIndex = frequencyOptions.indexOfFirst { it.id == cachedId }.coerceAtLeast(0)
+        renderCycleButton(summaryCycleButton, frequencyOptions[summaryFrequencyIndex])
+
+        Helpers.getSummaryFrequency(this) { serverId ->
+            runOnUiThread {
+                summaryFrequencyIndex = frequencyOptions.indexOfFirst { it.id == serverId }.coerceAtLeast(0)
+                generalSharedPreferences.edit { putInt("summary_frequency_id", serverId) }
+                renderCycleButton(summaryCycleButton, frequencyOptions[summaryFrequencyIndex])
+            }
         }
 
         summaryCycleButton.setOnClickListener {
             val newIndex = (summaryFrequencyIndex + 1) % frequencyOptions.size
-            renderCycleButton(summaryCycleButton, newIndex)
-            updateSummaryFrequency(newIndex)
+            val selectedFreq = frequencyOptions[newIndex]
+            updateSummaryFrequency(selectedFreq)
         }
     }
     private fun initDigestCycleButton() {
-        val cachedDigestIndex = generalSharedPreferences.getInt("digest_index", 0).coerceIn(0, frequencyOptions.lastIndex)
-        renderCycleButton(digestCycleButton, cachedDigestIndex)
-        Helpers.getDigestFrequency(this) { digestIndex ->
-            generalSharedPreferences.edit { putInt("digest_index", digestIndex) }
-            renderCycleButton(digestCycleButton, cachedDigestIndex)
+        val cachedId = generalSharedPreferences.getInt("digest_frequency_id", frequencyOptions.first().id)
+
+        digestFrequencyIndex = frequencyOptions.indexOfFirst { it.id == cachedId }.coerceAtLeast(0)
+        renderCycleButton(digestCycleButton, frequencyOptions[digestFrequencyIndex])
+
+        Helpers.getDigestFrequency(this) { serverId ->
+            runOnUiThread {
+                digestFrequencyIndex = frequencyOptions.indexOfFirst { it.id == serverId }.coerceAtLeast(0)
+                generalSharedPreferences.edit { putInt("digest_frequency_id", serverId) }
+                renderCycleButton(digestCycleButton, frequencyOptions[digestFrequencyIndex])
+            }
         }
 
         digestCycleButton.setOnClickListener {
             val newIndex = (digestFrequencyIndex + 1) % frequencyOptions.size
-            renderCycleButton(digestCycleButton, newIndex)
-            updateDigestFrequency(newIndex)
+            val selectedFreq = frequencyOptions[newIndex]
+            updateDigestFrequency(selectedFreq)
         }
     }
     private fun initMainButton() {
@@ -148,8 +158,15 @@ class FeaturePermissions : AppCompatActivity() {
         }
     }
 
-    private fun renderCycleButton(cycleButton: Button, index: Int) {
-        val (label, bgCol, txtCol) = frequencyOptions[index]
+    private fun renderCycleButton(cycleButton: Button, freq: FrequencyOption) {
+        val (label, bgCol, txtCol) = when (freq.name) {
+            "none" -> Triple(R.string.summaryNoneText, R.color.base_0, R.color.accent_1)
+            "daily" -> Triple(R.string.summaryDailyText, R.color.accent_0, R.color.accent_1)
+            "weekly" -> Triple(R.string.summaryWeeklyText, R.color.accent_0, R.color.accent_1)
+            "monthly" -> Triple(R.string.summaryMonthlyText, R.color.accent_0, R.color.accent_1)
+            else -> Triple(R.string.summaryNoneText, R.color.base_0, R.color.accent_1)
+        }
+
         cycleButton.setText(label)
         cycleButton.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, bgCol))
         cycleButton.setTextColor(ContextCompat.getColor(this, txtCol))
@@ -164,45 +181,43 @@ class FeaturePermissions : AppCompatActivity() {
     // endregion
 
     // region Feature Related
-    private fun updateSummaryFrequency(newIndex: Int) {
-        // Call API
-        val freqName = when (newIndex) {
-            0 -> "none"
-            1 -> "daily"
-            2 -> "weekly"
-            3 -> "monthly"
-            else -> "none"
-        }
-
-        Helpers.editSummaryFreqToServer(this, freqName) { success ->
-            if (success) {
-                // Save locally only if backend update succeeded
-                generalSharedPreferences.edit { putInt("summary_index", newIndex) }
-                summaryFrequencyIndex = newIndex
-            } else {
-                // Keep old state if backend failed
-                showToast(this, "Failed to update summary frequency")
+    private fun fetchFrequencies(callback: () -> Unit) {
+        Helpers.getAllFrequencies() { freqs: List<FrequencyOption> ->
+            runOnUiThread {
+                if (freqs.isNotEmpty()) {
+                    frequencyOptions.clear()
+                    frequencyOptions.addAll(freqs)
+                    callback()
+                } else {
+                    showToast(this, "Failed to load frequency options")
+                }
             }
         }
     }
-    private fun updateDigestFrequency(newIndex: Int) {
-        // Call API
-        val freqName = when (newIndex) {
-            0 -> "none"
-            1 -> "daily"
-            2 -> "weekly"
-            3 -> "monthly"
-            else -> "none"
-        }
 
-        Helpers.editDigestFreqToServer(this, freqName) { success ->
-            if (success) {
-                // Save locally only if backend update succeeded
-                generalSharedPreferences.edit { putInt("digest_index", newIndex) }
-                digestFrequencyIndex = newIndex
-            } else {
-                // Keep old state if backend failed
-                showToast(this, "Failed to update digest frequency")
+    private fun updateSummaryFrequency(freq: FrequencyOption) {
+        Helpers.editSummaryFreqToServer(this, freq.id) { success ->
+            runOnUiThread {
+                if (success) {
+                    generalSharedPreferences.edit { putInt("summary_frequency_id", freq.id) }
+                    summaryFrequencyIndex = frequencyOptions.indexOfFirst { it.id == freq.id }
+                    renderCycleButton(summaryCycleButton, freq)
+                } else {
+                    showToast(this, "Failed to update summary frequency")
+                }
+            }
+        }
+    }
+    private fun updateDigestFrequency(freq: FrequencyOption) {
+        Helpers.editDigestFreqToServer(this, freq.id) { success ->
+            runOnUiThread {
+                if (success) {
+                    generalSharedPreferences.edit { putInt("digest_frequency_id", freq.id) }
+                    digestFrequencyIndex = frequencyOptions.indexOfFirst { it.id == freq.id }
+                    renderCycleButton(digestCycleButton, freq)
+                } else {
+                    showToast(this, "Failed to update digest frequency")
+                }
             }
         }
     }

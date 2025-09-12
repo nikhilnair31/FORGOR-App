@@ -47,15 +47,6 @@ class Saving : AppCompatActivity() {
             showConfirmBulkDownload()
         }
 
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        ViewCompat.setOnApplyWindowInsetsListener(rootConstraintLayout) { v, insets ->
-            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
-            val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            val bottom = max(ime.bottom + 24, sys.bottom)
-            v.updatePadding(bottom = bottom)
-            insets
-        }
-
         val cachedSavesLeft = generalSharedPreferences.getInt("cached_saves_left", -1)
         if (cachedSavesLeft != -1) {
             savesLeftText.text = getString(R.string.savesLeftText, cachedSavesLeft)
@@ -66,6 +57,15 @@ class Saving : AppCompatActivity() {
             generalSharedPreferences.edit {
                 putInt("cached_saves_left", savesLeft)
             }
+        }
+
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        ViewCompat.setOnApplyWindowInsetsListener(rootConstraintLayout) { v, insets ->
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val bottom = max(ime.bottom + 24, sys.bottom)
+            v.updatePadding(bottom = bottom)
+            insets
         }
     }
     // endregion

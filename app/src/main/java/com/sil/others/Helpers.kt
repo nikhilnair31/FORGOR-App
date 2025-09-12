@@ -19,6 +19,7 @@ import androidx.core.net.toUri
 import com.bumptech.glide.load.model.GlideUrl
 import com.bumptech.glide.load.model.LazyHeaders
 import com.sil.buildmode.BuildConfig
+import com.sil.models.FrequencyOption
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -34,6 +35,7 @@ import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.io.FileNotFoundException
@@ -669,6 +671,48 @@ class Helpers {
             withValidToken(context, { token -> sendRequest(token) })
         }
 
+        fun getAllFrequencies(callback: (List<FrequencyOption>) -> Unit) {
+            val request = Request.Builder()
+                .url("$SERVER_URL/api/frequencies")
+                .addHeader("User-Agent", USER_AGENT)
+                .addHeader("X-App-Key", APP_KEY)
+                .get()
+                .build()
+
+            httpClient.newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    Log.e(TAG, "Failed to fetch frequencies: ${e.localizedMessage}")
+                    callback(emptyList())
+                }
+
+                override fun onResponse(call: Call, response: Response) {
+                    if (response.isSuccessful) {
+                        response.body?.string()?.let { body ->
+                            try {
+                                val jsonArray = JSONArray(body)
+                                val freqs = mutableListOf<FrequencyOption>()
+                                for (i in 0 until jsonArray.length()) {
+                                    val obj = jsonArray.getJSONObject(i)
+                                    freqs.add(
+                                        FrequencyOption(
+                                            obj.getInt("id"),
+                                            obj.getString("name")
+                                        )
+                                    )
+                                }
+                                callback(freqs)
+                            } catch (e: Exception) {
+                                Log.e(TAG, "JSON error: ${e.localizedMessage}")
+                                callback(emptyList())
+                            }
+                        } ?: callback(emptyList())
+                    } else {
+                        callback(emptyList())
+                    }
+                }
+            })
+        }
+
         fun editUserUsernameToServer(context: Context, newUsername: String, callback: (success: Boolean) -> Unit) {
             Log.i(TAG, "Trying to edit username to $newUsername")
 
@@ -801,8 +845,8 @@ class Helpers {
 
             sendRequest(accessToken)
         }
-        fun editSummaryFreqToServer(context: Context, newFrequency: String, callback: (success: Boolean) -> Unit) {
-            Log.i(TAG, "Trying to edit summary frequency to $newFrequency")
+        fun editSummaryFreqToServer(context: Context, frequencyId: Int, callback: (success: Boolean) -> Unit) {
+            Log.i(TAG, "Updating summary frequency to ID: $frequencyId")
 
             val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
             val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
@@ -814,7 +858,7 @@ class Helpers {
 
             val jsonBody = """
                 {
-                    "frequency": "$newFrequency"
+                    "frequency_id": "$frequencyId"
                 }
             """.trimIndent()
             val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
@@ -835,37 +879,39 @@ class Helpers {
                     }
 
                     override fun onResponse(call: Call, response: Response) {
-                        val responseBody = response.body?.string()
+                        val body = response.body?.string()
 
-                        if (response.code == 401) {
-                            refreshAccessToken(context) { success, newToken ->
-                                if (success && !newToken.isNullOrEmpty()) {
-                                    sendRequest(newToken) // retry with refreshed token
-                                } else {
-                                    showToast(context, "Session expired. Please log in again.")
-                                    callback(false)
+                        when (response.code) {
+                            200 -> {
+                                Log.i("Helpers", "Summary frequency updated: $body")
+                                showToast(context, "Summary updated")
+                                callback(true)
+                            }
+                            401 -> {
+                                refreshAccessToken(context) { success, newToken ->
+                                    if (success && !newToken.isNullOrEmpty()) {
+                                        editSummaryFreqToServer(context, frequencyId, callback) // Retry
+                                    } else {
+                                        showToast(context, "Session expired")
+                                        callback(false)
+                                    }
                                 }
                             }
-                            return
+                            else -> {
+                                Log.e("Helpers", "Failed to update summary freq. Code: ${response.code}, Body: $body")
+                                showToast(context, "Update failed!")
+                                callback(false)
+                            }
                         }
 
-                        if (response.isSuccessful) {
-                            Log.i(TAG, "Edit summary freq successful: $responseBody")
-                            showToast(context, "Summary updated")
-                            callback(true)
-                        } else {
-                            Log.e(TAG, "Edit summary freq error ${response.code}: $responseBody")
-                            showToast(context, "Edit failed!")
-                            callback(false)
-                        }
                     }
                 })
             }
 
             sendRequest(accessToken)
         }
-        fun editDigestFreqToServer(context: Context, newFrequency: String, callback: (success: Boolean) -> Unit) {
-            Log.i(TAG, "Trying to edit digest frequency to $newFrequency")
+        fun editDigestFreqToServer(context: Context, frequencyId: Int, callback: (success: Boolean) -> Unit) {
+            Log.i(TAG, "Updating digest frequency to ID: $frequencyId")
 
             val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
             val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
@@ -877,7 +923,7 @@ class Helpers {
 
             val jsonBody = """
                 {
-                    "frequency": "$newFrequency"
+                    "frequency_id": $frequencyId
                 }
             """.trimIndent()
             val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
@@ -898,28 +944,29 @@ class Helpers {
                     }
 
                     override fun onResponse(call: Call, response: Response) {
-                        val responseBody = response.body?.string()
+                        val body = response.body?.string()
 
-                        if (response.code == 401) {
-                            refreshAccessToken(context) { success, newToken ->
-                                if (success && !newToken.isNullOrEmpty()) {
-                                    sendRequest(newToken) // retry with refreshed token
-                                } else {
-                                    showToast(context, "Session expired. Please log in again.")
-                                    callback(false)
+                        when (response.code) {
+                            200 -> {
+                                Log.i("Helpers", "Digest frequency updated: $body")
+                                showToast(context, "Digest updated")
+                                callback(true)
+                            }
+                            401 -> {
+                                refreshAccessToken(context) { success, newToken ->
+                                    if (success && !newToken.isNullOrEmpty()) {
+                                        editDigestFreqToServer(context, frequencyId, callback) // Retry
+                                    } else {
+                                        showToast(context, "Session expired")
+                                        callback(false)
+                                    }
                                 }
                             }
-                            return
-                        }
-
-                        if (response.isSuccessful) {
-                            Log.i(TAG, "Edit digest freq successful: $responseBody")
-                            showToast(context, "Digest updated")
-                            callback(true)
-                        } else {
-                            Log.e(TAG, "Edit digest freq error ${response.code}: $responseBody")
-                            showToast(context, "Edit failed!")
-                            callback(false)
+                            else -> {
+                                Log.e("Helpers", "Failed to update digest freq. Code: ${response.code}, Body: $body")
+                                showToast(context, "Update failed!")
+                                callback(false)
+                            }
                         }
                     }
                 })
