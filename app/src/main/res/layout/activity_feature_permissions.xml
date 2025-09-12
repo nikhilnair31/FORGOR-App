@@ -187,10 +187,10 @@
         android:stateListAnimator="@null"
         android:contentDescription="@string/stopForgoringText"
 
-        android:background="@color/accent_1"
+        android:backgroundTint="@color/accent_0"
 
         android:fontFamily="@font/venus_cormier"
-        android:textColor="@color/accent_0"
+        android:textColor="@color/accent_1"
         android:text="@string/stopForgoringText"
         android:textSize="14sp"
 

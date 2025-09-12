@@ -41,15 +41,16 @@ class FeatureToggles : AppCompatActivity() {
     private lateinit var rootConstraintLayout: ConstraintLayout
     private lateinit var screenshotToggleButton: ToggleButton
     private lateinit var summaryCycleButton: Button
-    private lateinit var digestToggleButton: ToggleButton
+    private lateinit var digestCycleButton: Button
 
-    private val summaryOptions = listOf(
+    private val frequencyOptions = listOf(
         Triple(R.string.summaryNoneText,     R.color.base_0,     R.color.accent_1),
         Triple(R.string.summaryDailyText,    R.color.accent_0,   R.color.accent_1),
         Triple(R.string.summaryWeeklyText,   R.color.accent_0,   R.color.accent_1),
         Triple(R.string.summaryMonthlyText,  R.color.accent_0,   R.color.accent_1)
     )
-    private var summaryIndex = 0
+    private var summaryFrequencyIndex = 0
+    private var digestFrequencyIndex = 0
     // endregion
 
     // region Common
@@ -66,11 +67,11 @@ class FeatureToggles : AppCompatActivity() {
         rootConstraintLayout = findViewById(R.id.rootConstraintLayout)
         screenshotToggleButton = findViewById(R.id.screenshotToggleButton)
         summaryCycleButton = findViewById(R.id.summaryFreqToggleButton)
-        digestToggleButton = findViewById(R.id.digestEnabledToggleButton)
+        digestCycleButton = findViewById(R.id.digestEnabledToggleButton)
 
         initScreenshotToggle()
         initSummaryCycleButton()
-        initDigestToggle()
+        initDigestCycleButton()
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         ViewCompat.setOnApplyWindowInsetsListener(rootConstraintLayout) { v, insets ->
@@ -109,43 +110,40 @@ class FeatureToggles : AppCompatActivity() {
         }
     }
     private fun initSummaryCycleButton() {
-        val cachedSummaryIndex = generalSharedPreferences.getInt("summary_index", 0).coerceIn(0, summaryOptions.lastIndex)
-        renderSummaryButton(cachedSummaryIndex)
+        val cachedSummaryIndex = generalSharedPreferences.getInt("summary_index", 0).coerceIn(0, frequencyOptions.lastIndex)
+        renderCycleButton(summaryCycleButton, cachedSummaryIndex)
         Helpers.getSummaryFrequency(this) { summaryIndex ->
             generalSharedPreferences.edit { putInt("summary_index", summaryIndex) }
-            renderSummaryButton(cachedSummaryIndex)
+            renderCycleButton(summaryCycleButton, cachedSummaryIndex)
         }
 
         summaryCycleButton.setOnClickListener {
-            val newIndex = (summaryIndex + 1) % summaryOptions.size
-            renderSummaryButton(newIndex)
+            val newIndex = (summaryFrequencyIndex + 1) % frequencyOptions.size
+            renderCycleButton(summaryCycleButton, newIndex)
             updateSummaryFrequency(newIndex)
         }
     }
-    private fun initDigestToggle() {
-        val cachedIsDigestEnabled = generalSharedPreferences.getBoolean("digest_enabled", false)
-        Log.i(TAG, "cachedIsDigestEnabled: $cachedIsDigestEnabled")
-        updateToggle(digestToggleButton, cachedIsDigestEnabled)
-        Helpers.getIsDigestEnabled(this) { isDigestEnabled ->
-            Log.i(TAG, "isDigestEnabled: $isDigestEnabled")
-            generalSharedPreferences.edit { putBoolean("digest_enabled", isDigestEnabled) }
-            updateToggle(digestToggleButton, isDigestEnabled)
+    private fun initDigestCycleButton() {
+        val cachedDigestIndex = generalSharedPreferences.getInt("digest_index", 0).coerceIn(0, frequencyOptions.lastIndex)
+        renderCycleButton(digestCycleButton, cachedDigestIndex)
+        Helpers.getDigestFrequency(this) { digestIndex ->
+            generalSharedPreferences.edit { putInt("digest_index", digestIndex) }
+            renderCycleButton(digestCycleButton, cachedDigestIndex)
         }
 
-        digestToggleButton.setOnCheckedChangeListener { _, isChecked ->
-            Log.i(TAG, "Digest toggle changed: $isChecked")
-            digestToggleButton.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-            updateToggle(digestToggleButton, isChecked)
-            updateDigestEnabled(isChecked)
+        digestCycleButton.setOnClickListener {
+            val newIndex = (digestFrequencyIndex + 1) % frequencyOptions.size
+            renderCycleButton(digestCycleButton, newIndex)
+            updateDigestFrequency(newIndex)
         }
     }
 
-    private fun renderSummaryButton(index: Int) {
-        val (label, bgCol, txtCol) = summaryOptions[index]
-        summaryCycleButton.setText(label)
-        summaryCycleButton.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, bgCol))
-        summaryCycleButton.setTextColor(ContextCompat.getColor(this, txtCol))
-        summaryCycleButton.contentDescription = "Digest: $label"
+    private fun renderCycleButton(cycleButton: Button, index: Int) {
+        val (label, bgCol, txtCol) = frequencyOptions[index]
+        cycleButton.setText(label)
+        cycleButton.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, bgCol))
+        cycleButton.setTextColor(ContextCompat.getColor(this, txtCol))
+        cycleButton.contentDescription = "frequency: $label"
     }
     private fun updateToggle(toggle: ToggleButton, isChecked: Boolean) {
         toggle.isChecked = isChecked
@@ -170,21 +168,31 @@ class FeatureToggles : AppCompatActivity() {
             if (success) {
                 // Save locally only if backend update succeeded
                 generalSharedPreferences.edit { putInt("summary_index", newIndex) }
-                summaryIndex = newIndex
+                summaryFrequencyIndex = newIndex
             } else {
                 // Keep old state if backend failed
                 showToast(this, "Failed to update digest")
             }
         }
     }
-    private fun updateDigestEnabled(enabled: Boolean) {
-        Helpers.editDigestEnabledToServer(this, enabled) { success ->
+    private fun updateDigestFrequency(newIndex: Int) {
+        // Call API
+        val freqName = when (newIndex) {
+            0 -> "none"
+            1 -> "daily"
+            2 -> "weekly"
+            3 -> "monthly"
+            else -> "none"
+        }
+
+        Helpers.editDigestFreqToServer(this, freqName) { success ->
             if (success) {
                 // Save locally only if backend update succeeded
-                generalSharedPreferences.edit { putBoolean("digest_enabled", enabled) }
+                generalSharedPreferences.edit { putInt("digest_index", newIndex) }
+                digestFrequencyIndex = newIndex
             } else {
                 // Keep old state if backend failed
-                showToast(this, "Failed to update digest")
+                showToast(this, "Failed to update digest frequency")
             }
         }
     }

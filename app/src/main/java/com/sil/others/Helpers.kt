@@ -218,7 +218,7 @@ class Helpers {
 
             fun sendRequest(token: String) {
                 val request = buildAuthorizedRequest(
-                    url = "$SERVER_URL/api/get_saves_left",
+                    url = "$SERVER_URL/api/saves-left",
                     method = "GET",
                     token = token
                 )
@@ -614,21 +614,21 @@ class Helpers {
 
             withValidToken(context, { token -> sendRequest(token) })
         }
-        fun getIsDigestEnabled(context: Context, callback: (success: Boolean) -> Unit) {
-            Log.i(TAG, "Trying to get digest enabled...")
+        fun getDigestFrequency(context: Context, callback: (success: Int) -> Unit) {
+            Log.i(TAG, "Trying to get digest frequency index...")
 
             fun sendRequest(token: String) {
                 val request = buildAuthorizedRequest(
-                    url = "$SERVER_URL/api/digest-enabled",
+                    url = "$SERVER_URL/api/digest-frequency",
                     method = "GET",
                     token = token
                 )
 
                 httpClient.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException) {
-                        Log.e(TAG, "Failed to get digest enabled: ${e.localizedMessage}")
-                        showToast(context, "Failed to get digest enabled!")
-                        callback(false)
+                        Log.e(TAG, "Failed to get digest frequency index: ${e.localizedMessage}")
+                        showToast(context, "Failed to get digest frequency index!")
+                        callback(0)
                     }
 
                     override fun onResponse(call: Call, response: Response) {
@@ -637,13 +637,9 @@ class Helpers {
                                 if (success && newToken != null) sendRequest(newToken)
                                 else {
                                     showToast(context, "Login expired")
-                                    callback(false)
+                                    callback(0)
                                 }
                             }
-                            return
-                        }
-                        if (response.code == 403) {
-                            showToast(context, "Daily save limit reached")
                             return
                         }
 
@@ -651,20 +647,20 @@ class Helpers {
                             response.body?.string()?.let { body ->
                                 try {
                                     val json = JSONObject(body)
-                                    val digestEnabled = json.getBoolean("digest_enabled")
+                                    val digestFrequencyIndex = json.getInt("digest_index")
                                     val sharedPrefs = context.getSharedPreferences(TAG, MODE_PRIVATE)
-                                    sharedPrefs.edit { putBoolean("digest_enabled", digestEnabled) }
-                                    callback(digestEnabled)
+                                    sharedPrefs.edit { putInt("digest_index", digestFrequencyIndex) }
+                                    callback(digestFrequencyIndex)
                                 } catch (e: Exception) {
                                     Log.e(TAG, "JSON parsing error: ${e.localizedMessage}")
-                                    callback(false)
+                                    callback(0)
                                 }
                             } ?: run {
-                                callback(false)
+                                callback(0)
                             }
                         } else {
-                            showToast(context, "Could not get digest enabled")
-                            callback(false)
+                            showToast(context, "Could not get digest frequency index")
+                            callback(0)
                         }
                     }
                 })
@@ -868,8 +864,8 @@ class Helpers {
 
             sendRequest(accessToken)
         }
-        fun editDigestEnabledToServer(context: Context, newEnabled: Boolean, callback: (success: Boolean) -> Unit) {
-            Log.i(TAG, "Trying to edit digest enabled to $newEnabled")
+        fun editDigestFreqToServer(context: Context, newFrequency: String, callback: (success: Boolean) -> Unit) {
+            Log.i(TAG, "Trying to edit digest frequency to $newFrequency")
 
             val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
             val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
@@ -881,14 +877,14 @@ class Helpers {
 
             val jsonBody = """
                 {
-                    "enabled": "$newEnabled"
+                    "frequency": "$newFrequency"
                 }
             """.trimIndent()
             val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
 
             fun sendRequest(token: String) {
                 val request = buildAuthorizedRequest(
-                    "$SERVER_URL/api/digest-enabled",
+                    "$SERVER_URL/api/digest-frequency",
                     token = token,
                     method = "PUT",
                     body = requestBody
@@ -896,7 +892,7 @@ class Helpers {
 
                 httpClient.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException) {
-                        Log.e(TAG, "Edit digest enabled failed: ${e.localizedMessage}")
+                        Log.e(TAG, "Edit digest freq failed: ${e.localizedMessage}")
                         showToast(context, "Edit failed!")
                         callback(false)
                     }
@@ -917,11 +913,11 @@ class Helpers {
                         }
 
                         if (response.isSuccessful) {
-                            Log.i(TAG, "Edit digest enabled successful: $responseBody")
-                            showToast(context, "Digest enabled updated")
+                            Log.i(TAG, "Edit digest freq successful: $responseBody")
+                            showToast(context, "Digest updated")
                             callback(true)
                         } else {
-                            Log.e(TAG, "Edit digest enabled error ${response.code}: $responseBody")
+                            Log.e(TAG, "Edit digest freq error ${response.code}: $responseBody")
                             showToast(context, "Edit failed!")
                             callback(false)
                         }

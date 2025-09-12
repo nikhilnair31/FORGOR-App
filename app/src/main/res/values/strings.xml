@@ -29,7 +29,7 @@
     <string name="summaryDailyText">DAILY</string>
     <string name="summaryWeeklyText">WEEKLY</string>
     <string name="summaryMonthlyText">MONTHLY</string>
-    <string name="digestFrequencyText">DAILY EMAIL DIGEST</string>
+    <string name="digestFrequencyText">EMAIL DIGEST FREQUENCY</string>
     <string name="stopForgoringText">STOP FORGORING</string>
 
     <string name="searchImagesDescription">SEARCH IMAGES</string>
@@ -52,7 +52,7 @@
 
     <string name="settingsText">SETTINGS</string>
     <string name="savesLeftText">SAVES LEFT TODAY: %1$d</string>
-    <string name="download">BULK DOWNLOAD</string>
+    <string name="download">REQUEST DATA EXPORT</string>
     <string name="settingsUserLogout">LOGOUT</string>
     <string name="settingsUserDelete">DELETE ACCOUNT</string>
 
