@@ -35,9 +35,10 @@
     <string name="searchImagesDescription">SEARCH IMAGES</string>
     <string name="searchHint">WHAT ARE YOU FORGORING?</string>
     <string name="imageDescription">SEARCH IMAGE RESULT</string>
+    <string name="networkSlow">NETWORK IS SLOW</string>
     <string name="loadingContent">LOADING…</string>
     <string name="failedLoadingContent">FAILED TO LOAD</string>
-    <string name="noMoreResultsFound">NO MORE RESULTS FOUND</string>
+    <string name="noResultsFound">NO RESULTS FOUND</string>
 
     <!--    CONTENT DESCRIPTIONS    -->
     <string name="filterPostsButtonDescription">FILTER POSTS</string>

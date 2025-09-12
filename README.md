@@ -5,8 +5,6 @@ Meet FORGOR
 Meet FORGOR
 
 ## To-Do
-- [ ] Add text when no results visible
-- [ ] Add text when network lost or slow
-- [ ] Add loading indicator
+- [ ] Check why similar gives wierd results
 - [ ] Check why queries cached on the server don't load half the time
 - [ ] Add nudges

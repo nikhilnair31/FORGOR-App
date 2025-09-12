@@ -26,7 +26,7 @@
             <com.google.android.material.appbar.CollapsingToolbarLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                app:layout_scrollFlags="scroll|exitUntilCollapsed">
+                app:layout_scrollFlags="scroll">
 
                 <TextView
                     android:id="@+id/titleTextView"
@@ -64,7 +64,7 @@
             android:fontFamily="@font/venus_cormier"
             android:gravity="center_horizontal|center_vertical"
             android:padding="32dp"
-            android:text="@string/noMoreResultsFound"
+            android:text="@string/noResultsFound"
             android:textColor="@color/accent_1"
 
             android:textSize="16sp"
@@ -103,7 +103,7 @@
         android:id="@+id/emptyGroupLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="96dp"
+        android:layout_marginTop="128dp"
         android:layout_marginBottom="8dp"
         android:visibility="gone"
         app:layout_constraintBottom_toTopOf="@+id/searchTextLayout"
@@ -118,7 +118,7 @@
             android:layout_height="wrap_content"
             android:fontFamily="@font/venus_cormier"
             android:gravity="center"
-            android:text="@string/noMoreResultsFound"
+            android:text="@string/noResultsFound"
             android:textColor="@color/accent_1"
             android:textSize="16sp"
             app:layout_constraintBottom_toBottomOf="parent"

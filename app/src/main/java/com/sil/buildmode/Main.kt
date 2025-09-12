@@ -64,7 +64,9 @@ class Main : AppCompatActivity() {
     private var searchTextWatcherEnabled = true
     private var searchRunnable: Runnable? = null
     private lateinit var resultAdapter: ResultAdapter
+
     private lateinit var emptyGroupLayout: ConstraintLayout
+    private lateinit var emptyPlaceholder: TextView
 
     private lateinit var searchTextLayout: ConstraintLayout
     private lateinit var searchEditText: EditText
@@ -172,6 +174,7 @@ class Main : AppCompatActivity() {
         optionsButtonsLayout = findViewById(R.id.optionsButtonsLayout)
         searchTextLayout = findViewById(R.id.searchTextLayout)
         emptyGroupLayout = findViewById(R.id.emptyGroupLayout)
+        emptyPlaceholder = findViewById(R.id.emptyPlaceholder)
         recyclerView = findViewById(R.id.imageRecyclerView)
         optionsExpandButton = findViewById(R.id.optionsButton)
         settingsButton = findViewById(R.id.settingsButton)
@@ -281,12 +284,12 @@ class Main : AppCompatActivity() {
 
                 resultAdapter.updateData(emptyList())
                 recyclerView.fadeOut()
-                // emptyGroupLayout.fadeIn()
 
                 return@Runnable
             }
 
             if (!Helpers.isConnectedFast(this)) {
+                emptyPlaceholder.text = getString(R.string.networkSlow)
                 showToast( this, "No or slow internet connection")
                 return@Runnable
             }
@@ -308,6 +311,7 @@ class Main : AppCompatActivity() {
 
                         resultAdapter.updateData(emptyList())
                         recyclerView.fadeOut()
+                        emptyPlaceholder.text = getString(R.string.noResultsFound)
                         emptyGroupLayout.fadeIn()
 
                         return@runOnUiThread
