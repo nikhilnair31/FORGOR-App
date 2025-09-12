@@ -41,35 +41,11 @@ class SignIn : AppCompatActivity() {
 
         generalSharedPreferences = getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
 
-        uiInitRelated()
-    }
-    // endregion
-
-    // region UI Related
-    private fun uiInitRelated() {
         rootConstraintLayout = findViewById(R.id.rootConstraintLayout)
         usernameEditText = findViewById(R.id.usernameEditText)
         emailEditText = findViewById(R.id.emailEditText)
         passwordEditText = findViewById(R.id.passwordEditText)
         loginButton = findViewById(R.id.buttonSignup)
-
-        // single place to update enabled + color
-
-        // lightweight watcher shared by all three fields
-        val watcher = object : TextWatcher {
-            override fun afterTextChanged(s: Editable?) = updateLoginButtonState()
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-        }
-
-        usernameEditText.addTextChangedListener(watcher)
-        emailEditText.addTextChangedListener(watcher)        // ← you were missing this
-        passwordEditText.addTextChangedListener(watcher)
-
-        // set initial state based on any prefilled text
-        updateLoginButtonState()
-
-        loginButton.setOnClickListener { loginRelated() }
 
         // insets
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -80,8 +56,25 @@ class SignIn : AppCompatActivity() {
             v.updatePadding(bottom = bottom)
             insets
         }
-    }
 
+        loginButton.setOnClickListener { loginRelated() }
+
+        // lightweight watcher shared by all three fields
+        val watcher = object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) = updateLoginButtonState()
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+        }
+        usernameEditText.addTextChangedListener(watcher)
+        emailEditText.addTextChangedListener(watcher)        // ← you were missing this
+        passwordEditText.addTextChangedListener(watcher)
+
+        // set initial state based on any prefilled text
+        updateLoginButtonState()
+    }
+    // endregion
+
+    // region UI Related
     private fun updateLoginButtonState() {
         val minPasswordLength = resources.getInteger(R.integer.minPasswordLength)
 

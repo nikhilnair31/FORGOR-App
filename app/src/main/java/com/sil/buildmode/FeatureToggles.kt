@@ -56,21 +56,13 @@ class FeatureToggles : AppCompatActivity() {
 
         generalSharedPreferences = getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
 
-        fetchFrequencies {
-            initRelated()
-        }
-    }
-
-    private fun initRelated() {
+        // init views immediately
         rootConstraintLayout = findViewById(R.id.rootConstraintLayout)
         screenshotToggleButton = findViewById(R.id.screenshotToggleButton)
         summaryCycleButton = findViewById(R.id.summaryFreqToggleButton)
         digestCycleButton = findViewById(R.id.digestEnabledToggleButton)
 
-        initScreenshotToggle()
-        initSummaryCycleButton()
-        initDigestCycleButton()
-
+        // safe to set inset listener now
         WindowCompat.setDecorFitsSystemWindows(window, false)
         ViewCompat.setOnApplyWindowInsetsListener(rootConstraintLayout) { v, insets ->
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
@@ -78,6 +70,12 @@ class FeatureToggles : AppCompatActivity() {
             val bottom = max(ime.bottom + 24, sys.bottom)
             v.updatePadding(bottom = bottom)
             insets
+        }
+
+        fetchFrequencies {
+            initScreenshotToggle()
+            initSummaryCycleButton()
+            initDigestCycleButton()
         }
     }
     // endregion
