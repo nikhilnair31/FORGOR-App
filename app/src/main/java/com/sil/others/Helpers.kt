@@ -6,11 +6,11 @@ import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.content.SharedPreferences
+import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Environment
 import android.provider.DocumentsContract
 import android.provider.MediaStore
-import android.util.Base64
 import android.util.Log
 import android.webkit.MimeTypeMap
 import android.widget.Toast
@@ -45,8 +45,6 @@ import java.io.IOException
 import java.io.OutputStream
 import java.util.TimeZone
 import java.util.concurrent.TimeUnit
-import javax.crypto.Mac
-import javax.crypto.spec.SecretKeySpec
 
 class Helpers {
     companion object {
@@ -62,6 +60,42 @@ class Helpers {
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
             .build()
+
+        object EP {
+            // auth.py
+            const val REFRESH                           = "$SERVER_URL/api/refresh_token"
+            const val REGISTER                          = "$SERVER_URL/api/register"
+            const val LOGIN                             = "$SERVER_URL/api/login"
+
+            // data.py
+            const val UPLOAD_IMAGEURL                   = "$SERVER_URL/api/upload/imageurl"
+            const val UPLOAD_IMAGE                      = "$SERVER_URL/api/upload/image"
+            const val DELETE_FILE                       = "$SERVER_URL/api/delete/file"
+            const val GET_FILE                          = "$SERVER_URL/api/get_file"
+            const val GET_THUMBNAIL                     = "$SERVER_URL/api/get_thumbnail"
+            const val DATA_EXPORT                       = "$SERVER_URL/api/data-export"
+
+            // query.py
+            const val GET_SIMILAR                       = "$SERVER_URL/api/get_similar"
+            const val CHECK_TEXT                        = "$SERVER_URL/api/check/text"
+            const val QUERY                             = "$SERVER_URL/api/query"
+
+            // tracking.py
+            const val GET_TRACKING_LINKS                = "$SERVER_URL/api/generate-tracking-links"
+            const val INSERT_POST_INTERACTION           = "$SERVER_URL/api/insert-post-interaction"
+            const val INSERT_LINK_INTERACTION           = "$SERVER_URL/api/insert-link-interaction"
+
+            // users.py
+            const val GET_ALL_FREQUENCIES               = "$SERVER_URL/api/frequencies"
+            const val GET_SAVES                         = "$SERVER_URL/api/saves-left"
+            const val GET_SUMMARY_FREQUENCY             = "$SERVER_URL/api/summary-frequency"
+            const val GET_DIGEST_FREQUENCY              = "$SERVER_URL/api/digest-frequency"
+            const val DELETE_ACCOUNT                    = "$SERVER_URL/api/account_delete"
+            const val UPDATE_USERNAME                   = "$SERVER_URL/api/update-username"
+            const val UPDATE_EMAIL                      = "$SERVER_URL/api/update-email"
+            const val PUT_SUMMARY_FREQUENCY             = "$SERVER_URL/api/summary-frequency"
+            const val PUT_DIGEST_FREQUENCY              = "$SERVER_URL/api/digest-frequency"
+        }
         // endregion
 
         // region API Related
@@ -97,6 +131,41 @@ class Helpers {
             }
             onValid(token)
         }
+        private fun performJsonPostRequest(context: Context, url: String, jsonBody: String, headers: Map<String, String> = emptyMap(), onSuccess: (String) -> Unit, onFailure: (String) -> Unit) {
+            val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
+
+            val requestBuilder = Request.Builder()
+                .url(url)
+                .post(requestBody)
+                .addHeader("User-Agent", USER_AGENT)
+                .addHeader("X-App-Key", APP_KEY)
+
+            // Apply custom headers
+            headers.forEach { (key, value) -> requestBuilder.addHeader(key, value) }
+
+            val request = requestBuilder.build()
+
+            httpClient.newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    Log.e(TAG, "HTTP POST failed: ${e.localizedMessage}")
+                    showToast(context, "Request failed!")
+                    onFailure(e.localizedMessage ?: "Unknown error")
+                }
+
+                override fun onResponse(call: Call, response: Response) {
+                    val responseBody = response.body?.string() ?: ""
+                    if (response.isSuccessful) {
+                        Log.i(TAG, "POST success: $responseBody")
+                        onSuccess(responseBody)
+                    } else {
+                        Log.e(TAG, "POST error ${response.code}: $responseBody")
+                        showToast(context, "Server error!")
+                        onFailure("HTTP ${response.code}")
+                    }
+                }
+            })
+        }
+
         // endregion
 
         // region Image Related
@@ -137,7 +206,7 @@ class Helpers {
                     .build()
 
                 val request = buildAuthorizedRequest(
-                    "$SERVER_URL/api/upload/image",
+                    EP.UPLOAD_IMAGE,
                     token = token,
                     body = requestBody
                 )
@@ -223,7 +292,7 @@ class Helpers {
 
             fun sendRequest(token: String) {
                 val request = buildAuthorizedRequest(
-                    url = "$SERVER_URL/api/saves-left",
+                    url = EP.GET_SAVES,
                     method = "GET",
                     token = token
                 )
@@ -287,7 +356,7 @@ class Helpers {
                     .build()
 
                 val request = buildAuthorizedRequest(
-                    "$SERVER_URL/api/delete/file",
+                    EP.DELETE_FILE,
                     token = token,
                     body = requestBody
                 )
@@ -350,7 +419,7 @@ class Helpers {
 
             val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
             val request = Request.Builder()
-                .url("$SERVER_URL/api/refresh_token")
+                .url(EP.REFRESH)
                 .addHeader("User-Agent", USER_AGENT)
                 .addHeader("X-App-Key", APP_KEY)
                 .addHeader("X-Timezone", timeZoneId)
@@ -389,103 +458,70 @@ class Helpers {
         }
 
         fun authRegisterToServer(context: Context, username: String, email: String, password: String, timeZoneId: String, callback: (success: Boolean) -> Unit) {
-            Log.i(TAG, "Trying to register with $username and $email and $password at $timeZoneId")
-
             val jsonBody = """
-            {
-                "username": "$username",
-                "email": "$email",
-                "password": "$password",
-                "timezone": "$timeZoneId"
-            }
+                {
+                    "username": "$username",
+                    "email": "$email",
+                    "password": "$password",
+                    "timezone": "$timeZoneId"
+                }
             """.trimIndent()
-            val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
-            val request = Request.Builder()
-                .url("$SERVER_URL/api/register")
-                .addHeader("User-Agent", USER_AGENT)
-                .addHeader("X-App-Key", APP_KEY)
-                .post(requestBody)
-                .build()
 
-            httpClient.newCall(request).enqueue(object : Callback {
-                override fun onFailure(call: Call, e: IOException) {
-                    Log.e(TAG, "Register failed: ${e.localizedMessage}")
-                    showToast(context, "Register failed!")
+            performJsonPostRequest(
+                context = context,
+                url = EP.REGISTER,
+                jsonBody = jsonBody,
+                onSuccess = {
+                    Log.i(TAG, "Register successful")
+                    authLoginToServer(context, username, email, password, callback) // chain login
+                },
+                onFailure = {
                     callback(false)
                 }
-                override fun onResponse(call: Call, response: Response) {
-                    val responseBody = response.body?.string()
-                    if (response.isSuccessful) {
-                        Log.i(TAG, "Register successful: $responseBody")
-
-                        // Now attempt login and forward that result
-                        authLoginToServer(context, username, email, password) { loginSuccess ->
-                            Log.i(TAG, "Login success")
-                            callback(loginSuccess)
-                        }
-                    } else {
-                        Log.e(TAG, "Register error ${response.code}: $responseBody")
-                        showToast(context, "Register failed!")
-                        callback(false)
-                    }
-                }
-            })
+            )
         }
         fun authLoginToServer(context: Context, username: String, email: String, password: String, callback: (success: Boolean) -> Unit) {
-            Log.i(TAG, "Trying to login...")
-
             val jsonBody = """
-            {
-                "username": "$username",
-                "email": "$email",
-                "password": "$password"
-            }
+                {
+                    "username": "$username",
+                    "email": "$email",
+                    "password": "$password"
+                }
             """.trimIndent()
 
-            val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
+            val headers = mapOf("X-Timezone" to TimeZone.getDefault().id)
 
-            val timeZoneId = TimeZone.getDefault().id
-
-            val request = Request.Builder()
-                .url("$SERVER_URL/api/login")
-                .addHeader("User-Agent", USER_AGENT)
-                .addHeader("X-App-Key", APP_KEY)
-                .addHeader("X-Timezone", timeZoneId)
-                .post(requestBody)
-                .build()
-
-            httpClient.newCall(request).enqueue(object : Callback {
-                override fun onFailure(call: Call, e: IOException) {
-                    Log.e(TAG, "Login failed: ${e.localizedMessage}")
-                    showToast(context, "Login failed!")
-                    callback(false)
-                }
-                override fun onResponse(call: Call, response: Response) {
-                    val responseBody = response.body?.string()
-                    if (response.isSuccessful) {
-                        Log.i(TAG, "Login successful: $response")
-
+            performJsonPostRequest(
+                context = context,
+                url = EP.LOGIN,
+                jsonBody = jsonBody,
+                headers = headers,
+                onSuccess = { responseBody ->
+                    try {
                         val json = JSONObject(responseBody)
                         val accessToken = json.optString("access_token", "")
                         val refreshToken = json.optString("refresh_token", "")
 
-                        if (!accessToken.isEmpty() && !refreshToken.isEmpty()) {
-                            Log.i(TAG, "Tokens received")
-                            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
-                            generalSharedPrefs.edit {
-                                putString("access_token", accessToken.toString())
-                                putString("refresh_token", refreshToken.toString())
+                        if (accessToken.isNotEmpty() && refreshToken.isNotEmpty()) {
+                            val prefs = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
+                            prefs.edit {
+                                putString("access_token", accessToken)
+                                putString("refresh_token", refreshToken)
                             }
                             callback(true)
-                            return
+                        } else {
+                            Log.e(TAG, "Missing tokens in login response")
+                            callback(false)
                         }
-                    } else {
-                        Log.e(TAG, "Login error ${response.code}: $responseBody")
-                        showToast(context, "Login failed!")
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to parse login response", e)
                         callback(false)
                     }
+                },
+                onFailure = {
+                    callback(false)
                 }
-            })
+            )
         }
 
         fun autoLogout(context: Context) {
@@ -521,7 +557,7 @@ class Helpers {
 
             fun sendRequest(token: String) {
                 val request = buildAuthorizedRequest(
-                    "$SERVER_URL/api/account_delete",
+                    EP.DELETE_ACCOUNT,
                     token = token,
                     method = "DELETE",
                     body = null
@@ -570,7 +606,7 @@ class Helpers {
 
             fun sendRequest(token: String) {
                 val request = buildAuthorizedRequest(
-                    url = "$SERVER_URL/api/summary-frequency",
+                    url = EP.GET_SUMMARY_FREQUENCY,
                     method = "GET",
                     token = token
                 )
@@ -624,7 +660,7 @@ class Helpers {
 
             fun sendRequest(token: String) {
                 val request = buildAuthorizedRequest(
-                    url = "$SERVER_URL/api/digest-frequency",
+                    url = EP.GET_DIGEST_FREQUENCY,
                     method = "GET",
                     token = token
                 )
@@ -676,7 +712,7 @@ class Helpers {
 
         fun getAllFrequencies(callback: (List<FrequencyOption>) -> Unit) {
             val request = Request.Builder()
-                .url("$SERVER_URL/api/frequencies")
+                .url(EP.GET_ALL_FREQUENCIES)
                 .addHeader("User-Agent", USER_AGENT)
                 .addHeader("X-App-Key", APP_KEY)
                 .get()
@@ -736,7 +772,7 @@ class Helpers {
 
             fun sendRequest(token: String) {
                 val request = buildAuthorizedRequest(
-                    "$SERVER_URL/api/update-username",
+                    EP.UPDATE_USERNAME,
                     token = token,
                     method = "PUT",
                     body = requestBody
@@ -802,7 +838,7 @@ class Helpers {
 
             fun sendRequest(token: String) {
                 val request = buildAuthorizedRequest(
-                    "$SERVER_URL/api/update-email",
+                    EP.UPDATE_EMAIL,
                     token = token,
                     method = "PUT",
                     body = requestBody
@@ -868,7 +904,7 @@ class Helpers {
 
             fun sendRequest(token: String) {
                 val request = buildAuthorizedRequest(
-                    "$SERVER_URL/api/summary-frequency",
+                    EP.GET_SUMMARY_FREQUENCY,
                     token = token,
                     method = "PUT",
                     body = requestBody
@@ -933,7 +969,7 @@ class Helpers {
 
             fun sendRequest(token: String) {
                 val request = buildAuthorizedRequest(
-                    "$SERVER_URL/api/digest-frequency",
+                    EP.GET_DIGEST_FREQUENCY,
                     token = token,
                     method = "PUT",
                     body = requestBody
@@ -1000,7 +1036,7 @@ class Helpers {
 
             fun sendRequest(token: String) {
                 val request = buildAuthorizedRequest(
-                    "$SERVER_URL/api/insert-post-interaction",
+                    EP.INSERT_POST_INTERACTION,
                     token = token,
                     method = "PUT",
                     body = requestBody
@@ -1056,7 +1092,7 @@ class Helpers {
 
             fun sendRequest(token: String) {
                 val request = buildAuthorizedRequest(
-                    "$SERVER_URL/api/query",
+                    EP.QUERY,
                     token = token,
                     body = requestBody
                 )
@@ -1245,7 +1281,7 @@ class Helpers {
 
             fun sendRequest(token: String) {
                 val request = buildAuthorizedRequest(
-                    "$SERVER_URL/api/data-export",
+                    EP.DATA_EXPORT,
                     token = token,
                     method = "GET",
                     body = null
@@ -1390,7 +1426,7 @@ class Helpers {
                 val requestBody = jsonBody.toString().toRequestBody("application/json".toMediaType())
 
                 val request = buildAuthorizedRequest(
-                    "$SERVER_URL/api/generate-tracking-links",
+                    EP.GET_TRACKING_LINKS,
                     token = token,
                     body = requestBody
                 )
@@ -1473,8 +1509,13 @@ class Helpers {
         // endregion
 
         // region Network Related
+        fun isConnected(context: Context): Boolean {
+            val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            return cm.activeNetworkInfo?.isConnected == true
+        }
+
         fun isConnectedFast(context: Context): Boolean {
-            val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? android.net.ConnectivityManager
+            val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
             val network = cm?.activeNetwork ?: run {
                 Log.w("NetworkCheck", "No active network")
                 return false
