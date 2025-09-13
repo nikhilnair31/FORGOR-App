@@ -137,14 +137,14 @@ class User : AppCompatActivity() {
             runOnUiThread {
                 if (success) {
                     Log.i(TAG, "Edit username success")
-                    showToast(this, "Edit username successful!")
+                    this.showToast("Edit username successful!")
                     editUsernameButton.isEnabled = false
                     generalSharedPreferences.edit {
                         putString("username", newUsername)
                     }
                 } else {
                     Log.i(TAG, "Edit username failed!")
-                    showToast(this, "Edit username failed!")
+                    this.showToast("Edit username failed!")
                 }
             }
         }
@@ -157,14 +157,14 @@ class User : AppCompatActivity() {
             runOnUiThread {
                 if (success) {
                     Log.i(TAG, "Edit email success")
-                    showToast(this, "Edit email successful!")
+                    this.showToast("Edit email successful!")
                     editEmailButton.isEnabled = false
                     generalSharedPreferences.edit {
                         putString("email", newEmail)
                     }
                 } else {
                     Log.i(TAG, "Edit email failed!")
-                    showToast(this, "Edit email failed!")
+                    this.showToast("Edit email failed!")
                 }
             }
         }
@@ -198,10 +198,10 @@ class User : AppCompatActivity() {
             runOnUiThread {
                 if (success) {
                     Log.i(TAG, "Account delete success!")
-                    showToast(this, "Account deleted!")
+                    this.showToast("Account deleted!")
                 } else {
                     Log.i(TAG, "Account delete failed!")
-                    showToast(this, "Account delete failed!")
+                    this.showToast("Account delete failed!")
                 }
             }
         }

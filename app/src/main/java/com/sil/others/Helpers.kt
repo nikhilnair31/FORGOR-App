@@ -99,11 +99,12 @@ class Helpers {
         // endregion
 
         // region API Related
-        fun jsonOf(vararg pairs: Pair<String, Any?>): String {
+        private fun jsonOf(vararg pairs: Pair<String, Any?>): String {
             val json = JSONObject()
             for ((k, v) in pairs) json.put(k, v)
             return json.toString()
         }
+
         private fun buildAuthorizedRequest(url: String, method: String = "POST", token: String, body: RequestBody? = null): Request {
             val builder = Request.Builder()
                 .url(url)
@@ -1248,25 +1249,6 @@ class Helpers {
         }
         // endregion
 
-        // region Shared Prefs Related
-        fun Context.getAccessToken(): String = getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE).getString("access_token", "") ?: ""
-        fun Context.getRefreshToken(): String = getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE).getString("refresh_token", "") ?: ""
-        fun Context.saveTokens(access: String, refresh: String) {
-            getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE).edit {
-                putString("access_token", access)
-                putString("refresh_token", refresh)
-            }
-        }
-        fun Context.clearAuthSharedPrefs() {
-            getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE).edit {
-                remove("username")
-                remove("email")
-                remove("access_token")
-                remove("refresh_token")
-            }
-        }
-        // endregion
-
         // region Network Related
         fun isConnected(context: Context): Boolean {
             val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -1314,11 +1296,30 @@ class Helpers {
         }
         // endregion
 
+        // region Shared Prefs Related
+        fun Context.getAccessToken(): String = getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE).getString("access_token", "") ?: ""
+        fun Context.getRefreshToken(): String = getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE).getString("refresh_token", "") ?: ""
+        fun Context.saveTokens(access: String, refresh: String) {
+            getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE).edit {
+                putString("access_token", access)
+                putString("refresh_token", refresh)
+            }
+        }
+        fun Context.clearAuthSharedPrefs() {
+            getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE).edit {
+                remove("username")
+                remove("email")
+                remove("access_token")
+                remove("refresh_token")
+            }
+        }
+        // endregion
+
         // region UI Related
-        fun showToast(context: Context, message: String) {
+        fun Context.showToast(message: String) {
             val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
             mainHandler.post {
-                Toast.makeText(context.applicationContext, message, Toast.LENGTH_SHORT).show()
+                Toast.makeText(applicationContext, message, Toast.LENGTH_SHORT).show()
             }
         }
         // endregion

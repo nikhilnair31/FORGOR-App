@@ -18,6 +18,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import com.sil.others.Helpers
+import com.sil.others.Helpers.Companion.showToast
 import java.util.TimeZone
 import kotlin.math.max
 
@@ -130,7 +131,7 @@ class SignUp : AppCompatActivity() {
                     startActivity(intent)
                     finish()
                 } else {
-                    Helpers.showToast(this, "Sign up failed.")
+                    this.showToast("Sign up failed.")
                 }
             }
         }

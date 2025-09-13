@@ -177,7 +177,7 @@ class FeatureToggles : AppCompatActivity() {
                     frequencyOptions.addAll(freqs)
                     callback()
                 } else {
-                    showToast(this, "Failed to load frequency options")
+                    this.showToast("Failed to load frequency options")
                 }
             }
         }
@@ -191,7 +191,7 @@ class FeatureToggles : AppCompatActivity() {
                     summaryFrequencyIndex = frequencyOptions.indexOfFirst { it.id == freq.id }
                     renderCycleButton(summaryCycleButton, freq)
                 } else {
-                    showToast(this, "Failed to update summary frequency")
+                    this.showToast("Failed to update summary frequency")
                 }
             }
         }
@@ -204,7 +204,7 @@ class FeatureToggles : AppCompatActivity() {
                     digestFrequencyIndex = frequencyOptions.indexOfFirst { it.id == freq.id }
                     renderCycleButton(digestCycleButton, freq)
                 } else {
-                    showToast(this, "Failed to update digest frequency")
+                    this.showToast("Failed to update digest frequency")
                 }
             }
         }
@@ -264,7 +264,7 @@ class FeatureToggles : AppCompatActivity() {
                     onScreenshotPermissionsGranted()
                 }
             } else {
-                showToast(this, "Screenshot permissions denied.")
+                this.showToast("Screenshot permissions denied.")
                 screenshotToggleButton.isChecked = false
             }
         }
