@@ -297,7 +297,7 @@ class Main : AppCompatActivity() {
 
             if (!Helpers.isConnectedFast(this)) {
                 emptyPlaceholder.text = getString(R.string.networkSlow)
-                showToast( this, "No or slow internet connection")
+                this.showToast("No or slow internet connection")
                 return@Runnable
             }
 

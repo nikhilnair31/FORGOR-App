@@ -130,7 +130,7 @@ class Helpers {
         private fun withValidToken(context: Context, onValid: (token: String) -> Unit, onInvalid: (() -> Unit)? = null) {
             val token = context.getAccessToken()
             if (token.isEmpty()) {
-                showToast(context, "Not logged in")
+                context.showToast("Not logged in")
                 onInvalid?.invoke()
                 return
             }
@@ -153,7 +153,7 @@ class Helpers {
             httpClient.newCall(request).enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
                     Log.e(TAG, "HTTP POST failed: ${e.localizedMessage}")
-                    showToast(context, "Request failed!")
+                    context.showToast("Request failed!")
                     onFailure(e.localizedMessage ?: "Unknown error")
                 }
 
@@ -164,7 +164,7 @@ class Helpers {
                         onSuccess(responseBody)
                     } else {
                         Log.e(TAG, "POST error ${response.code}: $responseBody")
-                        showToast(context, "Server error!")
+                        context.showToast("Server error!")
                         onFailure("HTTP ${response.code}")
                     }
                 }
@@ -175,23 +175,23 @@ class Helpers {
             url: String,
             method: String = "GET",
             jsonBody: String? = null,
+            customBody: RequestBody? = null,
             onSuccess: (String) -> Unit,
             onFailure: (String) -> Unit
         ) {
             fun sendRequest(token: String) {
-                val body = jsonBody?.toRequestBody("application/json".toMediaTypeOrNull())
-
+                val finalBody = customBody ?: jsonBody?.toRequestBody("application/json".toMediaTypeOrNull())
                 val request = buildAuthorizedRequest(
                     url = url,
                     token = token,
                     method = method,
-                    body = body
+                    body = finalBody
                 )
 
                 httpClient.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException) {
                         Log.e(TAG, "Request failed: ${e.localizedMessage}")
-                        showToast(context, "Request failed!")
+                        context.showToast("Request failed!")
                         onFailure(e.localizedMessage ?: "Network error")
                     }
 
@@ -203,7 +203,7 @@ class Helpers {
                                 if (success && !newToken.isNullOrEmpty()) {
                                     sendRequest(newToken)
                                 } else {
-                                    showToast(context, "Session expired. Please log in again.")
+                                    context.showToast("Session expired. Please log in again.")
                                     onFailure("401: Token expired")
                                 }
                             }
@@ -214,14 +214,17 @@ class Helpers {
                             onSuccess(bodyStr)
                         } else {
                             Log.e(TAG, "Error ${response.code}: $bodyStr")
-                            showToast(context, "Request failed!")
+                            context.showToast("Request failed!")
                             onFailure("HTTP ${response.code}")
                         }
                     }
                 })
             }
 
-            withValidToken(context) { token -> sendRequest(token) }
+            withValidToken(
+                context = context,
+                onValid = { token -> sendRequest(token) }
+            )
         }
         // endregion
 
@@ -271,7 +274,7 @@ class Helpers {
                 httpClient.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException) {
                         Log.e(TAG, "Image save failed: ${e.localizedMessage}")
-                        showToast(context, "Save failed!")
+                        context.showToast("Save failed!")
                     }
 
                     override fun onResponse(call: Call, response: Response) {
@@ -281,21 +284,21 @@ class Helpers {
                                 if (success && !newToken.isNullOrEmpty()) {
                                     sendRequest(newToken) // Retry with new token
                                 } else {
-                                    showToast(context, "Session expired. Please log in again.")
+                                    context.showToast("Session expired. Please log in again.")
                                 }
                             }
                             return
                         }
                         if (response.code == 403) {
-                            showToast(context, "Daily save limit reached")
+                            context.showToast("Daily save limit reached")
                             return
                         }
 
                         if (response.isSuccessful) {
-                            showToast(context, "Saved!")
+                            context.showToast("Saved!")
                         } else {
                             Log.e(TAG, "Server error: ${response.code}")
-                            showToast(context, "Save failed!")
+                            context.showToast("Save failed!")
                         }
                     }
                 })
@@ -311,7 +314,7 @@ class Helpers {
                 val accessToken = context.getAccessToken()
                 if (accessToken.isEmpty()) {
                     Log.e(TAG, "Access token missing")
-                    showToast(context, "Not logged in")
+                    context.showToast("Not logged in")
                     return null
                 }
 
@@ -356,7 +359,7 @@ class Helpers {
                 httpClient.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException) {
                         Log.e(TAG, "Failed to check saves: ${e.localizedMessage}")
-                        showToast(context, "Failed to check saves!")
+                        context.showToast("Failed to check saves!")
                         callback(0)
                     }
 
@@ -365,14 +368,14 @@ class Helpers {
                             refreshAccessToken(context) { success, newToken ->
                                 if (success && newToken != null) sendRequest(newToken)
                                 else {
-                                    showToast(context, "Login expired")
+                                    context.showToast("Login expired")
                                     callback(0)
                                 }
                             }
                             return
                         }
                         if (response.code == 403) {
-                            showToast(context, "Daily save limit reached")
+                            context.showToast("Daily save limit reached")
                             return
                         }
 
@@ -392,7 +395,7 @@ class Helpers {
                                 callback(0)
                             }
                         } else {
-                            showToast(context, "Could not get saves left")
+                            context.showToast("Could not get saves left")
                             callback(0)
                         }
                     }
@@ -420,7 +423,7 @@ class Helpers {
                 httpClient.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException) {
                         Log.e(TAG, "File delete failed: ${e.localizedMessage}")
-                        showToast(context, "File delete failed!")
+                        context.showToast("File delete failed!")
                     }
 
                     override fun onResponse(call: Call, response: Response) {
@@ -430,21 +433,21 @@ class Helpers {
                                 if (success && !newToken.isNullOrEmpty()) {
                                     sendRequest(newToken) // Retry with new token
                                 } else {
-                                    showToast(context, "Session expired. Please log in again.")
+                                    context.showToast("Session expired. Please log in again.")
                                 }
                             }
                             return
                         }
                         if (response.code == 403) {
-                            showToast(context, "Daily save limit reached")
+                            context.showToast("Daily save limit reached")
                             return
                         }
 
                         if (response.isSuccessful) {
-                            showToast(context, "File deleted successfully!")
+                            context.showToast("File deleted successfully!")
                         } else {
                             Log.e(TAG, "Server error: ${response.code}")
-                            showToast(context, "File delete failed!")
+                            context.showToast("File delete failed!")
                         }
                     }
                 })
@@ -493,7 +496,7 @@ class Helpers {
                             val json = JSONObject(responseBody)
                             val newToken = json.optString("access_token", "")
                             if (newToken.isNotEmpty()) {
-                                prefs.edit { putString("access_token", newToken) }
+                                context.saveTokens(newToken, refreshToken)
                                 Log.i(TAG, "Access token refreshed")
                                 onComplete(true, newToken)
                                 return
@@ -574,7 +577,7 @@ class Helpers {
 
             context.clearAuthSharedPrefs()
 
-            showToast(context, "Session expired. Please sign in again.")
+            context.showToast("Session expired. Please sign in again.")
 
             val intent = Intent(context, com.sil.buildmode.Welcome::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -590,7 +593,7 @@ class Helpers {
                 method = "DELETE",
                 onSuccess = {
                     Log.i(TAG, "Account deleted: $it")
-                    showToast(context, "Account deleted")
+                    context.showToast("Account deleted")
                     callback(true)
                 },
                 onFailure = {
@@ -732,7 +735,7 @@ class Helpers {
                 jsonBody = json,
                 onSuccess = {
                     Log.i(TAG, "Summary frequency updated: $it")
-                    showToast(context, "Summary updated")
+                    context.showToast("Summary updated")
                     callback(true)
                 },
                 onFailure = {
@@ -751,7 +754,7 @@ class Helpers {
                 jsonBody = json,
                 onSuccess = {
                     Log.i(TAG, "Digest frequency updated: $it")
-                    showToast(context, "Digest updated")
+                    context.showToast("Digest updated")
                     callback(true)
                 },
                 onFailure = {
@@ -768,7 +771,7 @@ class Helpers {
             val accessToken = context.getAccessToken()
             if (accessToken.isEmpty()) {
                 Log.e(TAG, "Access token missing")
-                showToast(context, "Not logged in")
+                context.showToast("Not logged in")
                 return
             }
 
@@ -801,7 +804,7 @@ class Helpers {
                                 if (success && !newToken.isNullOrEmpty()) {
                                     sendRequest(newToken) // retry with refreshed token
                                 } else {
-                                    showToast(context, "Session expired. Please log in again.")
+                                    context.showToast("Session expired. Please log in again.")
                                     callback(false)
                                 }
                             }
@@ -843,7 +846,7 @@ class Helpers {
                 httpClient.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException) {
                         Log.e(TAG, "Query failed: ${e.localizedMessage}")
-                        showToast(context, "Query failed!")
+                        context.showToast("Query failed!")
                         callback(null)
                     }
 
@@ -852,14 +855,14 @@ class Helpers {
                             refreshAccessToken(context) { success, newToken ->
                                 if (success && !newToken.isNullOrEmpty()) sendRequest(newToken)
                                 else {
-                                    showToast(context, "Login expired")
+                                    context.showToast("Login expired")
                                     callback(null)
                                 }
                             }
                             return
                         }
                         if (response.code == 403) {
-                            showToast(context, "Daily save limit reached")
+                            context.showToast("Daily save limit reached")
                             callback(null)
                             return
                         }
@@ -869,7 +872,7 @@ class Helpers {
                             Log.i(TAG, "Query roundtrip time: ${endTime - startTime} ms")
                             callback(response.body?.string())
                         } else {
-                            showToast(context, "Query failed!")
+                            context.showToast("Query failed!")
                             callback(null)
                         }
                     }
@@ -895,7 +898,7 @@ class Helpers {
                 httpClient.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException) {
                         Log.e(TAG, "Get similar failed: ${e.localizedMessage}")
-                        showToast(context, "Get similar failed!")
+                        context.showToast("Get similar failed!")
                         callback(false, null)
                     }
 
@@ -907,7 +910,7 @@ class Helpers {
                             refreshAccessToken(context) { success, newToken ->
                                 if (success && !newToken.isNullOrEmpty()) sendRequest(newToken)
                                 else {
-                                    showToast(context, "Login expired")
+                                    context.showToast("Login expired")
                                     callback(false, null)
                                 }
                             }
@@ -920,7 +923,7 @@ class Helpers {
                             callback(true, responseBody)
                         } else {
                             Log.e(TAG, "Get similar failed with code ${response.code}: $responseBody")
-                            showToast(context, "Get similar failed!")
+                            context.showToast("Get similar failed!")
                             callback(false, null)
                         }
                     }
@@ -957,7 +960,7 @@ class Helpers {
                     val accessToken = context.getAccessToken()
                     if (accessToken.isEmpty()) {
                         withContext(Dispatchers.Main) {
-                            showToast(context, "Not logged in")
+                            context.showToast("Not logged in")
                         }
                         return@launch
                     }
@@ -1015,7 +1018,7 @@ class Helpers {
             val accessToken = context.getAccessToken()
             if (accessToken.isEmpty()) {
                 Log.e(TAG, "Access token missing")
-                showToast(context, "Not logged in")
+                context.showToast("Not logged in")
                 callback(false)
                 return
             }
@@ -1031,7 +1034,7 @@ class Helpers {
                 httpClient.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException) {
                         Log.e(TAG, "Bulk download failed: ${e.localizedMessage}")
-                        showToast(context, "Download failed!")
+                        context.showToast("Download failed!")
                         callback(false)
                     }
 
@@ -1039,7 +1042,7 @@ class Helpers {
                         when (response.code) {
                             200 -> {
                                 Log.i(TAG, "Bulk download successful!")
-                                showToast(context, "Bulk download successful!")
+                                context.showToast("Bulk download successful!")
                                 callback(true)
                             }
 
@@ -1048,24 +1051,24 @@ class Helpers {
                                     if (success && !newToken.isNullOrEmpty()) {
                                         sendRequest(newToken) // retry
                                     } else {
-                                        showToast(context, "Session expired. Please log in again.")
+                                        context.showToast("Session expired. Please log in again.")
                                         callback(false)
                                     }
                                 }
                             }
 
                             403 -> {
-                                showToast(context, "Forbidden or daily limit reached")
+                                context.showToast("Forbidden or daily limit reached")
                                 callback(false)
                             }
                             429 -> {
-                                showToast(context, "Too many requests, slow down")
+                                context.showToast("Too many requests, slow down")
                                 callback(false)
                             }
 
                             else -> {
                                 Log.e(TAG, "Bulk download error ${response.code}")
-                                showToast(context, "Download failed! Code: ${response.code}")
+                                context.showToast("Download failed! Code: ${response.code}")
                                 callback(false)
                             }
                         }
@@ -1160,51 +1163,30 @@ class Helpers {
 
         // region Tracking Related
         fun getTrackingLinks(context: Context, urls: JSONArray, callback: (JSONArray?) -> Unit) {
-            withValidToken(context, { token ->
-                val jsonBody = JSONObject().apply {
-                    put("urls", urls)
-                }
-                val requestBody = jsonBody.toString().toRequestBody("application/json".toMediaType())
+            val jsonBody = JSONObject().apply {
+                put("urls", urls)
+            }.toString()
 
-                val request = buildAuthorizedRequest(
-                    EP.GET_TRACKING_LINKS,
-                    token = token,
-                    body = requestBody
-                )
-
-                httpClient.newCall(request).enqueue(object : Callback {
-                    override fun onFailure(call: Call, e: IOException) {
-                        Log.e(TAG, "Failed to get tracking links: ${e.localizedMessage}")
+            performAuthorizedRequest(
+                context = context,
+                url = EP.GET_TRACKING_LINKS,
+                method = "POST",
+                jsonBody = jsonBody,
+                onSuccess = { body ->
+                    try {
+                        val json = JSONObject(body)
+                        val links = json.optJSONArray("links") ?: JSONArray()
+                        callback(links)
+                    } catch (e: Exception) {
+                        Log.e("Helper", "getTrackingLinks | JSON parsing failed: ${e.localizedMessage}")
                         callback(null)
                     }
-
-                    override fun onResponse(call: Call, response: Response) {
-                        val body = response.body?.string()
-                        if (response.isSuccessful && body != null) {
-                            try {
-                                val json = JSONObject(body)
-                                val links = json.optJSONArray("links") ?: JSONArray()
-                                callback(links)
-                            } catch (e: Exception) {
-                                Log.e(TAG, "Parse error: ${e.localizedMessage}")
-                                callback(null)
-                            }
-                        } else if (response.code == 401) {
-                            refreshAccessToken(context) { success, newToken ->
-                                if (success && !newToken.isNullOrEmpty()) {
-                                    getTrackingLinks(context, urls, callback) // retry
-                                } else {
-                                    showToast(context, "Session expired")
-                                    callback(null)
-                                }
-                            }
-                        } else {
-                            Log.e(TAG, "Error ${response.code}: $body")
-                            callback(null)
-                        }
-                    }
-                })
-            }, onInvalid = { callback(null) })
+                },
+                onFailure = { error ->
+                    Log.e("Helper", "getTrackingLinks | Failed: $error")
+                    callback(null)
+                }
+            )
         }
         // endregion
 
