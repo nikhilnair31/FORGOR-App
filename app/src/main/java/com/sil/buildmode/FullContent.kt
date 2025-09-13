@@ -23,12 +23,12 @@ import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
 import androidx.core.view.isNotEmpty
+import com.sil.others.Helpers.Companion.EP
 
 class FullContent : AppCompatActivity() {
     // region Vars
     private val TAG = "FullContent"
     private val PREFS_GENERAL = "com.sil.buildmode.generalSharedPrefs"
-    private val SERVER_URL = BuildConfig.SERVER_URL
 
     private lateinit var generalSharedPreferences: SharedPreferences
 
@@ -126,7 +126,7 @@ class FullContent : AppCompatActivity() {
         }
     }
     private fun initButtons(fileName: String) {
-        val fileUrl = "$SERVER_URL/api/get_file/$fileName"
+        val fileUrl = "${EP.GET_FILE}/$fileName"
 
         // Image Handling
         if (Helpers.isImageFile(fileName)) {

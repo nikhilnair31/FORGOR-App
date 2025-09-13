@@ -59,7 +59,7 @@ class Helpers {
             .writeTimeout(30, TimeUnit.SECONDS)
             .build()
 
-        object EP {
+        public object EP {
             // auth.py
             const val REFRESH                           = "$SERVER_URL/api/refresh_token"
             const val REGISTER                          = "$SERVER_URL/api/register"
@@ -86,8 +86,8 @@ class Helpers {
             // users.py
             const val GET_ALL_FREQUENCIES               = "$SERVER_URL/api/frequencies"
             const val GET_SAVES                         = "$SERVER_URL/api/saves-left"
-            const val GET_SUMMARY_FREQUENCY             = "$SERVER_URL/api/summary-frequency"
-            const val GET_DIGEST_FREQUENCY              = "$SERVER_URL/api/digest-frequency"
+            const val SUMMARY_FREQUENCY                 = "$SERVER_URL/api/summary-frequency"
+            const val DIGEST_FREQUENCY                  = "$SERVER_URL/api/digest-frequency"
             const val DELETE_ACCOUNT                    = "$SERVER_URL/api/account_delete"
             const val UPDATE_USERNAME                   = "$SERVER_URL/api/update-username"
             const val UPDATE_EMAIL                      = "$SERVER_URL/api/update-email"
@@ -666,7 +666,7 @@ class Helpers {
         fun getSummaryFrequency(context: Context, callback: (Int) -> Unit) {
             performAuthorizedRequest(
                 context = context,
-                url = EP.GET_SUMMARY_FREQUENCY,
+                url = EP.SUMMARY_FREQUENCY,
                 method = "GET",
                 onSuccess = { body ->
                     try {
@@ -687,7 +687,7 @@ class Helpers {
         fun getDigestFrequency(context: Context, callback: (Int) -> Unit) {
             performAuthorizedRequest(
                 context = context,
-                url = EP.GET_DIGEST_FREQUENCY,
+                url = EP.DIGEST_FREQUENCY,
                 method = "GET",
                 onSuccess = { body ->
                     try {
@@ -750,7 +750,7 @@ class Helpers {
 
             performAuthorizedRequest(
                 context = context,
-                url = EP.GET_SUMMARY_FREQUENCY,
+                url = EP.SUMMARY_FREQUENCY,
                 method = "PUT",
                 jsonBody = json,
                 onSuccess = {
@@ -769,7 +769,7 @@ class Helpers {
             )
             performAuthorizedRequest(
                 context = context,
-                url = EP.GET_DIGEST_FREQUENCY,
+                url = EP.DIGEST_FREQUENCY,
                 method = "PUT",
                 jsonBody = json,
                 onSuccess = {

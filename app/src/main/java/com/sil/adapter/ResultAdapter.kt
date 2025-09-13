@@ -8,10 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import android.widget.TextView
-import androidx.core.content.FileProvider
 import androidx.core.graphics.drawable.toDrawable
-import androidx.core.net.toUri
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -21,20 +18,17 @@ import com.bumptech.glide.load.model.GlideUrl
 import com.bumptech.glide.request.RequestOptions
 import com.sil.adapter.ResultDiffCallback
 import com.sil.others.Helpers
+import com.sil.others.Helpers.Companion.EP
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.json.JSONObject
-import java.io.IOException
 
 class ResultAdapter(private val context: Context, private val dataList: MutableList<JSONObject>) :
 RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
     // region Vars
     private val TAG = "ResultAdapter"
-
-    private val SERVER_URL = BuildConfig.SERVER_URL
     // endregion
 
     class ResultViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -73,7 +67,7 @@ RecyclerView.Adapter<ResultAdapter.ResultViewHolder>() {
         val thumbnailName = item.optString("thumbnail_name", "")
         val tags = item.optString("tags", "")
 
-        val thumbnailUrl = "${SERVER_URL}/api/get_thumbnail/$thumbnailName"
+        val thumbnailUrl = "${EP.GET_THUMBNAIL}/$thumbnailName"
 
         // Handle image files
         val blankDrawable = R.color.accent_0.toDrawable()
