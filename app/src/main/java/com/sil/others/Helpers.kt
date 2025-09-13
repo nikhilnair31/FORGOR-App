@@ -99,6 +99,11 @@ class Helpers {
         // endregion
 
         // region API Related
+        fun jsonOf(vararg pairs: Pair<String, Any?>): String {
+            val json = JSONObject()
+            for ((k, v) in pairs) json.put(k, v)
+            return json.toString()
+        }
         private fun buildAuthorizedRequest(url: String, method: String = "POST", token: String, body: RequestBody? = null): Request {
             val builder = Request.Builder()
                 .url(url)
@@ -458,11 +463,9 @@ class Helpers {
                 return
             }
 
-            val jsonBody = """
-                {
-                    "refresh_token": "$refreshToken"
-                }
-            """.trimIndent()
+            val jsonBody = jsonOf(
+                "refresh_token" to refreshToken,
+            )
 
             val timeZoneId = TimeZone.getDefault().id
 
@@ -507,14 +510,12 @@ class Helpers {
         }
 
         fun authRegisterToServer(context: Context, username: String, email: String, password: String, timeZoneId: String, callback: (success: Boolean) -> Unit) {
-            val jsonBody = """
-                {
-                    "username": "$username",
-                    "email": "$email",
-                    "password": "$password",
-                    "timezone": "$timeZoneId"
-                }
-            """.trimIndent()
+            val jsonBody = jsonOf(
+                "username" to username,
+                "email" to email,
+                "password" to password,
+                "timezone" to timeZoneId
+            )
 
             performJsonPostRequest(
                 context = context,
@@ -530,13 +531,11 @@ class Helpers {
             )
         }
         fun authLoginToServer(context: Context, username: String, email: String, password: String, callback: (success: Boolean) -> Unit) {
-            val jsonBody = """
-                {
-                    "username": "$username",
-                    "email": "$email",
-                    "password": "$password"
-                }
-            """.trimIndent()
+            val jsonBody = jsonOf(
+                "username" to username,
+                "email" to email,
+                "password" to password
+            )
 
             val headers = mapOf("X-Timezone" to TimeZone.getDefault().id)
 
@@ -684,7 +683,9 @@ class Helpers {
         }
 
         fun editUserUsernameToServer(context: Context, newUsername: String, callback: (Boolean) -> Unit) {
-            val json = """{ "new_username": "$newUsername" }"""
+            val json = jsonOf(
+                "new_username" to newUsername,
+            )
             performAuthorizedRequest(
                 context = context,
                 url = EP.UPDATE_USERNAME,
@@ -700,7 +701,10 @@ class Helpers {
             )
         }
         fun editUserEmailToServer(context: Context, newEmail: String, callback: (Boolean) -> Unit) {
-            val json = """{ "new_email": "$newEmail" }"""
+            val json = jsonOf(
+                "new_email" to newEmail
+            )
+
             performAuthorizedRequest(
                 context = context,
                 url = EP.UPDATE_EMAIL,
@@ -716,7 +720,10 @@ class Helpers {
             )
         }
         fun editSummaryFreqToServer(context: Context, frequencyId: Int, callback: (Boolean) -> Unit) {
-            val json = """{ "frequency_id": $frequencyId }"""
+            val json = jsonOf(
+                "frequency_id" to frequencyId
+            )
+
             performAuthorizedRequest(
                 context = context,
                 url = EP.GET_SUMMARY_FREQUENCY,
@@ -733,7 +740,9 @@ class Helpers {
             )
         }
         fun editDigestFreqToServer(context: Context, frequencyId: Int, callback: (Boolean) -> Unit) {
-            val json = """{ "frequency_id": $frequencyId }"""
+            val json = jsonOf(
+                "frequency_id" to frequencyId
+            )
             performAuthorizedRequest(
                 context = context,
                 url = EP.GET_DIGEST_FREQUENCY,
@@ -817,11 +826,9 @@ class Helpers {
         fun searchToServer(context: Context, query: String, callback: (response: String?) -> Unit) {
             Log.i(TAG, "Trying to search for $query")
 
-            val jsonBody = """
-                {
-                    "searchText": "$query"
-                }
-            """.trimIndent()
+            val jsonBody = jsonOf(
+                "searchText" to query
+            )
             val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
             val startTime = System.currentTimeMillis()
 
