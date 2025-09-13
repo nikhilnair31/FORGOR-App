@@ -337,7 +337,10 @@ class Main : AppCompatActivity() {
                         } else {
                             allResults = resultList
                             resultAdapter.updateData(allResults)
-                            recyclerView.scrollToPosition(0)
+                            recyclerView.postDelayed({
+                                recyclerView.scrollToPosition(0)
+                                appBarLayout.setExpanded(true, true)
+                            }, 50)
                             recyclerView.fadeIn()
                             emptyGroupLayout.fadeOut()
                         }
