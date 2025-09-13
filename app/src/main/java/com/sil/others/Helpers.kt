@@ -5,7 +5,6 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
-import android.content.SharedPreferences
 import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Environment
@@ -27,7 +26,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.Call
 import okhttp3.Callback
-import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
@@ -104,7 +102,6 @@ class Helpers {
             for ((k, v) in pairs) json.put(k, v)
             return json.toString()
         }
-
         private fun buildAuthorizedRequest(url: String, method: String = "POST", token: String, body: RequestBody? = null): Request {
             val builder = Request.Builder()
                 .url(url)
@@ -136,7 +133,57 @@ class Helpers {
             }
             onValid(token)
         }
-        private fun performJsonPostRequest(context: Context, url: String, jsonBody: String, headers: Map<String, String> = emptyMap(), onSuccess: (String) -> Unit, onFailure: (String) -> Unit) {
+        private fun performRequest(
+            url: String,
+            method: String = "GET",
+            jsonBody: String? = null,
+            customBody: RequestBody? = null,
+            onSuccess: (String) -> Unit,
+            onFailure: (String) -> Unit
+        ) {
+            val requestBody = customBody ?: jsonBody?.toRequestBody("application/json".toMediaTypeOrNull())
+
+            val requestBuilder = Request.Builder()
+                .url(url)
+                .addHeader("User-Agent", USER_AGENT)
+                .addHeader("X-App-Key", APP_KEY)
+
+            when (method.uppercase()) {
+                "GET" -> requestBuilder.get()
+                "POST" -> requestBody?.let { requestBuilder.post(it) }
+                "PUT" -> requestBody?.let { requestBuilder.put(it) }
+                "DELETE" -> requestBody?.let { requestBuilder.delete(it) } ?: requestBuilder.delete()
+                else -> {
+                    onFailure("Unsupported HTTP method: $method")
+                    return
+                }
+            }
+
+            httpClient.newCall(requestBuilder.build()).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    Log.e(TAG, "performRequest failed: ${e.localizedMessage}")
+                    onFailure(e.localizedMessage ?: "Network error")
+                }
+
+                override fun onResponse(call: Call, response: Response) {
+                    val bodyStr = response.body?.string() ?: ""
+                    if (response.isSuccessful) {
+                        onSuccess(bodyStr)
+                    } else {
+                        Log.e(TAG, "Request failed: ${response.code} - $bodyStr")
+                        onFailure("HTTP ${response.code}: $bodyStr")
+                    }
+                }
+            })
+        }
+        private fun performPublicJsonPostRequest(
+            context: Context,
+            url: String,
+            jsonBody: String,
+            headers: Map<String, String> = emptyMap(),
+            onSuccess: (String) -> Unit,
+            onFailure: (String) -> Unit
+        ) {
             val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
 
             val requestBuilder = Request.Builder()
@@ -170,14 +217,15 @@ class Helpers {
                 }
             })
         }
-        fun performAuthorizedRequest(
+        private fun performAuthorizedRequest(
             context: Context,
             url: String,
             method: String = "GET",
             jsonBody: String? = null,
             customBody: RequestBody? = null,
             onSuccess: (String) -> Unit,
-            onFailure: (String) -> Unit
+            onFailure: (String) -> Unit,
+            onForbidden: (() -> Unit)? = null // <-- Add this
         ) {
             fun sendRequest(token: String) {
                 val finalBody = customBody ?: jsonBody?.toRequestBody("application/json".toMediaTypeOrNull())
@@ -198,24 +246,32 @@ class Helpers {
                     override fun onResponse(call: Call, response: Response) {
                         val bodyStr = response.body?.string() ?: ""
 
-                        if (response.code == 401) {
-                            refreshAccessToken(context) { success, newToken ->
-                                if (success && !newToken.isNullOrEmpty()) {
-                                    sendRequest(newToken)
-                                } else {
-                                    context.showToast("Session expired. Please log in again.")
-                                    onFailure("401: Token expired")
+                        when (response.code) {
+                            401 -> {
+                                refreshAccessToken(context) { success, newToken ->
+                                    if (success && !newToken.isNullOrEmpty()) {
+                                        sendRequest(newToken)
+                                    } else {
+                                        context.showToast("Session expired. Please log in again.")
+                                        onFailure("401: Token expired")
+                                    }
                                 }
                             }
-                            return
-                        }
 
-                        if (response.isSuccessful) {
-                            onSuccess(bodyStr)
-                        } else {
-                            Log.e(TAG, "Error ${response.code}: $bodyStr")
-                            context.showToast("Request failed!")
-                            onFailure("HTTP ${response.code}")
+                            403 -> {
+                                context.showToast("Access forbidden (403)")
+                                onForbidden?.invoke()
+                            }
+
+                            in 200..299 -> {
+                                onSuccess(bodyStr)
+                            }
+
+                            else -> {
+                                Log.e(TAG, "Server error: ${response.code}: $bodyStr")
+                                context.showToast("Request failed!")
+                                onFailure("HTTP ${response.code}: $bodyStr")
+                            }
                         }
                     }
                 })
@@ -226,9 +282,56 @@ class Helpers {
                 onValid = { token -> sendRequest(token) }
             )
         }
+        fun performAuthorizedRequestMultipart(
+            context: Context,
+            url: String,
+            method: String = "POST",
+            multipartBody: MultipartBody,
+            onSuccess: (String?) -> Unit,
+            onFailure: (String) -> Unit,
+            onForbidden: (() -> Unit)? = null
+        ) {
+            withValidToken(context, { token ->
+                val request = buildAuthorizedRequest(
+                    url = url,
+                    token = token,
+                    method = method,
+                    body = multipartBody
+                )
+
+                httpClient.newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        onFailure(e.localizedMessage ?: "Unknown error")
+                    }
+
+                    override fun onResponse(call: Call, response: Response) {
+                        val body = response.body?.string()
+                        when {
+                            response.code == 401 -> {
+                                refreshAccessToken(context) { success, newToken ->
+                                    if (success && !newToken.isNullOrEmpty()) {
+                                        performAuthorizedRequestMultipart(context, url, method, multipartBody, onSuccess, onFailure, onForbidden)
+                                    } else {
+                                        context.showToast("Session expired")
+                                        onFailure("Unauthorized")
+                                    }
+                                }
+                            }
+                            response.code == 403 -> {
+                                onForbidden?.invoke() ?: onFailure("Forbidden")
+                            }
+                            response.isSuccessful -> onSuccess(body)
+                            else -> onFailure("Code ${response.code}: $body")
+                        }
+                    }
+                })
+            }, onInvalid = {
+                onFailure("Token invalid")
+            })
+        }
         // endregion
 
-        // region Image Related
+        // region File Related
         fun uploadImageFileToServer(context: Context, imageFile: File?) {
             Log.i(TAG, "Uploading Image to Server...")
 
@@ -335,6 +438,61 @@ class Helpers {
                 return null
             }
         }
+        fun getSavesLeft(context: Context, callback: (Int) -> Unit) {
+            Log.i(TAG, "Getting saves left from server...")
+
+            performAuthorizedRequest(
+                context = context,
+                url = EP.GET_SAVES,
+                method = "GET",
+                onSuccess = { responseBody ->
+                    try {
+                        val json = JSONObject(responseBody)
+                        val savesLeft = json.getInt("uploads_left")
+                        val sharedPrefs = context.getSharedPreferences(TAG, MODE_PRIVATE)
+                        sharedPrefs.edit { putInt("cached_saves_left", savesLeft) }
+                        callback(savesLeft)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "JSON parsing error: ${e.localizedMessage}")
+                        callback(0)
+                    }
+                },
+                onFailure = { error ->
+                    Log.e(TAG, "Failed to check saves: $error")
+                    context.showToast("Failed to check saves!")
+                    callback(0)
+                },
+                onForbidden = {
+                    context.showToast("Daily save limit reached")
+                    callback(0)
+                }
+            )
+        }
+        fun deleteFile(context: Context, fileName: String) {
+            Log.i(TAG, "Deleting file: $fileName")
+
+            val requestBody = MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("file_name", fileName)
+                .build()
+
+            performAuthorizedRequestMultipart(
+                context = context,
+                url = EP.DELETE_FILE,
+                method = "POST", // or "DELETE" if backend supports it
+                multipartBody = requestBody,
+                onSuccess = {
+                    context.showToast("File deleted successfully!")
+                },
+                onFailure = { error ->
+                    Log.e(TAG, "File delete failed: $error")
+                    context.showToast("File delete failed!")
+                },
+                onForbidden = {
+                    context.showToast("Daily save limit reached")
+                }
+            )
+        }
 
         fun isImageFile(fileName: String): Boolean {
             val lowerCaseName = fileName.lowercase()
@@ -342,118 +500,6 @@ class Helpers {
                     lowerCaseName.endsWith(".jpeg") ||
                     lowerCaseName.endsWith(".png") ||
                     lowerCaseName.endsWith(".webp")
-        }
-        // endregion
-
-        // region File Related
-        fun getSavesLeft(context: Context, callback: (Int) -> Unit) {
-            Log.i(TAG, "Getting saves left from server...")
-
-            fun sendRequest(token: String) {
-                val request = buildAuthorizedRequest(
-                    url = EP.GET_SAVES,
-                    method = "GET",
-                    token = token
-                )
-
-                httpClient.newCall(request).enqueue(object : Callback {
-                    override fun onFailure(call: Call, e: IOException) {
-                        Log.e(TAG, "Failed to check saves: ${e.localizedMessage}")
-                        context.showToast("Failed to check saves!")
-                        callback(0)
-                    }
-
-                    override fun onResponse(call: Call, response: Response) {
-                        if (response.code == 401) {
-                            refreshAccessToken(context) { success, newToken ->
-                                if (success && newToken != null) sendRequest(newToken)
-                                else {
-                                    context.showToast("Login expired")
-                                    callback(0)
-                                }
-                            }
-                            return
-                        }
-                        if (response.code == 403) {
-                            context.showToast("Daily save limit reached")
-                            return
-                        }
-
-                        if (response.isSuccessful) {
-                            response.body?.string()?.let { body ->
-                                try {
-                                    val json = JSONObject(body)
-                                    val savesLeft = json.getInt("uploads_left")
-                                    val sharedPrefs = context.getSharedPreferences(TAG, MODE_PRIVATE)
-                                    sharedPrefs.edit { putInt("cached_saves_left", savesLeft) }
-                                    callback(savesLeft)
-                                } catch (e: Exception) {
-                                    Log.e(TAG, "JSON parsing error: ${e.localizedMessage}")
-                                    callback(0)
-                                }
-                            } ?: run {
-                                callback(0)
-                            }
-                        } else {
-                            context.showToast("Could not get saves left")
-                            callback(0)
-                        }
-                    }
-                })
-            }
-
-            withValidToken(context, { token -> sendRequest(token) })
-        }
-
-        fun deleteFile(context: Context, fileName: String) {
-            Log.i(TAG, "Deleting file: $fileName")
-
-            fun sendRequest(token: String) {
-                val requestBody = MultipartBody.Builder()
-                    .setType(MultipartBody.FORM)
-                    .addFormDataPart("file_name", fileName)
-                    .build()
-
-                val request = buildAuthorizedRequest(
-                    EP.DELETE_FILE,
-                    token = token,
-                    body = requestBody
-                )
-
-                httpClient.newCall(request).enqueue(object : Callback {
-                    override fun onFailure(call: Call, e: IOException) {
-                        Log.e(TAG, "File delete failed: ${e.localizedMessage}")
-                        context.showToast("File delete failed!")
-                    }
-
-                    override fun onResponse(call: Call, response: Response) {
-                        if (response.code == 401) {
-                            // Token expired, attempt refresh
-                            refreshAccessToken(context) { success, newToken ->
-                                if (success && !newToken.isNullOrEmpty()) {
-                                    sendRequest(newToken) // Retry with new token
-                                } else {
-                                    context.showToast("Session expired. Please log in again.")
-                                }
-                            }
-                            return
-                        }
-                        if (response.code == 403) {
-                            context.showToast("Daily save limit reached")
-                            return
-                        }
-
-                        if (response.isSuccessful) {
-                            context.showToast("File deleted successfully!")
-                        } else {
-                            Log.e(TAG, "Server error: ${response.code}")
-                            context.showToast("File delete failed!")
-                        }
-                    }
-                })
-            }
-
-            withValidToken(context, { token -> sendRequest(token) })
         }
         // endregion
 
@@ -467,50 +513,36 @@ class Helpers {
                 return
             }
 
-            val jsonBody = jsonOf(
-                "refresh_token" to refreshToken,
-            )
-
+            val jsonBody = jsonOf("refresh_token" to refreshToken)
             val timeZoneId = TimeZone.getDefault().id
 
-            val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
-            val request = Request.Builder()
-                .url(EP.REFRESH)
-                .addHeader("User-Agent", USER_AGENT)
-                .addHeader("X-App-Key", APP_KEY)
-                .addHeader("X-Timezone", timeZoneId)
-                .post(requestBody)
-                .build()
-
-            httpClient.newCall(request).enqueue(object : Callback {
-                override fun onFailure(call: Call, e: IOException) {
-                    Log.e(TAG, "Refresh token failed: ${e.localizedMessage}")
-                    autoLogout(context)
-                    onComplete(false, null)
-                }
-
-                override fun onResponse(call: Call, response: Response) {
-                    val responseBody = response.body?.string()
-                    if (response.isSuccessful) {
-                        try {
-                            val json = JSONObject(responseBody)
-                            val newToken = json.optString("access_token", "")
-                            if (newToken.isNotEmpty()) {
-                                context.saveTokens(newToken, refreshToken)
-                                Log.i(TAG, "Access token refreshed")
-                                onComplete(true, newToken)
-                                return
-                            }
-                        } catch (e: Exception) {
-                            Log.e(TAG, "Error parsing refresh token response: ${e.localizedMessage}")
+            performPublicJsonPostRequest(
+                context = context,
+                url = EP.REFRESH,
+                jsonBody = jsonBody,
+                headers = mapOf("X-Timezone" to timeZoneId),
+                onSuccess = { responseBody ->
+                    try {
+                        val json = JSONObject(responseBody)
+                        val newToken = json.optString("access_token", "")
+                        if (newToken.isNotEmpty()) {
+                            context.saveTokens(newToken, refreshToken)
+                            Log.i(TAG, "Access token refreshed")
+                            onComplete(true, newToken)
+                            return@performPublicJsonPostRequest
                         }
-                    } else {
-                        Log.e(TAG, "Refresh token failed: $responseBody")
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error parsing refresh token response: ${e.localizedMessage}")
                     }
                     autoLogout(context)
                     onComplete(false, null)
+                },
+                onFailure = { error ->
+                    Log.e(TAG, "Refresh token failed: $error")
+                    autoLogout(context)
+                    onComplete(false, null)
                 }
-            })
+            )
         }
 
         fun authRegisterToServer(context: Context, username: String, email: String, password: String, timeZoneId: String, callback: (success: Boolean) -> Unit) {
@@ -521,7 +553,7 @@ class Helpers {
                 "timezone" to timeZoneId
             )
 
-            performJsonPostRequest(
+            performPublicJsonPostRequest(
                 context = context,
                 url = EP.REGISTER,
                 jsonBody = jsonBody,
@@ -543,7 +575,7 @@ class Helpers {
 
             val headers = mapOf("X-Timezone" to TimeZone.getDefault().id)
 
-            performJsonPostRequest(
+            performPublicJsonPostRequest(
                 context = context,
                 url = EP.LOGIN,
                 jsonBody = jsonBody,
@@ -575,9 +607,9 @@ class Helpers {
         fun autoLogout(context: Context) {
             Log.i(TAG, "autoLogout | Logging out user...")
 
-            context.clearAuthSharedPrefs()
-
             context.showToast("Session expired. Please sign in again.")
+
+            context.clearAuthSharedPrefs()
 
             val intent = Intent(context, com.sil.buildmode.Welcome::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -603,45 +635,33 @@ class Helpers {
         }
 
         fun getAllFrequencies(callback: (List<FrequencyOption>) -> Unit) {
-            val request = Request.Builder()
-                .url(EP.GET_ALL_FREQUENCIES)
-                .addHeader("User-Agent", USER_AGENT)
-                .addHeader("X-App-Key", APP_KEY)
-                .get()
-                .build()
-
-            httpClient.newCall(request).enqueue(object : Callback {
-                override fun onFailure(call: Call, e: IOException) {
-                    Log.e(TAG, "Failed to fetch frequencies: ${e.localizedMessage}")
-                    callback(emptyList())
-                }
-
-                override fun onResponse(call: Call, response: Response) {
-                    if (response.isSuccessful) {
-                        response.body?.string()?.let { body ->
-                            try {
-                                val jsonArray = JSONArray(body)
-                                val freqs = mutableListOf<FrequencyOption>()
-                                for (i in 0 until jsonArray.length()) {
-                                    val obj = jsonArray.getJSONObject(i)
-                                    freqs.add(
-                                        FrequencyOption(
-                                            obj.getInt("id"),
-                                            obj.getString("name")
-                                        )
-                                    )
-                                }
-                                callback(freqs)
-                            } catch (e: Exception) {
-                                Log.e(TAG, "JSON error: ${e.localizedMessage}")
-                                callback(emptyList())
-                            }
-                        } ?: callback(emptyList())
-                    } else {
+            performRequest(
+                url = EP.GET_ALL_FREQUENCIES,
+                method = "GET",
+                onSuccess = { responseBody ->
+                    try {
+                        val jsonArray = JSONArray(responseBody)
+                        val freqs = mutableListOf<FrequencyOption>()
+                        for (i in 0 until jsonArray.length()) {
+                            val obj = jsonArray.getJSONObject(i)
+                            freqs.add(
+                                FrequencyOption(
+                                    obj.getInt("id"),
+                                    obj.getString("name")
+                                )
+                            )
+                        }
+                        callback(freqs)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "JSON parsing error: ${e.localizedMessage}")
                         callback(emptyList())
                     }
+                },
+                onFailure = { error ->
+                    Log.e(TAG, "Failed to fetch frequencies: $error")
+                    callback(emptyList())
                 }
-            })
+            )
         }
         fun getSummaryFrequency(context: Context, callback: (Int) -> Unit) {
             performAuthorizedRequest(
@@ -766,173 +786,74 @@ class Helpers {
 
         // region Interaction Related
         fun insertPostInteraction(context: Context, fileId: Int, query: String, callback: (success: Boolean) -> Unit) {
-            Log.i(TAG, "Trying to insert interaction for fileId $fileId with query $query")
+            Log.i(TAG, "Inserting interaction: fileId = $fileId, query = \"$query\"")
 
-            val accessToken = context.getAccessToken()
-            if (accessToken.isEmpty()) {
-                Log.e(TAG, "Access token missing")
-                context.showToast("Not logged in")
-                return
-            }
+            val jsonBody = jsonOf(
+                "fileId" to fileId,
+                "query" to query
+            )
 
-            // Valid JSON, no trailing comma. fileId stays numeric.
-            val json = JSONObject().apply {
-                put("fileId", fileId)
-                put("query", query)
-            }
-            val requestBody = json.toString().toRequestBody("application/json".toMediaType())
-
-            fun sendRequest(token: String) {
-                val request = buildAuthorizedRequest(
-                    EP.INSERT_POST_INTERACTION,
-                    token = token,
-                    method = "PUT",
-                    body = requestBody
-                )
-
-                httpClient.newCall(request).enqueue(object : Callback {
-                    override fun onFailure(call: Call, e: IOException) {
-                        Log.e(TAG, "Insert interaction failed: ${e.localizedMessage}")
-                        callback(false)
-                    }
-
-                    override fun onResponse(call: Call, response: Response) {
-                        val responseBody = response.body?.string()
-
-                        if (response.code == 401) {
-                            refreshAccessToken(context) { success, newToken ->
-                                if (success && !newToken.isNullOrEmpty()) {
-                                    sendRequest(newToken) // retry with refreshed token
-                                } else {
-                                    context.showToast("Session expired. Please log in again.")
-                                    callback(false)
-                                }
-                            }
-                            return
-                        }
-
-                        if (response.isSuccessful) {
-                            Log.i(TAG, "Insert interaction successful: $responseBody")
-                            callback(true)
-                        } else {
-                            Log.e(TAG, "Insert interaction error ${response.code}: $responseBody")
-                            callback(false)
-                        }
-                    }
-                })
-            }
-
-            sendRequest(accessToken)
+            performAuthorizedRequest(
+                context = context,
+                url = EP.INSERT_POST_INTERACTION,
+                method = "PUT",
+                jsonBody = jsonBody,
+                onSuccess = { responseBody ->
+                    Log.i(TAG, "Insert interaction successful: $responseBody")
+                    callback(true)
+                },
+                onFailure = { error ->
+                    Log.e(TAG, "Insert interaction failed: $error")
+                    callback(false)
+                }
+            )
         }
         // endregion
 
         // region Search Related
         fun searchToServer(context: Context, query: String, callback: (response: String?) -> Unit) {
-            Log.i(TAG, "Trying to search for $query")
+            Log.i(TAG, "Trying to search for \"$query\"")
 
-            val jsonBody = jsonOf(
-                "searchText" to query
-            )
-            val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
+            val jsonBody = jsonOf("searchText" to query)
             val startTime = System.currentTimeMillis()
 
-            fun sendRequest(token: String) {
-                val request = buildAuthorizedRequest(
-                    EP.QUERY,
-                    token = token,
-                    body = requestBody
-                )
-
-                httpClient.newCall(request).enqueue(object : Callback {
-                    override fun onFailure(call: Call, e: IOException) {
-                        Log.e(TAG, "Query failed: ${e.localizedMessage}")
-                        context.showToast("Query failed!")
-                        callback(null)
-                    }
-
-                    override fun onResponse(call: Call, response: Response) {
-                        if (response.code == 401) {
-                            refreshAccessToken(context) { success, newToken ->
-                                if (success && !newToken.isNullOrEmpty()) sendRequest(newToken)
-                                else {
-                                    context.showToast("Login expired")
-                                    callback(null)
-                                }
-                            }
-                            return
-                        }
-                        if (response.code == 403) {
-                            context.showToast("Daily save limit reached")
-                            callback(null)
-                            return
-                        }
-
-                        if (response.isSuccessful) {
-                            val endTime = System.currentTimeMillis()
-                            Log.i(TAG, "Query roundtrip time: ${endTime - startTime} ms")
-                            callback(response.body?.string())
-                        } else {
-                            context.showToast("Query failed!")
-                            callback(null)
-                        }
-                    }
-                })
-            }
-
-            withValidToken(context, { token -> sendRequest(token) }, onInvalid = { callback(null) })
+            performAuthorizedRequest(
+                context = context,
+                url = EP.QUERY,
+                method = "POST",
+                jsonBody = jsonBody,
+                onSuccess = { responseBody ->
+                    val endTime = System.currentTimeMillis()
+                    Log.i(TAG, "Query round-trip time: ${endTime - startTime} ms")
+                    callback(responseBody)
+                },
+                onFailure = {
+                    Log.e(TAG, "Search query failed: $it")
+                    callback(null)
+                }
+            )
         }
-
         fun getSimilarFromServer(context: Context, fileName: String, callback: (success: Boolean, resultJson: String?) -> Unit) {
             Log.i(TAG, "Getting similar content for file: $fileName")
 
+            val requestUrl = "${EP.GET_SIMILAR}/$fileName"
             val startTime = System.currentTimeMillis()
-            val requestUrl = "$SERVER_URL/api/get_similar/$fileName"
 
-            fun sendRequest(token: String) {
-                val request = buildAuthorizedRequest(
-                    url = requestUrl,
-                    method = "GET",
-                    token = token
-                )
-
-                httpClient.newCall(request).enqueue(object : Callback {
-                    override fun onFailure(call: Call, e: IOException) {
-                        Log.e(TAG, "Get similar failed: ${e.localizedMessage}")
-                        context.showToast("Get similar failed!")
-                        callback(false, null)
-                    }
-
-                    override fun onResponse(call: Call, response: Response) {
-                        val roundtripTime = System.currentTimeMillis() - startTime
-                        val responseBody = response.body?.string()
-
-                        if (response.code == 401) {
-                            refreshAccessToken(context) { success, newToken ->
-                                if (success && !newToken.isNullOrEmpty()) sendRequest(newToken)
-                                else {
-                                    context.showToast("Login expired")
-                                    callback(false, null)
-                                }
-                            }
-                            return
-                        }
-
-                        if (response.isSuccessful) {
-                            Log.i(TAG, "Get similar roundtrip time: ${roundtripTime}ms")
-                            Log.d(TAG, "Get similar response: $responseBody")
-                            callback(true, responseBody)
-                        } else {
-                            Log.e(TAG, "Get similar failed with code ${response.code}: $responseBody")
-                            context.showToast("Get similar failed!")
-                            callback(false, null)
-                        }
-                    }
-                })
-            }
-
-            withValidToken(context, { token -> sendRequest(token) }, onInvalid = {
-                callback(false, null)
-            })
+            performAuthorizedRequest(
+                context = context,
+                url = requestUrl,
+                method = "GET",
+                onSuccess = { responseBody ->
+                    val duration = System.currentTimeMillis() - startTime
+                    Log.i(TAG, "Get similar round-trip time: ${duration}ms")
+                    Log.d(TAG, "Get similar response: $responseBody")
+                    callback(true, responseBody)
+                },
+                onFailure = {
+                    Log.e(TAG, "Get similar failed: $it")
+                    callback(false, null)
+                }
+            )
         }
         // endregion
 
@@ -1011,72 +932,28 @@ class Helpers {
                 }
             }
         }
-
         fun requestDataExport(context: Context, callback: (success: Boolean) -> Unit) {
             Log.i(TAG, "Starting bulk download...")
 
-            val accessToken = context.getAccessToken()
-            if (accessToken.isEmpty()) {
-                Log.e(TAG, "Access token missing")
-                context.showToast("Not logged in")
-                callback(false)
-                return
-            }
-
-            fun sendRequest(token: String) {
-                val request = buildAuthorizedRequest(
-                    EP.DATA_EXPORT,
-                    token = token,
-                    method = "GET",
-                    body = null
-                )
-
-                httpClient.newCall(request).enqueue(object : Callback {
-                    override fun onFailure(call: Call, e: IOException) {
-                        Log.e(TAG, "Bulk download failed: ${e.localizedMessage}")
-                        context.showToast("Download failed!")
-                        callback(false)
-                    }
-
-                    override fun onResponse(call: Call, response: Response) {
-                        when (response.code) {
-                            200 -> {
-                                Log.i(TAG, "Bulk download successful!")
-                                context.showToast("Bulk download successful!")
-                                callback(true)
-                            }
-
-                            401 -> {
-                                refreshAccessToken(context) { success, newToken ->
-                                    if (success && !newToken.isNullOrEmpty()) {
-                                        sendRequest(newToken) // retry
-                                    } else {
-                                        context.showToast("Session expired. Please log in again.")
-                                        callback(false)
-                                    }
-                                }
-                            }
-
-                            403 -> {
-                                context.showToast("Forbidden or daily limit reached")
-                                callback(false)
-                            }
-                            429 -> {
-                                context.showToast("Too many requests, slow down")
-                                callback(false)
-                            }
-
-                            else -> {
-                                Log.e(TAG, "Bulk download error ${response.code}")
-                                context.showToast("Download failed! Code: ${response.code}")
-                                callback(false)
-                            }
-                        }
-                    }
-                })
-            }
-
-            sendRequest(accessToken)
+            performAuthorizedRequest(
+                context = context,
+                url = EP.DATA_EXPORT,
+                method = "GET",
+                onSuccess = {
+                    Log.i(TAG, "Bulk download successful!")
+                    context.showToast("Bulk download successful!")
+                    callback(true)
+                },
+                onFailure = { error ->
+                    Log.e(TAG, "Bulk download failed: $error")
+                    context.showToast("Download failed!")
+                    callback(false)
+                },
+                onForbidden = {
+                    context.showToast("Forbidden or daily limit reached")
+                    callback(false)
+                }
+            )
         }
 
         fun getScreenshotsPath(): String? {
