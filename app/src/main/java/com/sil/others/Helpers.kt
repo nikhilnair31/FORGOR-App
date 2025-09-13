@@ -122,8 +122,7 @@ class Helpers {
             return builder.build()
         }
         private fun withValidToken(context: Context, onValid: (token: String) -> Unit, onInvalid: (() -> Unit)? = null) {
-            val prefs = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
-            val token = prefs.getString("access_token", "") ?: ""
+            val token = context.getAccessToken()
             if (token.isEmpty()) {
                 showToast(context, "Not logged in")
                 onInvalid?.invoke()
@@ -165,7 +164,59 @@ class Helpers {
                 }
             })
         }
+        fun performAuthorizedRequest(
+            context: Context,
+            url: String,
+            method: String = "GET",
+            jsonBody: String? = null,
+            onSuccess: (String) -> Unit,
+            onFailure: (String) -> Unit
+        ) {
+            fun sendRequest(token: String) {
+                val body = jsonBody?.toRequestBody("application/json".toMediaTypeOrNull())
 
+                val request = buildAuthorizedRequest(
+                    url = url,
+                    token = token,
+                    method = method,
+                    body = body
+                )
+
+                httpClient.newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        Log.e(TAG, "Request failed: ${e.localizedMessage}")
+                        showToast(context, "Request failed!")
+                        onFailure(e.localizedMessage ?: "Network error")
+                    }
+
+                    override fun onResponse(call: Call, response: Response) {
+                        val bodyStr = response.body?.string() ?: ""
+
+                        if (response.code == 401) {
+                            refreshAccessToken(context) { success, newToken ->
+                                if (success && !newToken.isNullOrEmpty()) {
+                                    sendRequest(newToken)
+                                } else {
+                                    showToast(context, "Session expired. Please log in again.")
+                                    onFailure("401: Token expired")
+                                }
+                            }
+                            return
+                        }
+
+                        if (response.isSuccessful) {
+                            onSuccess(bodyStr)
+                        } else {
+                            Log.e(TAG, "Error ${response.code}: $bodyStr")
+                            showToast(context, "Request failed!")
+                            onFailure("HTTP ${response.code}")
+                        }
+                    }
+                })
+            }
+
+            withValidToken(context) { token -> sendRequest(token) }
+        }
         // endregion
 
         // region Image Related
@@ -251,8 +302,7 @@ class Helpers {
             // Log.i(TAG, "getImageURL | getting image URL...")
 
             try {
-                val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
-                val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
+                val accessToken = context.getAccessToken()
                 if (accessToken.isEmpty()) {
                     Log.e(TAG, "Access token missing")
                     showToast(context, "Not logged in")
@@ -400,8 +450,7 @@ class Helpers {
 
         // region Auth Related
         fun refreshAccessToken(context: Context, onComplete: (success: Boolean, newToken: String?) -> Unit) {
-            val prefs = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
-            val refreshToken = prefs.getString("refresh_token", "") ?: ""
+            val refreshToken = context.getRefreshToken()
             if (refreshToken.isEmpty()) {
                 Log.e(TAG, "Refresh token missing")
                 autoLogout(context)
@@ -503,11 +552,7 @@ class Helpers {
                         val refreshToken = json.optString("refresh_token", "")
 
                         if (accessToken.isNotEmpty() && refreshToken.isNotEmpty()) {
-                            val prefs = context.getSharedPreferences(PREFS_GENERAL, Context.MODE_PRIVATE)
-                            prefs.edit {
-                                putString("access_token", accessToken)
-                                putString("refresh_token", refreshToken)
-                            }
+                            context.saveTokens(accessToken, refreshToken)
                             callback(true)
                         } else {
                             Log.e(TAG, "Missing tokens in login response")
@@ -527,13 +572,7 @@ class Helpers {
         fun autoLogout(context: Context) {
             Log.i(TAG, "autoLogout | Logging out user...")
 
-            val prefs = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
-            prefs.edit {
-                remove("username")
-                remove("email")
-                remove("access_token")
-                remove("refresh_token")
-            }
+            context.clearAuthSharedPrefs()
 
             showToast(context, "Session expired. Please sign in again.")
 
@@ -544,170 +583,20 @@ class Helpers {
         // endregion
 
         // region User Account Related
-        fun authAccountDelete(context: Context, callback: (success: Boolean) -> Unit) {
-            Log.i(TAG, "Trying to delete account...")
-
-            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
-            val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
-            if (accessToken.isEmpty()) {
-                Log.e(TAG, "Access token missing")
-                showToast(context, "Not logged in")
-                return
-            }
-
-            fun sendRequest(token: String) {
-                val request = buildAuthorizedRequest(
-                    EP.DELETE_ACCOUNT,
-                    token = token,
-                    method = "DELETE",
-                    body = null
-                )
-
-                httpClient.newCall(request).enqueue(object : Callback {
-                    override fun onFailure(call: Call, e: IOException) {
-                        Log.e(TAG, "Account delete failed: ${e.localizedMessage}")
-                        showToast(context, "Delete failed!")
-                        callback(false)
-                    }
-
-                    override fun onResponse(call: Call, response: Response) {
-                        val responseBody = response.body?.string()
-
-                        if (response.code == 401) {
-                            refreshAccessToken(context) { success, newToken ->
-                                if (success && !newToken.isNullOrEmpty()) {
-                                    sendRequest(newToken) // Retry with refreshed token
-                                } else {
-                                    showToast(context, "Session expired. Please log in again.")
-                                    callback(false)
-                                }
-                            }
-                            return
-                        }
-
-                        if (response.isSuccessful) {
-                            Log.i(TAG, "Account deleted successfully: $responseBody")
-                            showToast(context, "Account deleted")
-                            callback(true)
-                        } else {
-                            Log.e(TAG, "Delete error ${response.code}: $responseBody")
-                            showToast(context, "Delete failed!")
-                            callback(false)
-                        }
-                    }
-                })
-            }
-
-            sendRequest(accessToken)
-        }
-
-        fun getSummaryFrequency(context: Context, callback: (success: Int) -> Unit) {
-            Log.i(TAG, "Trying to get summary frequency index...")
-
-            fun sendRequest(token: String) {
-                val request = buildAuthorizedRequest(
-                    url = EP.GET_SUMMARY_FREQUENCY,
-                    method = "GET",
-                    token = token
-                )
-
-                httpClient.newCall(request).enqueue(object : Callback {
-                    override fun onFailure(call: Call, e: IOException) {
-                        Log.e(TAG, "Failed to get summary frequency index: ${e.localizedMessage}")
-                        showToast(context, "Failed to get summary frequency index!")
-                        callback(0)
-                    }
-
-                    override fun onResponse(call: Call, response: Response) {
-                        if (response.code == 401) {
-                            refreshAccessToken(context) { success, newToken ->
-                                if (success && newToken != null) sendRequest(newToken)
-                                else {
-                                    showToast(context, "Login expired")
-                                    callback(0)
-                                }
-                            }
-                            return
-                        }
-
-                        if (response.isSuccessful) {
-                            response.body?.string()?.let { body ->
-                                try {
-                                    val json = JSONObject(body)
-                                    val summaryFrequencyIndex = json.getInt("summary_index")
-                                    val sharedPrefs = context.getSharedPreferences(TAG, MODE_PRIVATE)
-                                    sharedPrefs.edit { putInt("summary_index", summaryFrequencyIndex) }
-                                    callback(summaryFrequencyIndex)
-                                } catch (e: Exception) {
-                                    Log.e(TAG, "JSON parsing error: ${e.localizedMessage}")
-                                    callback(0)
-                                }
-                            } ?: run {
-                                callback(0)
-                            }
-                        } else {
-                            showToast(context, "Could not get summary frequency index")
-                            callback(0)
-                        }
-                    }
-                })
-            }
-
-            withValidToken(context, { token -> sendRequest(token) })
-        }
-        fun getDigestFrequency(context: Context, callback: (success: Int) -> Unit) {
-            Log.i(TAG, "Trying to get digest frequency index...")
-
-            fun sendRequest(token: String) {
-                val request = buildAuthorizedRequest(
-                    url = EP.GET_DIGEST_FREQUENCY,
-                    method = "GET",
-                    token = token
-                )
-
-                httpClient.newCall(request).enqueue(object : Callback {
-                    override fun onFailure(call: Call, e: IOException) {
-                        Log.e(TAG, "Failed to get digest frequency index: ${e.localizedMessage}")
-                        showToast(context, "Failed to get digest frequency index!")
-                        callback(0)
-                    }
-
-                    override fun onResponse(call: Call, response: Response) {
-                        if (response.code == 401) {
-                            refreshAccessToken(context) { success, newToken ->
-                                if (success && newToken != null) sendRequest(newToken)
-                                else {
-                                    showToast(context, "Login expired")
-                                    callback(0)
-                                }
-                            }
-                            return
-                        }
-
-                        if (response.isSuccessful) {
-                            response.body?.string()?.let { body ->
-                                try {
-                                    val json = JSONObject(body)
-                                    val digestFrequencyIndex = json.getInt("digest_index")
-                                    val sharedPrefs = context.getSharedPreferences(TAG, MODE_PRIVATE)
-                                    sharedPrefs.edit { putInt("digest_index", digestFrequencyIndex) }
-                                    callback(digestFrequencyIndex)
-                                } catch (e: Exception) {
-                                    Log.e(TAG, "JSON parsing error: ${e.localizedMessage}")
-                                    callback(0)
-                                }
-                            } ?: run {
-                                callback(0)
-                            }
-                        } else {
-                            showToast(context, "Could not get digest frequency index")
-                            callback(0)
-                        }
-                    }
-                })
-            }
-
-            withValidToken(context, { token -> sendRequest(token) })
+        fun authAccountDelete(context: Context, callback: (Boolean) -> Unit) {
+            performAuthorizedRequest(
+                context = context,
+                url = EP.DELETE_ACCOUNT,
+                method = "DELETE",
+                onSuccess = {
+                    Log.i(TAG, "Account deleted: $it")
+                    showToast(context, "Account deleted")
+                    callback(true)
+                },
+                onFailure = {
+                    callback(false)
+                }
+            )
         }
 
         fun getAllFrequencies(callback: (List<FrequencyOption>) -> Unit) {
@@ -751,267 +640,114 @@ class Helpers {
                 }
             })
         }
-
-        fun editUserUsernameToServer(context: Context, newUsername: String, callback: (success: Boolean) -> Unit) {
-            Log.i(TAG, "Trying to edit username to $newUsername")
-
-            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
-            val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
-            if (accessToken.isEmpty()) {
-                Log.e(TAG, "Access token missing")
-                showToast(context, "Not logged in")
-                return
-            }
-
-            val jsonBody = """
-            {
-                "new_username": "$newUsername"
-            }
-            """.trimIndent()
-            val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
-
-            fun sendRequest(token: String) {
-                val request = buildAuthorizedRequest(
-                    EP.UPDATE_USERNAME,
-                    token = token,
-                    method = "PUT",
-                    body = requestBody
-                )
-
-                httpClient.newCall(request).enqueue(object : Callback {
-                    override fun onFailure(call: Call, e: IOException) {
-                        Log.e(TAG, "Edit username failed: ${e.localizedMessage}")
-                        showToast(context, "Edit failed!")
-                        callback(false)
+        fun getSummaryFrequency(context: Context, callback: (Int) -> Unit) {
+            performAuthorizedRequest(
+                context = context,
+                url = EP.GET_SUMMARY_FREQUENCY,
+                method = "GET",
+                onSuccess = { body ->
+                    try {
+                        val json = JSONObject(body)
+                        val index = json.getInt("summary_index")
+                        context.getSharedPreferences(TAG, MODE_PRIVATE).edit { putInt("summary_index", index) }
+                        callback(index)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Parse error: ${e.localizedMessage}")
+                        callback(0)
                     }
-
-                    override fun onResponse(call: Call, response: Response) {
-                        val responseBody = response.body?.string()
-
-                        if (response.code == 401) {
-                            refreshAccessToken(context) { success, newToken ->
-                                if (success && !newToken.isNullOrEmpty()) {
-                                    sendRequest(newToken) // Retry with refreshed token
-                                } else {
-                                    showToast(context, "Session expired. Please log in again.")
-                                    callback(false)
-                                }
-                            }
-                            return
-                        }
-                        if (response.code == 403) {
-                            showToast(context, "Daily save limit reached")
-                            return
-                        }
-
-                        if (response.isSuccessful) {
-                            Log.i(TAG, "Edit username successful: $responseBody")
-                            callback(true)
-                        } else {
-                            Log.e(TAG, "Edit username error ${response.code}: $responseBody")
-                            showToast(context, "Edit failed!")
-                            callback(false)
-                        }
-                    }
-                })
-            }
-
-            sendRequest(accessToken)
-        }
-        fun editUserEmailToServer(context: Context, newEmail: String, callback: (success: Boolean) -> Unit) {
-            Log.i(TAG, "Trying to edit email to $newEmail")
-
-            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
-            val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
-            if (accessToken.isEmpty()) {
-                Log.e(TAG, "Access token missing")
-                showToast(context, "Not logged in")
-                return
-            }
-
-            val jsonBody = """
-            {
-                "new_email": "$newEmail"
-            }
-            """.trimIndent()
-            val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
-
-            fun sendRequest(token: String) {
-                val request = buildAuthorizedRequest(
-                    EP.UPDATE_EMAIL,
-                    token = token,
-                    method = "PUT",
-                    body = requestBody
-                )
-
-                httpClient.newCall(request).enqueue(object : Callback {
-                    override fun onFailure(call: Call, e: IOException) {
-                        Log.e(TAG, "Edit email failed: ${e.localizedMessage}")
-                        showToast(context, "Edit failed!")
-                        callback(false)
-                    }
-
-                    override fun onResponse(call: Call, response: Response) {
-                        val responseBody = response.body?.string()
-
-                        if (response.code == 401) {
-                            refreshAccessToken(context) { success, newToken ->
-                                if (success && !newToken.isNullOrEmpty()) {
-                                    sendRequest(newToken) // Retry with refreshed token
-                                } else {
-                                    showToast(context, "Session expired. Please log in again.")
-                                    callback(false)
-                                }
-                            }
-                            return
-                        }
-                        if (response.code == 403) {
-                            showToast(context, "Daily save limit reached")
-                            return
-                        }
-
-                        if (response.isSuccessful) {
-                            Log.i(TAG, "Edit email successful: $responseBody")
-                            callback(true)
-                        } else {
-                            Log.e(TAG, "Edit email error ${response.code}: $responseBody")
-                            showToast(context, "Edit failed!")
-                            callback(false)
-                        }
-                    }
-                })
-            }
-
-            sendRequest(accessToken)
-        }
-        fun editSummaryFreqToServer(context: Context, frequencyId: Int, callback: (success: Boolean) -> Unit) {
-            Log.i(TAG, "Updating summary frequency to ID: $frequencyId")
-
-            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
-            val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
-            if (accessToken.isEmpty()) {
-                Log.e(TAG, "Access token missing")
-                showToast(context, "Not logged in")
-                return
-            }
-
-            val jsonBody = """
-                {
-                    "frequency_id": "$frequencyId"
+                },
+                onFailure = {
+                    callback(0)
                 }
-            """.trimIndent()
-            val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
-
-            fun sendRequest(token: String) {
-                val request = buildAuthorizedRequest(
-                    EP.GET_SUMMARY_FREQUENCY,
-                    token = token,
-                    method = "PUT",
-                    body = requestBody
-                )
-
-                httpClient.newCall(request).enqueue(object : Callback {
-                    override fun onFailure(call: Call, e: IOException) {
-                        Log.e(TAG, "Edit summary freq failed: ${e.localizedMessage}")
-                        showToast(context, "Edit failed!")
-                        callback(false)
-                    }
-
-                    override fun onResponse(call: Call, response: Response) {
-                        val body = response.body?.string()
-
-                        when (response.code) {
-                            200 -> {
-                                Log.i("Helpers", "Summary frequency updated: $body")
-                                showToast(context, "Summary updated")
-                                callback(true)
-                            }
-                            401 -> {
-                                refreshAccessToken(context) { success, newToken ->
-                                    if (success && !newToken.isNullOrEmpty()) {
-                                        editSummaryFreqToServer(context, frequencyId, callback) // Retry
-                                    } else {
-                                        showToast(context, "Session expired")
-                                        callback(false)
-                                    }
-                                }
-                            }
-                            else -> {
-                                Log.e("Helpers", "Failed to update summary freq. Code: ${response.code}, Body: $body")
-                                showToast(context, "Update failed!")
-                                callback(false)
-                            }
-                        }
-
-                    }
-                })
-            }
-
-            sendRequest(accessToken)
+            )
         }
-        fun editDigestFreqToServer(context: Context, frequencyId: Int, callback: (success: Boolean) -> Unit) {
-            Log.i(TAG, "Updating digest frequency to ID: $frequencyId")
-
-            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
-            val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
-            if (accessToken.isEmpty()) {
-                Log.e(TAG, "Access token missing")
-                showToast(context, "Not logged in")
-                return
-            }
-
-            val jsonBody = """
-                {
-                    "frequency_id": $frequencyId
+        fun getDigestFrequency(context: Context, callback: (Int) -> Unit) {
+            performAuthorizedRequest(
+                context = context,
+                url = EP.GET_DIGEST_FREQUENCY,
+                method = "GET",
+                onSuccess = { body ->
+                    try {
+                        val json = JSONObject(body)
+                        val index = json.getInt("digest_index")
+                        context.getSharedPreferences(TAG, MODE_PRIVATE).edit { putInt("digest_index", index) }
+                        callback(index)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Parse error: ${e.localizedMessage}")
+                        callback(0)
+                    }
+                },
+                onFailure = {
+                    callback(0)
                 }
-            """.trimIndent()
-            val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
+            )
+        }
 
-            fun sendRequest(token: String) {
-                val request = buildAuthorizedRequest(
-                    EP.GET_DIGEST_FREQUENCY,
-                    token = token,
-                    method = "PUT",
-                    body = requestBody
-                )
-
-                httpClient.newCall(request).enqueue(object : Callback {
-                    override fun onFailure(call: Call, e: IOException) {
-                        Log.e(TAG, "Edit digest freq failed: ${e.localizedMessage}")
-                        showToast(context, "Edit failed!")
-                        callback(false)
-                    }
-
-                    override fun onResponse(call: Call, response: Response) {
-                        val body = response.body?.string()
-
-                        when (response.code) {
-                            200 -> {
-                                Log.i("Helpers", "Digest frequency updated: $body")
-                                showToast(context, "Digest updated")
-                                callback(true)
-                            }
-                            401 -> {
-                                refreshAccessToken(context) { success, newToken ->
-                                    if (success && !newToken.isNullOrEmpty()) {
-                                        editDigestFreqToServer(context, frequencyId, callback) // Retry
-                                    } else {
-                                        showToast(context, "Session expired")
-                                        callback(false)
-                                    }
-                                }
-                            }
-                            else -> {
-                                Log.e("Helpers", "Failed to update digest freq. Code: ${response.code}, Body: $body")
-                                showToast(context, "Update failed!")
-                                callback(false)
-                            }
-                        }
-                    }
-                })
-            }
-
-            sendRequest(accessToken)
+        fun editUserUsernameToServer(context: Context, newUsername: String, callback: (Boolean) -> Unit) {
+            val json = """{ "new_username": "$newUsername" }"""
+            performAuthorizedRequest(
+                context = context,
+                url = EP.UPDATE_USERNAME,
+                method = "PUT",
+                jsonBody = json,
+                onSuccess = {
+                    Log.i(TAG, "Username updated: $it")
+                    callback(true)
+                },
+                onFailure = {
+                    callback(false)
+                }
+            )
+        }
+        fun editUserEmailToServer(context: Context, newEmail: String, callback: (Boolean) -> Unit) {
+            val json = """{ "new_email": "$newEmail" }"""
+            performAuthorizedRequest(
+                context = context,
+                url = EP.UPDATE_EMAIL,
+                method = "PUT",
+                jsonBody = json,
+                onSuccess = {
+                    Log.i(TAG, "Email updated: $it")
+                    callback(true)
+                },
+                onFailure = {
+                    callback(false)
+                }
+            )
+        }
+        fun editSummaryFreqToServer(context: Context, frequencyId: Int, callback: (Boolean) -> Unit) {
+            val json = """{ "frequency_id": $frequencyId }"""
+            performAuthorizedRequest(
+                context = context,
+                url = EP.GET_SUMMARY_FREQUENCY,
+                method = "PUT",
+                jsonBody = json,
+                onSuccess = {
+                    Log.i(TAG, "Summary frequency updated: $it")
+                    showToast(context, "Summary updated")
+                    callback(true)
+                },
+                onFailure = {
+                    callback(false)
+                }
+            )
+        }
+        fun editDigestFreqToServer(context: Context, frequencyId: Int, callback: (Boolean) -> Unit) {
+            val json = """{ "frequency_id": $frequencyId }"""
+            performAuthorizedRequest(
+                context = context,
+                url = EP.GET_DIGEST_FREQUENCY,
+                method = "PUT",
+                jsonBody = json,
+                onSuccess = {
+                    Log.i(TAG, "Digest frequency updated: $it")
+                    showToast(context, "Digest updated")
+                    callback(true)
+                },
+                onFailure = {
+                    callback(false)
+                }
+            )
         }
         // endregion
 
@@ -1019,8 +755,7 @@ class Helpers {
         fun insertPostInteraction(context: Context, fileId: Int, query: String, callback: (success: Boolean) -> Unit) {
             Log.i(TAG, "Trying to insert interaction for fileId $fileId with query $query")
 
-            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
-            val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
+            val accessToken = context.getAccessToken()
             if (accessToken.isEmpty()) {
                 Log.e(TAG, "Access token missing")
                 showToast(context, "Not logged in")
@@ -1211,8 +946,7 @@ class Helpers {
             Log.d(TAG, "Attempting to download from: $downloadUrl")
             CoroutineScope(Dispatchers.IO).launch {
                 try {
-                    val sharedPrefs = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
-                    val accessToken = sharedPrefs.getString("access_token", "") ?: ""
+                    val accessToken = context.getAccessToken()
                     if (accessToken.isEmpty()) {
                         withContext(Dispatchers.Main) {
                             showToast(context, "Not logged in")
@@ -1270,8 +1004,7 @@ class Helpers {
         fun requestDataExport(context: Context, callback: (success: Boolean) -> Unit) {
             Log.i(TAG, "Starting bulk download...")
 
-            val generalSharedPrefs: SharedPreferences = context.getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE)
-            val accessToken = generalSharedPrefs.getString("access_token", "") ?: ""
+            val accessToken = context.getAccessToken()
             if (accessToken.isEmpty()) {
                 Log.e(TAG, "Access token missing")
                 showToast(context, "Not logged in")
@@ -1504,6 +1237,25 @@ class Helpers {
                 Log.e(TAG, "No activity found to handle opening $url: ${e.localizedMessage}")
             } catch (e: Exception) { // Catch other potential exceptions
                 Log.e(TAG, "Failed to open $url: ${e.localizedMessage}")
+            }
+        }
+        // endregion
+
+        // region Shared Prefs Related
+        fun Context.getAccessToken(): String = getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE).getString("access_token", "") ?: ""
+        fun Context.getRefreshToken(): String = getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE).getString("refresh_token", "") ?: ""
+        fun Context.saveTokens(access: String, refresh: String) {
+            getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE).edit {
+                putString("access_token", access)
+                putString("refresh_token", refresh)
+            }
+        }
+        fun Context.clearAuthSharedPrefs() {
+            getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE).edit {
+                remove("username")
+                remove("email")
+                remove("access_token")
+                remove("refresh_token")
             }
         }
         // endregion
