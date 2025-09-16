@@ -51,7 +51,6 @@ class Helpers {
         private const val PREFS_GENERAL = "com.sil.buildmode.generalSharedPrefs"
 
         private const val SERVER_URL = BuildConfig.SERVER_URL
-        private const val APP_KEY = BuildConfig.APP_KEY
         private const val USER_AGENT = BuildConfig.USER_AGENT
 
         private val httpClient = OkHttpClient.Builder()
@@ -59,7 +58,7 @@ class Helpers {
             .writeTimeout(30, TimeUnit.SECONDS)
             .build()
 
-        public object EP {
+        object EP {
             // auth.py
             const val REFRESH                           = "$SERVER_URL/api/refresh_token"
             const val REGISTER                          = "$SERVER_URL/api/register"
@@ -107,7 +106,6 @@ class Helpers {
                 .url(url)
                 .addHeader("Authorization", "Bearer $token")
                 .addHeader("User-Agent", USER_AGENT)
-                .addHeader("X-App-Key", APP_KEY)
 
             val empty = ByteArray(0).toRequestBody()
 
@@ -146,7 +144,6 @@ class Helpers {
             val requestBuilder = Request.Builder()
                 .url(url)
                 .addHeader("User-Agent", USER_AGENT)
-                .addHeader("X-App-Key", APP_KEY)
 
             when (method.uppercase()) {
                 "GET" -> requestBuilder.get()
@@ -166,7 +163,7 @@ class Helpers {
                 }
 
                 override fun onResponse(call: Call, response: Response) {
-                    val bodyStr = response.body?.string() ?: ""
+                    val bodyStr = response.body.string()
                     if (response.isSuccessful) {
                         onSuccess(bodyStr)
                     } else {
@@ -190,7 +187,6 @@ class Helpers {
                 .url(url)
                 .post(requestBody)
                 .addHeader("User-Agent", USER_AGENT)
-                .addHeader("X-App-Key", APP_KEY)
 
             // Apply custom headers
             headers.forEach { (key, value) -> requestBuilder.addHeader(key, value) }
@@ -205,7 +201,7 @@ class Helpers {
                 }
 
                 override fun onResponse(call: Call, response: Response) {
-                    val responseBody = response.body?.string() ?: ""
+                    val responseBody = response.body.string()
                     if (response.isSuccessful) {
                         Log.i(TAG, "POST success: $responseBody")
                         onSuccess(responseBody)
@@ -244,7 +240,7 @@ class Helpers {
                     }
 
                     override fun onResponse(call: Call, response: Response) {
-                        val bodyStr = response.body?.string() ?: ""
+                        val bodyStr = response.body.string()
 
                         when (response.code) {
                             401 -> {
@@ -305,7 +301,7 @@ class Helpers {
                     }
 
                     override fun onResponse(call: Call, response: Response) {
-                        val body = response.body?.string()
+                        val body = response.body.string()
                         when {
                             response.code == 401 -> {
                                 refreshAccessToken(context) { success, newToken ->
@@ -424,7 +420,6 @@ class Helpers {
                 val glideUrl = GlideUrl(imageUrl, LazyHeaders.Builder()
                     .addHeader("Authorization", "Bearer $accessToken")
                     .addHeader("User-Agent", USER_AGENT)
-                    .addHeader("X-App-Key", APP_KEY)
                     .build())
 
                 return glideUrl
@@ -891,12 +886,11 @@ class Helpers {
                         .url(downloadUrl)
                         .addHeader("Authorization", "Bearer $accessToken")
                         .addHeader("User-Agent", USER_AGENT)
-                        .addHeader("X-App-Key", APP_KEY)
                         .build()
                     val response = client.newCall(request).execute()
 
                     if (!response.isSuccessful) {
-                        val errorBody = response.body?.string()
+                        val errorBody = response.body.string()
                         Log.e(TAG, "Error ${response.code}: $errorBody")
                         return@launch
                     }
