@@ -2,9 +2,7 @@ package com.sil.services
 
 import android.app.Service
 import android.content.ContentUris
-import android.content.Context
 import android.content.Intent
-import android.os.Environment
 import android.os.FileObserver
 import android.os.IBinder
 import android.provider.MediaStore
@@ -13,9 +11,10 @@ import com.sil.others.Helpers
 import com.sil.others.NotificationHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.io.File
 
 class ScreenshotService : Service() {
     // region Vars
@@ -25,6 +24,8 @@ class ScreenshotService : Service() {
 
     private lateinit var notificationHelper: NotificationHelper
     private val monitoringNotificationId = 2
+
+    private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     // endregion
 
     // region Common
@@ -37,6 +38,7 @@ class ScreenshotService : Service() {
     override fun onDestroy() {
         Log.i(TAG, "onDestroy | Screenshot monitor service destroyed")
 
+        serviceScope.cancel()
         stopMonitoring()
         super.onDestroy()
     }
@@ -68,7 +70,7 @@ class ScreenshotService : Service() {
         if (screenshotsPath != null) {
             Log.i(TAG, "Starting to monitor screenshots folder: $screenshotsPath")
 
-            screenshotObserver = ScreenshotFileObserver(screenshotsPath)
+            screenshotObserver = ScreenshotFileObserver(screenshotsPath, serviceScope)
             screenshotObserver?.startWatching()
         } else {
             Log.e(TAG, "Could not determine screenshots directory path")
@@ -81,53 +83,69 @@ class ScreenshotService : Service() {
         screenshotObserver = null
     }
 
-    private inner class ScreenshotFileObserver(path: String) : FileObserver(path, MOVED_TO) {
+    private inner class ScreenshotFileObserver(path: String, private val coroutineScope: CoroutineScope) : FileObserver(path, MOVED_TO) {
         override fun onEvent(event: Int, path: String?) {
             if (event == MOVED_TO && path != null) {
                 Log.i(TAG, "Screenshot detected: $path")
 
                 // Delay to ensure MediaStore has indexed it
-                CoroutineScope(Dispatchers.IO).launch {
-                    delay(1000)
+                coroutineScope.launch {
+                    try {
+                        delay(500)
 
-                    val projection = arrayOf(
-                        MediaStore.Images.Media._ID,
-                        MediaStore.Images.Media.DISPLAY_NAME,
-                        MediaStore.Images.Media.DATE_ADDED
-                    )
+                        val projection = arrayOf(
+                            MediaStore.Images.Media._ID,
+                            MediaStore.Images.Media.DISPLAY_NAME,
+                            MediaStore.Images.Media.DATE_ADDED
+                        )
 
-                    val selection = "${MediaStore.Images.Media.DISPLAY_NAME}=?"
-                    val selectionArgs = arrayOf(path)
+                        val selection = "${MediaStore.Images.Media.DISPLAY_NAME}=?"
+                        val selectionArgs = arrayOf(path)
 
-                    val sortOrder = "${MediaStore.Images.Media.DATE_ADDED} DESC"
+                        val sortOrder = "${MediaStore.Images.Media.DATE_ADDED} DESC"
 
-                    contentResolver.query(
-                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                        projection,
-                        selection,
-                        selectionArgs,
-                        sortOrder
-                    )?.use { cursor ->
-                        if (cursor.moveToFirst()) {
-                            val idCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-                            val id = cursor.getLong(idCol)
-                            val uri = ContentUris.withAppendedId(
-                                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                                id
-                            )
+                        applicationContext.contentResolver.query(
+                            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                            projection,
+                            selection,
+                            selectionArgs,
+                            sortOrder
+                        )?.use { cursor ->
+                            if (cursor.moveToFirst()) {
+                                val idCol =
+                                    cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+                                val id = cursor.getLong(idCol)
+                                val uri = ContentUris.withAppendedId(
+                                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                                    id
+                                )
 
-                            Log.i(TAG, "Uploading screenshot via URI: $uri")
+                                Log.i(TAG, "Uploading screenshot via URI: $uri")
 
-                            val tempFile = Helpers.copyUriToTempFile(this@ScreenshotService, uri)
-                            if (tempFile != null) {
-                                Helpers.uploadImageFileToServer(this@ScreenshotService, tempFile)
+                                val tempFile =
+                                    Helpers.copyUriToTempFile(this@ScreenshotService, uri)
+                                if (tempFile != null) {
+                                    Helpers.uploadImageFileToServer(
+                                        this@ScreenshotService,
+                                        tempFile
+                                    )
+                                } else {
+                                    Log.e(TAG, "Failed to copy screenshot to temp file")
+                                }
                             } else {
-                                Log.e(TAG, "Failed to copy screenshot to temp file")
+                                Log.e(TAG, "No MediaStore match for $path")
                             }
+                        }
+                    } catch (e: Exception) {
+                        // Important: Catch CancellationException if you need to perform cleanup
+                        // but generally, launch { ... } handles it by stopping.
+                        if (e is kotlinx.coroutines.CancellationException) {
+                            Log.i(TAG, "Screenshot processing coroutine cancelled gracefully.")
                         } else {
-                            Log.e(TAG, "No MediaStore match for $path")
+                            Log.e(TAG, "Error processing screenshot: ${e.localizedMessage}", e)
                         }
                     }
+
                 }
             }
         }

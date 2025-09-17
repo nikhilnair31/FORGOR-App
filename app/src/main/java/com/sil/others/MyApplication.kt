@@ -20,9 +20,6 @@ class MyApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        // Initialize FreezeDetector
-        freezeDetector = FreezeDetector(this)
-
         // Set default crash handler (your existing one)
         Thread.setDefaultUncaughtExceptionHandler { thread: Thread?, throwable: Throwable? ->
             logCrashToFile(throwable)
@@ -37,6 +34,26 @@ class MyApplication : Application() {
             }
         }
 
+//        freezeDetector = FreezeDetector(this)
+//        startFreezeListener()
+    }
+
+    private fun logCrashToFile(throwable: Throwable?) {
+        try {
+            val logFile = File(filesDir, "crash_log.txt")
+            val writer = FileWriter(logFile, true)
+            val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US).format(Date())
+            writer.write("=== CRASH at: $timestamp ===\n")
+            writer.write(Log.getStackTraceString(throwable))
+            writer.write("\n\n")
+            writer.close()
+            Log.e(TAG, "Crash logged to ${logFile.absolutePath}")
+        } catch (e: IOException) {
+            Log.e("CrashLogger", "Failed to write crash log (inner exception)", e)
+        }
+    }
+
+    private fun startFreezeListener() {
         // Register Activity lifecycle callbacks to manage FreezeDetector
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
             override fun onActivityStarted(activity: Activity) {
@@ -62,20 +79,5 @@ class MyApplication : Application() {
             override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
             override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
         })
-    }
-
-    private fun logCrashToFile(throwable: Throwable?) {
-        try {
-            val logFile = File(filesDir, "crash_log.txt")
-            val writer = FileWriter(logFile, true)
-            val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US).format(Date())
-            writer.write("=== CRASH at: $timestamp ===\n")
-            writer.write(Log.getStackTraceString(throwable))
-            writer.write("\n\n")
-            writer.close()
-            Log.e(TAG, "Crash logged to ${logFile.absolutePath}")
-        } catch (e: IOException) {
-            Log.e("CrashLogger", "Failed to write crash log (inner exception)", e)
-        }
     }
 }
