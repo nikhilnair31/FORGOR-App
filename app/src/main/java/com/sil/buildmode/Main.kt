@@ -457,7 +457,7 @@ class Main : AppCompatActivity() {
     // region Service Related
     private fun checkScreenshotServiceStatus() {
         val wasScreenshotServiceRunning = generalSharedPreferences.getBoolean(KEY_SCREENSHOT_ENABLED, false)
-        val isScreenshotServiceRunning = Helpers.isServiceRunning(this, ScreenshotService::class.java)
+        val isScreenshotServiceRunning = Helpers.isServiceRunning(ScreenshotService::class.java)
 
         val screenshotServiceIntent = Intent(this, ScreenshotService::class.java)
 

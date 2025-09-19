@@ -82,7 +82,7 @@ class FeatureToggles : AppCompatActivity() {
 
     // region UI Related
     private fun initScreenshotToggle() {
-        val isRunning = Helpers.isServiceRunning(this, ScreenshotService::class.java)
+        val isRunning = Helpers.isServiceRunning(ScreenshotService::class.java)
         updateToggle(screenshotToggleButton, isRunning)
 
         screenshotToggleButton.setOnCheckedChangeListener { _, isChecked ->

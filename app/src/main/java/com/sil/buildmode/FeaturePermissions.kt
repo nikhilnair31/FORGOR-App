@@ -85,7 +85,7 @@ class FeaturePermissions : AppCompatActivity() {
 
     // region UI Related
     private fun initScreenshotToggle() {
-        val isRunning = Helpers.isServiceRunning(this, ScreenshotService::class.java)
+        val isRunning = Helpers.isServiceRunning(ScreenshotService::class.java)
         updateToggle(screenshotToggleButton, isRunning)
 
         screenshotToggleButton.setOnCheckedChangeListener { _, isChecked ->
@@ -99,7 +99,6 @@ class FeaturePermissions : AppCompatActivity() {
                 } else {
                     pendingToggle = { startScreenshotService(serviceIntent) }
                     requestScreenshotPermissions()
-                    screenshotToggleButton.isChecked = false
                 }
             } else {
                 stopService(serviceIntent)

@@ -11,6 +11,8 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.bumptech.glide.Glide
 import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -88,7 +90,6 @@ class FullContent : AppCompatActivity() {
     // region UI Related
     private fun toggleUI() {
         isUiVisible = !isUiVisible
-        val visibility = if (isUiVisible) View.VISIBLE else View.GONE
 
         // Animate visibility (optional: remove if you want instant toggle)
         listOf(similarPostButton, sharePostButton, deletePostButton).forEach { button ->
@@ -116,13 +117,17 @@ class FullContent : AppCompatActivity() {
 
         // Toggle system UI (status/nav bars)
         if (!isUiVisible) {
-            window.decorView.systemUiVisibility = (
-                    View.SYSTEM_UI_FLAG_FULLSCREEN
-                            or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                            or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                    )
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+            WindowInsetsControllerCompat(window, window.decorView).let { controller ->
+                controller.hide(WindowInsetsCompat.Type.statusBars() or WindowInsetsCompat.Type.navigationBars())
+                controller.systemBarsBehavior =
+                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
         } else {
-            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+            WindowCompat.setDecorFitsSystemWindows(window, true)
+            WindowInsetsControllerCompat(window, window.decorView).show(
+                WindowInsetsCompat.Type.statusBars() or WindowInsetsCompat.Type.navigationBars()
+            )
         }
     }
     private fun initButtons(fileName: String) {
@@ -182,7 +187,6 @@ class FullContent : AppCompatActivity() {
                 .show()
         }
     }
-
     private fun initLinks(tags: String) {
         // Clear previous links
         linksLinearLayout.removeAllViews()
@@ -261,6 +265,5 @@ class FullContent : AppCompatActivity() {
             }
         }
     }
-
     // endregion
 }

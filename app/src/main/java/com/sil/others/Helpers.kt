@@ -16,10 +16,16 @@ import android.widget.Toast
 import androidx.core.content.FileProvider
 import androidx.core.content.edit
 import androidx.core.net.toUri
+import androidx.work.Constraints
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.bumptech.glide.load.model.GlideUrl
 import com.bumptech.glide.load.model.LazyHeaders
 import com.sil.buildmode.BuildConfig
 import com.sil.models.FrequencyOption
+import com.sil.utils.ScreenshotServiceUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -65,7 +71,6 @@ class Helpers {
             const val LOGIN                             = "$SERVER_URL/api/login"
 
             // data.py
-            const val UPLOAD_IMAGEURL                   = "$SERVER_URL/api/upload/imageurl"
             const val UPLOAD_IMAGE                      = "$SERVER_URL/api/upload/image"
             const val DELETE_FILE                       = "$SERVER_URL/api/delete/file"
             const val GET_FILE                          = "$SERVER_URL/api/get_file"
@@ -74,13 +79,11 @@ class Helpers {
 
             // query.py
             const val GET_SIMILAR                       = "$SERVER_URL/api/get_similar"
-            const val CHECK_TEXT                        = "$SERVER_URL/api/check/text"
             const val QUERY                             = "$SERVER_URL/api/query"
 
             // tracking.py
             const val GET_TRACKING_LINKS                = "$SERVER_URL/api/generate-tracking-links"
             const val INSERT_POST_INTERACTION           = "$SERVER_URL/api/insert-post-interaction"
-            const val INSERT_LINK_INTERACTION           = "$SERVER_URL/api/insert-link-interaction"
 
             // users.py
             const val GET_ALL_FREQUENCIES               = "$SERVER_URL/api/frequencies"
@@ -90,8 +93,6 @@ class Helpers {
             const val DELETE_ACCOUNT                    = "$SERVER_URL/api/account_delete"
             const val UPDATE_USERNAME                   = "$SERVER_URL/api/update-username"
             const val UPDATE_EMAIL                      = "$SERVER_URL/api/update-email"
-            const val PUT_SUMMARY_FREQUENCY             = "$SERVER_URL/api/summary-frequency"
-            const val PUT_DIGEST_FREQUENCY              = "$SERVER_URL/api/digest-frequency"
         }
         // endregion
 
@@ -336,26 +337,25 @@ class Helpers {
                 return
             }
 
-            val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
-            val networkInfo = connectivityManager.activeNetworkInfo
-            if (networkInfo == null || !networkInfo.isConnected) {
-                Log.i(TAG, "No internet connection. Deferring upload with WorkManager.")
+            // Use modern connectivity + speed check
+            if (!isConnectedFast(context)) {
+                Log.i(TAG, "No or slow internet. Deferring upload with WorkManager.")
 
-                val uploadWork = androidx.work.OneTimeWorkRequestBuilder<com.sil.workers.UploadWorker>()
+                val uploadWork = OneTimeWorkRequestBuilder<com.sil.workers.UploadWorker>()
                     .setInputData(
-                        androidx.work.workDataOf(
+                        workDataOf(
                             "uploadType" to "image",
                             "filePath" to imageFile.absolutePath
                         )
                     )
                     .setConstraints(
-                        androidx.work.Constraints.Builder()
-                            .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
+                        Constraints.Builder()
+                            .setRequiredNetworkType(NetworkType.CONNECTED)
                             .build()
                     )
                     .build()
 
-                androidx.work.WorkManager.getInstance(context).enqueue(uploadWork)
+                WorkManager.getInstance(context).enqueue(uploadWork)
                 return
             }
 
@@ -896,7 +896,7 @@ class Helpers {
                     }
 
                     val file = File(context.cacheDir, fileName)
-                    response.body?.byteStream()?.use { input ->
+                    response.body.byteStream().use { input ->
                         FileOutputStream(file).use { output ->
                             input.copyTo(output)
                         }
@@ -1103,11 +1103,6 @@ class Helpers {
         // endregion
 
         // region Network Related
-        fun isConnected(context: Context): Boolean {
-            val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-            return cm.activeNetworkInfo?.isConnected == true
-        }
-
         fun isConnectedFast(context: Context): Boolean {
             val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
             val network = cm?.activeNetwork ?: run {
@@ -1136,16 +1131,13 @@ class Helpers {
         // endregion
 
         // region Service Related
-        fun isServiceRunning(context: Context, serviceClass: Class<*>): Boolean {
+        fun isServiceRunning(serviceClass: Class<*>): Boolean {
             Log.i(TAG, "isServiceRunning | Checking if ${serviceClass.simpleName} is running...")
 
-            val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-            for (service in manager.getRunningServices(Integer.MAX_VALUE)) {
-                if (serviceClass.name == service.service.className) {
-                    return true
-                }
-            }
-            return false
+            val running = ScreenshotServiceUtils.isServiceRunning()
+            Log.i("Check", "ScreenshotService running: $running")
+
+            return running
         }
         // endregion
 
