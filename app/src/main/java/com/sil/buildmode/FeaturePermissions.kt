@@ -25,6 +25,7 @@ import com.sil.models.FrequencyOption
 import com.sil.others.Helpers
 import com.sil.others.Helpers.Companion.showToast
 import com.sil.services.ScreenshotService
+import com.sil.utils.ScreenshotServiceUtils
 import kotlin.math.max
 
 class FeaturePermissions : AppCompatActivity() {
@@ -85,7 +86,7 @@ class FeaturePermissions : AppCompatActivity() {
 
     // region UI Related
     private fun initScreenshotToggle() {
-        val isRunning = Helpers.isServiceRunning(ScreenshotService::class.java)
+        val isRunning = ScreenshotServiceUtils.isServiceRunning()
         updateToggle(screenshotToggleButton, isRunning)
 
         screenshotToggleButton.setOnCheckedChangeListener { _, isChecked ->

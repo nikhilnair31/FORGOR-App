@@ -1,7 +1,5 @@
 package com.sil.utils
 
-import android.content.Context
-
 class ScreenshotServiceUtils {
     companion object {
         @Volatile

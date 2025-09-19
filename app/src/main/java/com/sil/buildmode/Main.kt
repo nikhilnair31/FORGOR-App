@@ -33,6 +33,7 @@ import com.google.android.material.appbar.AppBarLayout
 import com.sil.others.Helpers
 import com.sil.others.Helpers.Companion.showToast
 import com.sil.services.ScreenshotService
+import com.sil.utils.ScreenshotServiceUtils
 import com.sil.workers.TokenRefreshWorker
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
@@ -457,7 +458,7 @@ class Main : AppCompatActivity() {
     // region Service Related
     private fun checkScreenshotServiceStatus() {
         val wasScreenshotServiceRunning = generalSharedPreferences.getBoolean(KEY_SCREENSHOT_ENABLED, false)
-        val isScreenshotServiceRunning = Helpers.isServiceRunning(ScreenshotService::class.java)
+        val isScreenshotServiceRunning = ScreenshotServiceUtils.isServiceRunning()
 
         val screenshotServiceIntent = Intent(this, ScreenshotService::class.java)
 

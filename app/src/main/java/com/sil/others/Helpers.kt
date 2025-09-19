@@ -1130,17 +1130,6 @@ class Helpers {
         }
         // endregion
 
-        // region Service Related
-        fun isServiceRunning(serviceClass: Class<*>): Boolean {
-            Log.i(TAG, "isServiceRunning | Checking if ${serviceClass.simpleName} is running...")
-
-            val running = ScreenshotServiceUtils.isServiceRunning()
-            Log.i("Check", "ScreenshotService running: $running")
-
-            return running
-        }
-        // endregion
-
         // region Shared Prefs Related
         fun Context.getAccessToken(): String = getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE).getString("access_token", "") ?: ""
         fun Context.getRefreshToken(): String = getSharedPreferences(PREFS_GENERAL, MODE_PRIVATE).getString("refresh_token", "") ?: ""
