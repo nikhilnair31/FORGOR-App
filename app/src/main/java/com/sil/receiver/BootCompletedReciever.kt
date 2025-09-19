@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import com.sil.services.ScreenshotService
 
 class BootCompletedReceiver : android.content.BroadcastReceiver() {
     val TAG = "BootCompletedReceiver"

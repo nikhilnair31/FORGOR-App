@@ -32,11 +32,11 @@ class Share : AppCompatActivity() {
             type?.startsWith("image/") == true -> {
                 when (action) {
                     Intent.ACTION_SEND -> {
-                        val imageUri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
+                        val imageUri = intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
                         handleSendImage(imageUri)
                     }
                     Intent.ACTION_SEND_MULTIPLE -> {
-                        val imageUriList = intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM)
+                        val imageUriList = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM, Uri::class.java)
                         handleSendMultipleImages(imageUriList)
                     }
                 }

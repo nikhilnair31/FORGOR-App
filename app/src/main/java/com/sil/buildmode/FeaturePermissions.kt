@@ -12,6 +12,8 @@ import android.util.Log
 import android.view.HapticFeedbackConstants
 import android.widget.Button
 import android.widget.ToggleButton
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
@@ -37,6 +39,7 @@ class FeaturePermissions : AppCompatActivity() {
 
     private val initRequestCode = 100
     private val batteryUnrestrictedRequestCode = 103
+    private lateinit var batteryOptLauncher: ActivityResultLauncher<Intent>
 
     private var pendingToggle: (() -> Unit)? = null
 
@@ -64,6 +67,16 @@ class FeaturePermissions : AppCompatActivity() {
         summaryCycleButton = findViewById(R.id.summaryFreqToggleButton)
         digestCycleButton = findViewById(R.id.digestEnabledToggleButton)
         buttonToMain = findViewById(R.id.buttonToMain)
+
+        batteryOptLauncher = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+            if (result.resultCode == RESULT_OK) {
+                if (isBatteryOptimized()) {
+                    onScreenshotPermissionsGranted()
+                }
+            }
+        }
 
         // safe to set inset listener now
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -270,7 +283,7 @@ class FeaturePermissions : AppCompatActivity() {
             if (grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
                 if (!isBatteryOptimized()) {
                     val intent = Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-                    startActivityForResult(intent, batteryUnrestrictedRequestCode)
+                    batteryOptLauncher.launch(intent)
                 } else {
                     onScreenshotPermissionsGranted()
                 }

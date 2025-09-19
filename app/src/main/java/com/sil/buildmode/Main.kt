@@ -208,7 +208,7 @@ class Main : AppCompatActivity() {
         sizeToggleButton.setImageResource(spanIcons[currentSpanIndex])
         layoutManager.spanCount = spanOptions[currentSpanIndex]
         recyclerView.layoutManager = layoutManager
-        recyclerView.setItemAnimator(null);
+        recyclerView.setItemAnimator(null)
 
         optionsExpandButton.setOnClickListener {
             if (optionsButtonsLayout.isVisible) {
