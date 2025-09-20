@@ -39,7 +39,10 @@ class FeatureToggles : AppCompatActivity() {
 
     private val initRequestCode = 100
     private val batteryUnrestrictedRequestCode = 103
+
     private lateinit var batteryOptLauncher: ActivityResultLauncher<Intent>
+    private lateinit var imagePermLauncher: ActivityResultLauncher<String>
+    private lateinit var notifPermLauncher: ActivityResultLauncher<String>
 
     private var pendingToggle: (() -> Unit)? = null
 
@@ -66,14 +69,26 @@ class FeatureToggles : AppCompatActivity() {
         summaryCycleButton = findViewById(R.id.summaryFreqToggleButton)
         digestCycleButton = findViewById(R.id.digestEnabledToggleButton)
 
+        // Launchers
         batteryOptLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
-        ) { result ->
-            if (result.resultCode == RESULT_OK) {
-                if (isBatteryOptimized()) {
-                    onScreenshotPermissionsGranted()
-                }
-            }
+        ) {
+            // User returns from settings. Just proceed; user was instructed to disable manually.
+            onScreenshotPermissionsGranted()
+        }
+        imagePermLauncher = registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { granted ->
+            Log.i(TAG, "READ_MEDIA_IMAGES result=$granted")
+            if (granted && hasAllImageAccess()) requestNotificationPermission()
+            else { showToast("Grant ‘Photos: Allow all’ to proceed."); resetScreenshotToggle() }
+        }
+        notifPermLauncher = registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { granted ->
+            Log.i(TAG, "POST_NOTIFICATIONS result=$granted")
+            if (granted) promptDisableBatteryOptimization()
+            else { showToast("Grant notification permission to proceed."); resetScreenshotToggle() }
         }
 
         // safe to set inset listener now
@@ -105,11 +120,11 @@ class FeatureToggles : AppCompatActivity() {
 
             val serviceIntent = Intent(this, ScreenshotService::class.java)
             if (isChecked) {
-                if (areScreenshotPermissionsGranted()) {
-                    startScreenshotService(serviceIntent)
+                pendingToggle = { startScreenshotService(serviceIntent) }  // set first
+                if (hasAllImageAccess() && hasNotificationAccess()) {
+                    promptDisableBatteryOptimization()
                 } else {
-                    pendingToggle = { startScreenshotService(serviceIntent) }
-                    requestScreenshotPermissions()
+                    requestImagePermission()
                 }
             } else {
                 stopService(serviceIntent)
@@ -222,6 +237,7 @@ class FeatureToggles : AppCompatActivity() {
             }
         }
     }
+
     private fun startScreenshotService(serviceIntent: Intent) {
         startForegroundService(serviceIntent)
         generalSharedPreferences.edit { putBoolean(KEY_SCREENSHOT_ENABLED, true) }
@@ -230,81 +246,69 @@ class FeatureToggles : AppCompatActivity() {
     // endregion
 
     // region Permissions Related
-    private fun requestScreenshotPermissions() {
-        val permissions = when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> arrayOf(
-                Manifest.permission.READ_MEDIA_IMAGES,
-                Manifest.permission.READ_MEDIA_VIDEO,
-                Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED,
-                Manifest.permission.POST_NOTIFICATIONS
-            )
-
-            else -> arrayOf(
-                Manifest.permission.READ_MEDIA_IMAGES,
-                Manifest.permission.READ_MEDIA_VIDEO,
-                Manifest.permission.POST_NOTIFICATIONS
-            )
+    private fun requestImagePermission() {
+        if (hasAllImageAccess()) {
+            requestNotificationPermission()
+        } else {
+            imagePermLauncher.launch(Manifest.permission.READ_MEDIA_IMAGES)
         }
-        ActivityCompat.requestPermissions(this, permissions, initRequestCode)
     }
 
-    private fun isBatteryOptimized(): Boolean {
+    private fun requestNotificationPermission() {
+        if (hasNotificationAccess()) {
+            promptDisableBatteryOptimization()
+        } else {
+            notifPermLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
+    private fun promptDisableBatteryOptimization() {
         val pm = getSystemService(POWER_SERVICE) as PowerManager
-        return pm.isIgnoringBatteryOptimizations(packageName)
+        val isUnrestricted = pm.isIgnoringBatteryOptimizations(packageName)
+
+        if (isUnrestricted) {
+            Log.i(TAG, "Battery optimization already unrestricted.")
+            onScreenshotPermissionsGranted()
+            return
+        }
+
+        showToast("Disable battery optimization for reliable monitoring.")
+        val intent = Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+        try {
+            startActivity(intent)
+        } catch (t: Throwable) {
+            Log.w(TAG, "Battery opt settings not resolvable: ${t.message}")
+        }
+        // proceed anyway, user may or may not flip it
+        onScreenshotPermissionsGranted()
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        when (requestCode) {
-            batteryUnrestrictedRequestCode -> {
-                if (isBatteryOptimized()) {
-                    onScreenshotPermissionsGranted()
-                }
-            }
-        }
+    private fun hasAllImageAccess(): Boolean {
+        // Treat “Allow all photos” as READ_MEDIA_IMAGES == GRANTED.
+        return ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.READ_MEDIA_IMAGES
+        ) == PackageManager.PERMISSION_GRANTED
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-
-        if (requestCode == initRequestCode) {
-            if (grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-                if (!isBatteryOptimized()) {
-                    val intent = Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-                    batteryOptLauncher.launch(intent)
-                } else {
-                    onScreenshotPermissionsGranted()
-                }
-            } else {
-                this.showToast("Screenshot permissions denied.")
-                screenshotToggleButton.isChecked = false
-            }
-        }
-    }
-
-    private fun areScreenshotPermissionsGranted(): Boolean {
-        return when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> {
-                ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED) == PackageManager.PERMISSION_GRANTED &&
-                        ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED &&
-                        isBatteryOptimized()
-            }
-
-            else -> {
-                ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.READ_MEDIA_IMAGES
-                ) == PackageManager.PERMISSION_GRANTED &&
-                        isBatteryOptimized()
-            }
-        }
+    private fun hasNotificationAccess(): Boolean {
+        return ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun onScreenshotPermissionsGranted() {
-        Log.i(TAG, "Screenshot permissions granted")
+        Log.i(TAG, "All prerequisites satisfied")
         pendingToggle?.invoke()
         pendingToggle = null
+    }
+
+    private fun resetScreenshotToggle() {
+        pendingToggle = null
+        screenshotToggleButton.isChecked = false
+        updateToggle(screenshotToggleButton, false)
+        generalSharedPreferences.edit { putBoolean(KEY_SCREENSHOT_ENABLED, false) }
     }
     // endregion
 }
