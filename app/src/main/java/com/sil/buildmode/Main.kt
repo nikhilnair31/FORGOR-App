@@ -83,6 +83,7 @@ class Main : AppCompatActivity() {
 
     private lateinit var rootConstraintLayout: ConstraintLayout
     private lateinit var recyclerView: RecyclerView
+    private var typingStoppedTimestamp: Long = 0
     // endregion
 
     // region Common
@@ -133,6 +134,15 @@ class Main : AppCompatActivity() {
 
                     resultAdapter.updateData(resultList)
                     recyclerView.postDelayed({
+                        val uiRenderedTimestamp = System.currentTimeMillis()
+                        Log.d(TAG, "TIMING: UI results *started* rendering at $uiRenderedTimestamp")
+                        // Calculate and log the total perceived gap if typing stopped timestamp is valid
+                        if (typingStoppedTimestamp != 0L) {
+                            val totalPerceivedGap = uiRenderedTimestamp - typingStoppedTimestamp
+                            Log.d(TAG, "TIMING: Total perceived gap (Typing Stopped -> UI Results Popup): $totalPerceivedGap ms")
+                            // Reset for next interaction
+                            typingStoppedTimestamp = 0L
+                        }
                         recyclerView.scrollToPosition(0)
                         // Force AppBar to expand after scroll
                         appBarLayout.setExpanded(true, true)
@@ -198,7 +208,7 @@ class Main : AppCompatActivity() {
         }
 
         recyclerView.adapter = resultAdapter
-        recyclerView.itemAnimator = DefaultItemAnimator()
+        // recyclerView.itemAnimator = DefaultItemAnimator()
 
         currentSpanIndex = generalSharedPreferences.getInt("grid_span_index", 0)
         layoutManager = StaggeredGridLayoutManager(
@@ -243,6 +253,8 @@ class Main : AppCompatActivity() {
         }
 
         searchEditText.doAfterTextChanged { text ->
+            typingStoppedTimestamp = System.currentTimeMillis()
+            Log.d(TAG, "TIMING: User last typed at $typingStoppedTimestamp")
             searchQueryUpdated(text.toString())
         }
 
@@ -339,6 +351,16 @@ class Main : AppCompatActivity() {
                             allResults = resultList
                             resultAdapter.updateData(allResults)
                             recyclerView.postDelayed({
+                                val uiRenderedTimestamp = System.currentTimeMillis()
+                                Log.d(TAG, "TIMING: UI results *started* rendering at $uiRenderedTimestamp")
+                                // Calculate and log the total perceived gap if typing stopped timestamp is valid
+                                if (typingStoppedTimestamp != 0L) {
+                                    val totalPerceivedGap = uiRenderedTimestamp - typingStoppedTimestamp
+                                    Log.d(TAG, "TIMING: Total perceived gap (Typing Stopped -> UI Results Popup): $totalPerceivedGap ms")
+                                    // Reset for next interaction
+                                    typingStoppedTimestamp = 0L
+                                }
+
                                 recyclerView.scrollToPosition(0)
                                 appBarLayout.setExpanded(true, true)
                             }, 50)
@@ -352,7 +374,7 @@ class Main : AppCompatActivity() {
             }
         }
 
-        searchHandler.postDelayed(searchRunnable!!, 300) // 1000 ms = 1 second
+        searchHandler.postDelayed(searchRunnable!!, 150) // 1000 ms = 1 second
     }
 
     private fun View.fadeIn(duration: Long = 200, delay: Long = 0) {

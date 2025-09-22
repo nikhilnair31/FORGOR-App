@@ -25,6 +25,7 @@ import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
 import androidx.core.view.isNotEmpty
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.sil.others.Helpers.Companion.EP
 
 class FullContent : AppCompatActivity() {
@@ -140,7 +141,10 @@ class FullContent : AppCompatActivity() {
                 imageView.visibility = View.VISIBLE
                 Glide.with(this)
                     .load(glideUrl)
-                    .dontTransform()
+                    .dontTransform()  // Keep original image quality
+                    .placeholder(R.drawable.bg_chip)  // Placeholder while loading
+                    .error(R.drawable.bg_chip_selected)  // Error placeholder
+                    .fitCenter()  // Or fitCenter() based on UI requirements
                     .into(imageView)
             }
         }
