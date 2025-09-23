@@ -73,7 +73,7 @@
             android:fontFamily="@font/venus_cormier"
             android:gravity="start"
             android:text="@string/monitoringText"
-            android:textColor="@color/accent_1"
+            android:textColor="@color/base_2"
             android:textSize="14sp" />
         <ToggleButton
             android:id="@+id/screenshotToggleButton"
@@ -109,7 +109,7 @@
 
             android:fontFamily="@font/venus_cormier"
             android:text="@string/summaryFrequencyText"
-            android:textColor="@color/accent_1"
+            android:textColor="@color/base_2"
             android:textSize="14sp" />
         <Button
             android:id="@+id/summaryFreqToggleButton"
@@ -146,7 +146,7 @@
 
             android:fontFamily="@font/venus_cormier"
             android:text="@string/digestFrequencyText"
-            android:textColor="@color/accent_1"
+            android:textColor="@color/base_2"
             android:textSize="14sp" />
         <Button
             android:id="@+id/digestEnabledToggleButton"

@@ -93,6 +93,7 @@ class Helpers {
             const val DELETE_ACCOUNT                    = "$SERVER_URL/api/account_delete"
             const val UPDATE_USERNAME                   = "$SERVER_URL/api/update-username"
             const val UPDATE_EMAIL                      = "$SERVER_URL/api/update-email"
+            const val USER_TIER_INFO                    = "$SERVER_URL/api/user/tier_info"
         }
         // endregion
 
@@ -433,33 +434,39 @@ class Helpers {
                 return null
             }
         }
-        fun getSavesLeft(context: Context, callback: (Int) -> Unit) {
-            Log.i(TAG, "Getting saves left from server...")
+        fun getUserTierInfo(context: Context, callback: (String, Int, Int) -> Unit) {
+            Log.i(TAG, "Getting user tier info from server...")
 
             performAuthorizedRequest(
                 context = context,
-                url = EP.GET_SAVES,
+                url = EP.USER_TIER_INFO,
                 method = "GET",
                 onSuccess = { responseBody ->
                     try {
                         val json = JSONObject(responseBody)
-                        val savesLeft = json.getInt("uploads_left")
+
+                        val currTier = json.getString("tier")
+                        val currSaves = json.getInt("current_saves")
+                        val maxSaves = json.getInt("max_saves")
+
                         val sharedPrefs = context.getSharedPreferences(TAG, MODE_PRIVATE)
-                        sharedPrefs.edit { putInt("cached_saves_left", savesLeft) }
-                        callback(savesLeft)
-                    } catch (e: Exception) {
+                        sharedPrefs.edit {
+                            putString("cached_curr_tier", currTier)
+                            putInt("cached_curr_saves", currSaves)
+                            putInt("cached_max_saves", maxSaves)
+                        }
+
+                        callback(currTier, currSaves, maxSaves)
+                    }
+                    catch (e: Exception) {
                         Log.e(TAG, "JSON parsing error: ${e.localizedMessage}")
-                        callback(0)
+                        callback("FREE", 0, 3)
                     }
                 },
                 onFailure = { error ->
-                    Log.e(TAG, "Failed to check saves: $error")
-                    context.showToast("Failed to check saves!")
-                    callback(0)
-                },
-                onForbidden = {
-                    context.showToast("Daily save limit reached")
-                    callback(0)
+                    Log.e(TAG, "Failed to get user tier info: $error")
+                    context.showToast("Failed to get user tier info!")
+                    callback("FREE", 0, 3)
                 }
             )
         }
@@ -782,6 +789,8 @@ class Helpers {
         // region Interaction Related
         fun insertPostInteraction(context: Context, fileId: Int, query: String, callback: (success: Boolean) -> Unit) {
             Log.i(TAG, "Inserting interaction: fileId = $fileId, query = \"$query\"")
+
+            if (query.isEmpty()) return
 
             val jsonBody = jsonOf(
                 "fileId" to fileId,

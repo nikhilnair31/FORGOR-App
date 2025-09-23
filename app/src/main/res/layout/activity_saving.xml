@@ -67,7 +67,23 @@
         app:layout_constraintStart_toStartOf="parent">
 
         <TextView
-            android:id="@+id/savesLeftText"
+            android:id="@+id/tiersTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/venus_cormier"
+
+            android:gravity="start"
+            android:padding="12dp"
+            android:text="@string/tiers"
+            android:textColor="@color/base_2"
+            android:textSize="14sp"
+
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/tierText"
             android:layout_width="match_parent"
             android:layout_height="64dp"
             android:layout_marginTop="8dp"
@@ -76,7 +92,43 @@
             android:fontFamily="@font/venus_cormier"
             android:gravity="center_horizontal|center_vertical"
             android:padding="12dp"
-            android:text="@string/savesLeftText"
+            android:text="@string/currentTier"
+            android:textColor="@color/accent_0"
+            android:textSize="14sp"
+
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/savesLeftTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/venus_cormier"
+
+            android:layout_marginTop="8dp"
+
+            android:gravity="start"
+            android:padding="12dp"
+            android:text="@string/savesLeft"
+            android:textColor="@color/base_2"
+            android:textSize="14sp"
+
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/savesLeftAmount"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:layout_marginTop="8dp"
+            android:background="@color/base_0"
+
+            android:fontFamily="@font/venus_cormier"
+            android:gravity="center_horizontal|center_vertical"
+            android:padding="12dp"
+            android:text="@string/savesLeftAmount"
             android:textColor="@color/accent_0"
             android:textSize="14sp"
 

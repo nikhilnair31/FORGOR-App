@@ -24,7 +24,8 @@ class Saving : AppCompatActivity() {
 
     private lateinit var generalSharedPreferences: SharedPreferences
 
-    private lateinit var savesLeftText: TextView
+    private lateinit var tierText: TextView
+    private lateinit var savesLeftAmountText: TextView
     private lateinit var requestDataExportButton: Button
     private lateinit var rootConstraintLayout: ConstraintLayout
     // endregion
@@ -41,21 +42,27 @@ class Saving : AppCompatActivity() {
     private fun initRelated() {
         rootConstraintLayout = findViewById(R.id.rootConstraintLayout)
         requestDataExportButton = findViewById(R.id.requestDataExportButton)
-        savesLeftText = findViewById(R.id.savesLeftText)
+        savesLeftAmountText = findViewById(R.id.savesLeftAmount)
+        tierText = findViewById(R.id.tierText)
 
         requestDataExportButton.setOnClickListener {
             showConfirmBulkDownload()
         }
 
-        val cachedSavesLeft = generalSharedPreferences.getInt("cached_saves_left", -1)
-        if (cachedSavesLeft != -1) {
-            savesLeftText.text = getString(R.string.savesLeftText, cachedSavesLeft)
-        }
-        Helpers.getSavesLeft(this) { savesLeft ->
-            Log.i(TAG, "You have $savesLeft uploads left today!")
-            savesLeftText.text = getString(R.string.savesLeftText, savesLeft)
+        // Get cached values
+        val cachedCurrTier = generalSharedPreferences.getString("cached_curr_tier", "FREE")
+        val cachedCurrSaves = generalSharedPreferences.getInt("cached_curr_saves", 0)
+        val cachedMaxSaves = generalSharedPreferences.getInt("cached_max_saves", 0)
+        // Update the UI
+        tierText.text = getString(R.string.currentTier, cachedCurrTier)
+        savesLeftAmountText.text = getString(R.string.savesLeftAmount, cachedCurrSaves, cachedMaxSaves)
+        // Then update the values from server
+        Helpers.getUserTierInfo(this) { tier, currSaves, maxSaves ->
+            Log.i(TAG, "You're on the $tier tier and have $currSaves/$maxSaves uploads left today!")
+            savesLeftAmountText.text = getString(R.string.savesLeftAmount, currSaves, maxSaves)
             generalSharedPreferences.edit {
-                putInt("cached_saves_left", savesLeft)
+                putInt("cached_curr_saves", currSaves)
+                putInt("cached_max_saves", maxSaves)
             }
         }
 
