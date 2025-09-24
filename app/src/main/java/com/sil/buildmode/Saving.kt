@@ -51,17 +51,18 @@ class Saving : AppCompatActivity() {
 
         // Get cached values
         val cachedCurrTier = generalSharedPreferences.getString("cached_curr_tier", "FREE")
-        val cachedCurrSaves = generalSharedPreferences.getInt("cached_curr_saves", 0)
-        val cachedMaxSaves = generalSharedPreferences.getInt("cached_max_saves", 0)
+        val cachedLeftSaves = generalSharedPreferences.getInt("cached_left_saves", 0)
+        val cachedMaxSaves = generalSharedPreferences.getInt("cached_max_saves", 3)
         // Update the UI
         tierText.text = getString(R.string.currentTier, cachedCurrTier)
-        savesLeftAmountText.text = getString(R.string.savesLeftAmount, cachedCurrSaves, cachedMaxSaves)
+        savesLeftAmountText.text = getString(R.string.savesLeftAmount, cachedLeftSaves, cachedMaxSaves)
         // Then update the values from server
-        Helpers.getUserTierInfo(this) { tier, currSaves, maxSaves ->
-            Log.i(TAG, "You're on the $tier tier and have $currSaves/$maxSaves uploads left today!")
-            savesLeftAmountText.text = getString(R.string.savesLeftAmount, currSaves, maxSaves)
+        Helpers.getUserTierInfo(this) { tier, leftSaves, maxSaves ->
+            Log.i(TAG, "You're on the $tier tier and have $leftSaves of $maxSaves uploads left today!")
+            savesLeftAmountText.text = getString(R.string.savesLeftAmount, leftSaves, maxSaves)
             generalSharedPreferences.edit {
-                putInt("cached_curr_saves", currSaves)
+                putString("cached_curr_tier", tier)
+                putInt("cached_left_saves", leftSaves)
                 putInt("cached_max_saves", maxSaves)
             }
         }

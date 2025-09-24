@@ -60,7 +60,7 @@
     <string name="tiers">TIER</string>
     <string name="currentTier">%1$s</string>
     <string name="savesLeft">SAVES</string>
-    <string name="savesLeftAmount">%1$d/%2$d</string>
+    <string name="savesLeftAmount">%1$d OF %2$d SAVES LEFT</string>
 
     <string name="savingText">SAVING</string>
     <string name="noResultsIcon">NO RESULTS</string>

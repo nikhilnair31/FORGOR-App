@@ -444,19 +444,20 @@ class Helpers {
                 onSuccess = { responseBody ->
                     try {
                         val json = JSONObject(responseBody)
+                        Log.i(TAG, "json: $json")
 
-                        val currTier = json.getString("tier")
-                        val currSaves = json.getInt("current_saves")
-                        val maxSaves = json.getInt("max_saves")
+                        val currTier = json.getString("tier_name")
+                        val leftSaves = json.getInt("uploads_left")
+                        val maxSaves = json.getInt("daily_limit")
 
                         val sharedPrefs = context.getSharedPreferences(TAG, MODE_PRIVATE)
                         sharedPrefs.edit {
                             putString("cached_curr_tier", currTier)
-                            putInt("cached_curr_saves", currSaves)
+                            putInt("cached_left_saves", leftSaves)
                             putInt("cached_max_saves", maxSaves)
                         }
 
-                        callback(currTier, currSaves, maxSaves)
+                        callback(currTier, leftSaves, maxSaves)
                     }
                     catch (e: Exception) {
                         Log.e(TAG, "JSON parsing error: ${e.localizedMessage}")
