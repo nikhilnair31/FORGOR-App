@@ -142,6 +142,7 @@
             android:layout_marginTop="8dp"
             android:padding="12dp"
 
+            android:visibility="gone"
             android:gravity="start"
 
             android:fontFamily="@font/venus_cormier"
@@ -156,6 +157,7 @@
             app:cornerRadius="@dimen/softCorners"
             android:backgroundTint="@color/base_0"
 
+            android:visibility="gone"
             android:checked="false"
             android:stateListAnimator="@null"
 
